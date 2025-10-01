@@ -27,21 +27,18 @@ const sampleData = [
       {
         code: "A",
         descriptionText: "kresba sestupu",
-        label: "obr. 1",
         description: "Pod posledním padákem vpravo dole mezi plameny zlatá čárka chybí",
         image: "/img/1983/A2586-A-1.jpg"
       },
       {
         code: "A",
         descriptionText: "ZP2",
-        label: "obr. 2",
         description: "Hnědá čárka v písmenu Č slova výročí",
         image: "/img/1983/A2586-A-2.jpg"
       },
       {
         code: "A",
         descriptionText: "ZP3",
-        label: "obr. 3",
         description: "Další popis vady...",
         image: "/img/1983/A2586-A-3.jpg"
       }
@@ -73,21 +70,18 @@ const sampleData = [
       {
         code: "A",
         descriptionText: "kresba sestupu",
-        label: "obr. 1",
         description: "Pod posledním padákem vpravo dole mezi plameny zlatá čárka chybí",
         image: "/img/1983/A2586-A-1.jpg"
       },
       {
         code: "A",
         descriptionText: "ZP2",
-        label: "obr. 2",
         description: "Hnědá čárka v písmenu Č slova výročí",
         image: "/img/1983/A2586-A-2.jpg"
       },
       {
         code: "A",
         descriptionText: "ZP3",
-        label: "obr. 3",
         description: "Další popis vady...",
         image: "/img/1983/A2586-A-3.jpg"
       }
@@ -118,21 +112,18 @@ const sampleData = [
       {
         code: "A",
         descriptionText: "kresba sestupu",
-        label: "obr. 1",
         description: "Pod posledním padákem vpravo dole mezi plameny zlatá čárka chybí",
         image: "/img/1983/A2586-A-1.jpg"
       },
       {
         code: "A",
         descriptionText: "ZP2",
-        label: "obr. 2",
         description: "Hnědá čárka v písmenu Č slova výročí",
         image: "/img/1983/A2586-A-2.jpg"
       },
       {
         code: "A",
         descriptionText: "ZP3",
-        label: "obr. 3",
         description: "Další popis vady...",
         image: "/img/1983/A2586-A-3.jpg"
       }

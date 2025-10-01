@@ -18,6 +18,8 @@ function DetailPage({ id, onBack, onLightbox }) {
       defectIndexMap[idx] = idx;
     });
   }
+  // Detekce mobilního rozlišení (max-width: 600px)
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 600;
   return (
     <div className="stamp-detail-block">
       <button onClick={onBack} className="back-btn">← Zpět</button>
@@ -31,16 +33,19 @@ function DetailPage({ id, onBack, onLightbox }) {
         </div>
         <div className="stamp-spec stamp-detail-spec-col" style={{ flex: '1 1 0%' }}>
           {item.specs && item.specs.map((spec, idx) => (
-            <div key={idx} className="stamp-spec-row">
-              <span className="stamp-spec-label">{spec.label}</span>
-              <span className="stamp-spec-value">
-                {spec.label === 'Schéma TF' && spec.tfImage ? (
+            spec.label === 'Schéma TF' && spec.tfImage ? (
+              <div key={idx} className="stamp-spec-row spec-tf-row">
+                <span className="stamp-spec-label">{spec.label}</span>
+                <span className="stamp-spec-value">
                   <img src={spec.tfImage} alt="Schéma TF" className="tf-img" />
-                ) : (
-                  spec.value
-                )}
-              </span>
-            </div>
+                </span>
+              </div>
+            ) : (
+              <div key={idx} className="stamp-spec-row">
+                <span className="stamp-spec-label">{spec.label}</span>
+                <span className="stamp-spec-value">{spec.value}</span>
+              </div>
+            )
           ))}
         </div>
       </div>
@@ -70,8 +75,13 @@ function DetailPage({ id, onBack, onLightbox }) {
                   <div className="variant-subtitle">Varianta {group}</div>
                   {subCodes.length > 0 && (
                     <div className="variant-group-info">
-                      <span className="variant-group-info-icon" title="Tato skupina obsahuje podvarianty">&#9432;</span>
-                      <span className="variant-group-info-text">Podvarianty: {subCodes.join(", ")}</span>
+                                  <span className="variant-group-info-icon" title="Tato skupina obsahuje podvarianty">
+                                    <svg width="1em" height="1em" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="10" fill="#2563eb"/>
+                          <text x="12" y="16" textAnchor="middle" fontSize="14" fill="#fff" fontFamily="Arial" fontWeight="bold">i</text>
+                        </svg>
+                      </span>
+                      <span className="variant-group-info-text">Obsahuje podvarianty: {subCodes.join(", ")}</span>
                     </div>
                   )}
                   <div className="variants">
@@ -101,6 +111,8 @@ function DetailPage({ id, onBack, onLightbox }) {
                       const mainCode = def.code ? <span className="variant-popis-hlavni">{def.code}</span> : null;
                       const mainDesc = def.descriptionText ? <span className="variant-popis-hlavni">{def.descriptionText}</span> : null;
                       const detail = def.description;
+                      // Automaticky generovaný label pokud není zadán
+                      const autoLabel = def.label ? def.label : `obr. ${i + 1}`;
                       return (
                         <div key={i} className="variant">
                           {(def.code || def.descriptionText) && (
@@ -114,11 +126,9 @@ function DetailPage({ id, onBack, onLightbox }) {
                             className="variant-img-bg variant-img-bg-pointer"
                             onClick={() => onLightbox(item.defects.indexOf(def))}
                           >
-                            <img src={def.image} alt={def.label} />
+                            <img src={def.image} alt={autoLabel} />
                           </div>
-                          {def.label && (
-                            <div className="variant-label">{def.label}</div>
-                          )}
+                          <div className="variant-label">{autoLabel}</div>
                           {detail && (
                             <div className="variant-popis-detail">{detail}</div>
                           )}
