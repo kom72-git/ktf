@@ -1,3 +1,19 @@
+@media (max-width: 600px) {
+  .stamp-spec-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .stamp-spec-label {
+    min-width: 0;
+    margin-right: 0;
+    margin-bottom: 4px;
+  }
+  .tf-img {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 8px;
+  }
+}
 @media (max-width: 1200px) {
   .stamp-detail-img-main {
     max-width: 80%;
