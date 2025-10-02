@@ -91,7 +91,7 @@ const sampleData = [
     id: "cz-1985-01",
     year: 1985,
     catalogNumber: "A 2700",
-    emission: "Pokus2 - fsd fsdf sdff sdf fsdf sfd dsf sfsdfdsfsdfsdfsd sfd fsdfsdfs dfgsdfsfsdf",
+    emission: "Pokus2 - fsd fsdf sdff sdf fsdf sfd dsf sfsdfdsfsdfsdfsd sfd fsdfsdfs dfgsdfsfsd",
     images: [
       "/img/1983/A2586.jpg"
     ],
