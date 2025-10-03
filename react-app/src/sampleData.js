@@ -1,14 +1,16 @@
 // sampleData.js
-// Sem patří všechna data známek, která se budou importovat do katalogu
+// Sem patří všechna data známek, která se budou importovat do katalogu.
 
 const sampleData = [
   {
-    id: "cz-1983-01",
-    year: 1983,
-    catalogNumber: "A 2586",
-    emission: "Interkosmos - 5. výročí letu SSSR-ČSSR",
+    // === ZAČÁTEK EMISE ===
+    // Každý objekt v poli sampleData představuje jednu emisi (jednu známku/aršík)
+    id: "cz-1983-01", // Unikátní ID emise
+    year: 1983, // Rok vydání
+    catalogNumber: "A 2586", // Katalogové číslo
+    emission: "Interkosmos - 5. výročí letu SSSR-ČSSR", // Název emise
     images: [
-      "/img/1983/A2586.jpg"
+      "/img/1983/A2586.jpg" // Hlavní obrázek emise
     ],
     specs: [
       { label: "Datum vydání", value: "18.5. 1983" },
@@ -24,24 +26,105 @@ const sampleData = [
     ],
     studyNote: "F. Graman, zpravodaj SSČSZ 1/2012",
     defects: [
+      // --- Varianta A ---
       {
-        code: "A",
-        descriptionText: "kresba sestupu",
-        description: "Pod posledním padákem vpravo dole mezi plameny zlatá čárka chybí",
-        image: "/img/1983/A2586-A-1.jpg"
+        code: "A", // varianta
+        descriptionText: "kresba sestupu", // ZP nebo popis
+        description: "pod posledním padákem vpravo dole mezi plameny zlatá čárka chybí", // Detailní popis
+        image: "/img/1983/A2586-A-1.jpg" // Obrázek varianty
       },
+      // --- Varianta A ---
       {
         code: "A",
         descriptionText: "ZP2",
-        description: "Hnědá čárka v písmenu Č slova výročí",
+        description: "hnědá čárka v písmenu 'č' slova 'výročí'",
         image: "/img/1983/A2586-A-2.jpg"
       },
+      // --- Varianta A ---
       {
         code: "A",
-        descriptionText: "ZP3",
-        description: "Další popis vady...",
+        descriptionText: "zlatá větvička",
+        description: "nad koncem větvičky uprostřed PL je zlatá skvrnka",
         image: "/img/1983/A2586-A-3.jpg"
+      },
+      // --- Varianta A ---
+      {
+        code: "A",
+        descriptionText: "kresba sestupu",
+        description: "modrá skvrnka vlevo nahoře u první sestupové fáze",
+        image: "/img/1983/A2586-A-4.jpg"
+      },
+      // --- Varianta A ---
+      {
+        code: "A",
+        descriptionText: "obraz Země",
+        description: "modrá skvrnka pod obrazem",
+        image: "/img/1983/A2586-A-5.jpg"
+      },
+      // --- Varianta B ---
+      {
+        code: "B", // varianta
+        descriptionText: "kresba sestupu", // ZP nebo popis
+        description: "pod posledním padákem vpravo dole mezi plameny zlatá čárka chybí", // Detailní popis
+        image: "/img/1983/A2586-A-1.jpg" // Obrázek varianty
+      },
+      // --- Varianta B ---
+      {
+        code: "B",
+        descriptionText: "zlatá větvička",
+        description: "nad koncem větvičky uprostřed PL je zlatá čárka",
+        image: "/img/1983/A2586-B-2.jpg"
+      },
+      // --- Varianta B1 ---
+      {
+        code: "B1",
+        descriptionText: "ZP2",
+        description: "hnědá skvrnka dole mezi písmeny 've' nápisu 'Československo'",
+        image: "/img/1983/A2586-B1-1.jpg"
+      },
+      // --- Varianta B2 ---
+      {
+        code: "B2",
+        descriptionText: "ZP2",
+        description: "hnědá čárka dole mezi písmeny 've' nápisu 'Československo'",
+        image: "/img/1983/A2586-B2-1.jpg"
+      },
+      // --- Varianta C ---
+      {
+        code: "C", // varianta
+        descriptionText: "kresba sestupu", // ZP nebo popis
+        description: "pod posledním padákem vpravo dole mezi plameny je zlatá čárka", // Detailní popis
+        image: "/img/1983/A2586-C-1.jpg" // Obrázek varianty
+      },
+      // --- Varianta C ---
+      {
+        code: "C",
+        descriptionText: "ZP1",
+        description: "hnědá skvrnka vlevo dole od číslice '1' v textu 'KOVÁŘÍK 1983'",
+        image: "/img/1983/A2586-C-2.jpg"
+      },
+      {
+        code: "C",
+        descriptionText: "kupón vpravo od ZP2",
+        description: "hnědý bod vlevo nahoře nad číslicí '2' nápisu 'Sojuz 28'",
+        image: "/img/1983/A2586-C-3.jpg"
+      },
+      // --- Varianta C1 ---
+      {
+        code: "C1",
+        descriptionText: "kresba sestupu",
+        description: "jednoduchá moletáž 4. a 5. fáze sestupu",
+        image: "/img/1983/A2586-C1-1.jpg"
+      },
+      // --- Varianta C2 ---
+      {
+        code: "C2",
+        descriptionText: "kresba sestupu",
+        description: "dvojitá moletáž 4. a 5. fáze sestupu",
+        image: "/img/1983/A2586-C2-1.jpg"
       }
+
+
     ]
   },
   // DUPLIKÁTY pro testování filtru
