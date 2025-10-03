@@ -1,0 +1,13 @@
+{
+  "name": "ktf-devcontainer",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "workspaceFolder": "/workspaces/ktf",
+  "forwardPorts": [5173],
+  "postCreateCommand": "cd react-app && npm install && npm run dev",
+  "customizations": {
+    "vscode": {
+      "settings": {},
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"]
+    }
+  }
+}
