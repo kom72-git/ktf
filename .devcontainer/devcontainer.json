@@ -4,6 +4,7 @@
   "workspaceFolder": "/workspaces/ktf",
   "forwardPorts": [5173],
   "postCreateCommand": "cd react-app && npm install && npm run dev",
+  "postStartCommand": "cd react-app && npm run dev",
   "customizations": {
     "vscode": {
       "settings": {},

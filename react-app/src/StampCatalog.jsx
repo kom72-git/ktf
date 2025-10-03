@@ -1,13 +1,16 @@
 import React, { useState, useMemo } from "react";
+// ...existing code...
 import sampleData from "./sampleData";
-import { motion } from "framer-motion";
 import { Search, Image } from "lucide-react";
 import "./App.css";
-import Lightbox from "yet-another-react-lightbox";
-import "yet-another-react-lightbox/styles.css";
+import { Fancybox } from "@fancyapps/ui";
+import "@fancyapps/ui/dist/fancybox/fancybox.css";
+// thumbs plugin není importován
+import "./fancybox-responsive.css";
 
 
-function DetailPage({ id, onBack, onLightbox }) {
+function DetailPage({ id, onBack }) {
+  // ...existing code...
   const item = sampleData.find((d) => d.id === id);
   if (!item) return <div className="p-8">Nenalezeno</div>;
 
@@ -18,8 +21,39 @@ function DetailPage({ id, onBack, onLightbox }) {
       defectIndexMap[idx] = idx;
     });
   }
-  // Detekce mobilního rozlišení (max-width: 600px)
-  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 600;
+  // Funkce pro otevření Fancyboxu s galerií obrázků variant
+         const openFancybox = (startIndex = 0) => {
+           if (!item.defects || item.defects.length === 0) return;
+           const slides = item.defects.map(def => ({
+             src: def.image,
+             caption:
+               `<div style='text-align:center;'>`
+               + `<span style='font-weight:700;font-size:1.05em;'>${def.code || ''}${def.code && def.descriptionText ? ' – ' : ''}${def.descriptionText || ''}</span>`
+               + (def.description ? `<br><span style='font-size:1em;font-weight:400;margin-top:8px;display:inline-block;'>${def.description}</span>` : '')
+               + `</div>`
+           }));
+           Fancybox.show(slides, {
+             startIndex,
+             Toolbar: [
+               'thumbs',
+               'zoom',
+               'close',
+             ],
+             dragToClose: true,
+             animated: true,
+             compact: false,
+             showClass: 'fancybox-zoomIn',
+             hideClass: 'fancybox-zoomOut',
+             closeButton: 'top',
+             defaultType: 'image',
+             Carousel: {
+               Thumbs: {
+                 showOnStart: false,
+               },
+             },
+           });
+  };
+
   return (
     <div className="stamp-detail-block">
       <button onClick={onBack} className="back-btn">← Zpět</button>
@@ -84,14 +118,14 @@ function DetailPage({ id, onBack, onLightbox }) {
                   })()}
                   <div className="variants">
                     {defs.map((def, i) => {
-                      const mainCode = def.code ? <span className="variant-popis-hlavni">{def.code}</span> : null;
-                      const mainDesc = def.descriptionText ? <span className="variant-popis-hlavni">{def.descriptionText}</span> : null;
+                      // ...existing code...
                       const detail = def.description;
                       // Label generovaný podle indexu v item.defects
                       const defectIdx = item.defects.indexOf(def);
                       const autoLabel = def.label ? def.label : `obr. ${defectIdx + 1}`;
                       return (
                         <div key={i} className="variant">
+                          {/* Hlavní popisek nad obrázkem */}
                           {(def.code || def.descriptionText) && (
                             <div className="variant-popis">
                               {def.code && <span className="variant-popis-hlavni">{def.code}</span>}
@@ -101,7 +135,7 @@ function DetailPage({ id, onBack, onLightbox }) {
                           )}
                           <div
                             className="variant-img-bg variant-img-bg-pointer"
-                            onClick={() => onLightbox(defectIdx)}
+                            onClick={() => openFancybox(defectIdx)}
                           >
                             <img src={def.image} alt={autoLabel} />
                           </div>
@@ -269,80 +303,27 @@ export default function StampCatalog(props) {
             </div>
           </>
         )}
-        {/* Lightbox bez pluginu Captions, plně vlastní popisek */}
-        {typeof lightboxIndex === 'number' && detailId && (
-          <Lightbox
-            open={true}
-            close={() => setLightboxIndex(null)}
-            index={lightboxIndex}
-            slides={(() => {
-              const item = sampleData.find((d) => d.id === detailId);
-              if (!item || !item.defects) return [];
-              return item.defects.map((def, i) => ({
-                src: def.image,
-                main: [def.code, def.descriptionText].filter(Boolean).join(' – '),
-                label: def.label ? def.label : `obr. ${i + 1}`,
-                detail: def.description
-              }));
-            })()}
-            render={{
-              slide: ({ slide }) => {
-                return (
-                  <div className="lightbox-slide-outer">
-                    {/* Hlavní popisek nad obrázkem */}
-                    {slide.main && (
-                      <div className="lightbox-slide-main">{slide.main}</div>
-                    )}
-                    <div className="lightbox-slide-imgwrap">
-                      <img
-                        src={slide.src}
-                        alt={slide.label || ''}
-                        className="lightbox-slide-img"
-                      />
-                    </div>
-                    {/* Automaticky generovaný label pod obrázkem */}
-                    <div
-                      className="lightbox-slide-title"
-                      style={{
-                        color: '#fff',
-                        fontSize: '15px',
-                        fontWeight: 500,
-                        textAlign: 'center',
-                        marginTop: '10px',
-                        marginBottom: '18px',
-                        textShadow: '0 2px 12px #000, 0 0 2px #000',
-                        background: 'none',
-                        border: 'none',
-                        zIndex: 9999
-                      }}
-                    >
-                      {slide.label}
-                    </div>
-                    {/* Detailní popis pod číslem obrázku */}
-                    {slide.detail && (
-                      <div
-                        className="lightbox-slide-detail"
-                        style={{
-                          color: '#fff',
-                          fontSize: '20px',
-                          fontWeight: 'normal',
-                          textAlign: 'center',
-                          marginBottom: '10px',
-                          textShadow: '0 2px 12px #000, 0 0 2px #000',
-                          background: 'none',
-                          border: 'none',
-                          zIndex: 9999
-                        }}
-                      >
-                        {slide.detail}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-            }}
-          />
-        )}
+        {/* Fancybox lightbox s podporou zoomu, klávesnice a vlastních popisků */}
+        {typeof lightboxIndex === 'number' && detailId && (() => {
+          const item = sampleData.find((d) => d.id === detailId);
+          if (!item || !item.defects) return null;
+          // Fancybox potřebuje HTML elementy s data-fancybox atributem
+          return (
+            <div style={{ display: 'none' }}>
+              {item.defects.map((def, i) => (
+                <a
+                  key={i}
+                  href={def.image}
+                  data-fancybox="gallery"
+                  data-caption={`<div><strong>${def.code || ''}${def.code && def.descriptionText ? ' – ' : ''}${def.descriptionText || ''}</strong><br/>${def.description || ''}</div>`}
+                  style={{ display: 'none' }}
+                >
+                  Obrázek
+                </a>
+              ))}
+            </div>
+          );
+        })()}
       </main>
     </div>
   );
