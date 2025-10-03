@@ -64,55 +64,32 @@ function DetailPage({ id, onBack, onLightbox }) {
               groups[groupKey].push(def);
             });
             return Object.entries(groups).map(([group, defs]) => {
-              // Najít obecnou vadu (např. B) a podvarianty (B1, B2...)
-              const general = defs.find(d => d.code && d.code.length === 1);
-              const subs = defs.filter(d => !general || d !== general);
-              const showGeneralHighlight = general && subs.length > 0;
-              // Najít unikátní podvarianty (např. B1, B2) — pouze ty, které mají kód delší než 1 znak
-              const subCodes = subs.map(d => d.code).filter(c => c && c.length > 1);
               return (
                 <div key={group}>
                   <div className="variant-subtitle">Varianta {group}</div>
-                  {subCodes.length > 0 && (
-                    <div className="variant-group-info">
-                                  <span className="variant-group-info-icon" title="Tato skupina obsahuje podvarianty">
-                                    <svg width="1em" height="1em" viewBox="0 0 24 24">
-                          <circle cx="12" cy="12" r="10" fill="#2563eb"/>
-                          <text x="12" y="16" textAnchor="middle" fontSize="14" fill="#fff" fontFamily="Arial" fontWeight="bold">i</text>
-                        </svg>
-                      </span>
-                      <span className="variant-group-info-text">Obsahuje podvarianty: {subCodes.join(", ")}</span>
-                    </div>
-                  )}
-                  <div className="variants">
-                    {general && (
-                      <div className="variant">
-                        <div className="variant-popis">
-                          <span className="variant-popis-hlavni">{general.code}</span>
-                          {general.descriptionText && (
-                            <span className="variant-dash">–</span>
-                          )}
-                          {general.descriptionText && (
-                            <span className="variant-popis-hlavni">{general.descriptionText}</span>
-                          )}
-                        </div>
-                        <div className="variant-img-bg variant-img-bg-pointer" onClick={() => onLightbox(item.defects.indexOf(general))}>
-                          <img src={general.image} alt={general.label} />
-                        </div>
-                        {general.label && (
-                          <div className="variant-label">{general.label}</div>
-                        )}
-                        {general.description && (
-                          <div className="variant-popis-detail">{general.description}</div>
-                        )}
+                  {/* Info o podvariantách */}
+                  {(() => {
+                    const subCodes = defs.map(d => d.code).filter(c => c && c.length > 1);
+                    return subCodes.length > 0 ? (
+                      <div className="variant-group-info">
+                        <span className="variant-group-info-icon" title="Tato skupina obsahuje podvarianty">
+                          <svg width="1em" height="1em" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" fill="#2563eb"/>
+                            <text x="12" y="16" textAnchor="middle" fontSize="14" fill="#fff" fontFamily="Arial" fontWeight="bold">i</text>
+                          </svg>
+                        </span>
+                        <span className="variant-group-info-text">Obsahuje podvarianty: {subCodes.join(", ")}</span>
                       </div>
-                    )}
-                    {subs.map((def, i) => {
+                    ) : null;
+                  })()}
+                  <div className="variants">
+                    {defs.map((def, i) => {
                       const mainCode = def.code ? <span className="variant-popis-hlavni">{def.code}</span> : null;
                       const mainDesc = def.descriptionText ? <span className="variant-popis-hlavni">{def.descriptionText}</span> : null;
                       const detail = def.description;
-                      // Automaticky generovaný label pokud není zadán
-                      const autoLabel = def.label ? def.label : `obr. ${i + 1}`;
+                      // Label generovaný podle indexu v item.defects
+                      const defectIdx = item.defects.indexOf(def);
+                      const autoLabel = def.label ? def.label : `obr. ${defectIdx + 1}`;
                       return (
                         <div key={i} className="variant">
                           {(def.code || def.descriptionText) && (
@@ -124,7 +101,7 @@ function DetailPage({ id, onBack, onLightbox }) {
                           )}
                           <div
                             className="variant-img-bg variant-img-bg-pointer"
-                            onClick={() => onLightbox(item.defects.indexOf(def))}
+                            onClick={() => onLightbox(defectIdx)}
                           >
                             <img src={def.image} alt={autoLabel} />
                           </div>
@@ -304,12 +281,12 @@ export default function StampCatalog(props) {
               return item.defects.map((def, i) => ({
                 src: def.image,
                 main: [def.code, def.descriptionText].filter(Boolean).join(' – '),
-                title: def.label,
+                label: def.label ? def.label : `obr. ${i + 1}`,
                 detail: def.description
               }));
             })()}
             render={{
-              slide: ({ slide, offset, rect }) => {
+              slide: ({ slide }) => {
                 return (
                   <div className="lightbox-slide-outer">
                     {/* Hlavní popisek nad obrázkem */}
@@ -319,30 +296,28 @@ export default function StampCatalog(props) {
                     <div className="lightbox-slide-imgwrap">
                       <img
                         src={slide.src}
-                        alt={slide.title || ''}
+                        alt={slide.label || ''}
                         className="lightbox-slide-img"
                       />
                     </div>
-                    {/* Číslo obrázku hned pod obrázkem */}
-                    {slide.title && (
-                      <div
-                        className="lightbox-slide-title"
-                        style={{
-                          color: '#fff',
-                          fontSize: '15px',
-                          fontWeight: 500,
-                          textAlign: 'center',
-                          marginTop: '10px',
-                          marginBottom: '18px',
-                          textShadow: '0 2px 12px #000, 0 0 2px #000',
-                          background: 'none',
-                          border: 'none',
-                          zIndex: 9999
-                        }}
-                      >
-                        {slide.title}
-                      </div>
-                    )}
+                    {/* Automaticky generovaný label pod obrázkem */}
+                    <div
+                      className="lightbox-slide-title"
+                      style={{
+                        color: '#fff',
+                        fontSize: '15px',
+                        fontWeight: 500,
+                        textAlign: 'center',
+                        marginTop: '10px',
+                        marginBottom: '18px',
+                        textShadow: '0 2px 12px #000, 0 0 2px #000',
+                        background: 'none',
+                        border: 'none',
+                        zIndex: 9999
+                      }}
+                    >
+                      {slide.label}
+                    </div>
                     {/* Detailní popis pod číslem obrázku */}
                     {slide.detail && (
                       <div
