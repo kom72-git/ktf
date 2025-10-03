@@ -1,14 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import "./App.css";
-import Lightbox from "yet-another-react-lightbox";
-import "yet-another-react-lightbox/styles.css";
-import Captions from "yet-another-react-lightbox/plugins/captions";
-import "yet-another-react-lightbox/plugins/captions.css";
 
 
 export default function StampDetail({ stamp, onBack }) {
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
+  // Lightbox stav odstraněn
   useEffect(() => {
     const handlePopState = () => {
       onBack();
@@ -50,22 +45,13 @@ export default function StampDetail({ stamp, onBack }) {
                 src={v.image}
                 alt={v.caption}
                 style={{ cursor: "pointer" }}
-                onClick={() => { setLightboxIndex(i); setLightboxOpen(true); }}
+                // původní lightbox click odstraněn
               />
               <div className="variant-caption">obr. {i+1}: {v.caption}</div>
             </div>
           ))}
         </div>
-        {lightboxOpen && (
-          <Lightbox
-            open={lightboxOpen}
-            close={() => setLightboxOpen(false)}
-            slides={stamp.variants.map(v => ({ src: v.image, description: v.caption }))}
-            index={lightboxIndex}
-            plugins={[Captions]}
-            captions={{ descriptionTextAlign: "center" }}
-          />
-        )}
+        {/* Lightbox komponenta odstraněna */}
       </div>
     </div>
   );
