@@ -8,7 +8,7 @@ const sampleData = [
     id: "cz-1983-01", // Unikátní ID emise
     year: 1983, // Rok vydání
     catalogNumber: "A 2586", // Katalogové číslo
-    emission: "Interkosmos - 5. výročí letu SSSR-ČSR", // Název emise
+    emission: "Interkosmos - 5. výročí letu SSSR-ČSSR", // Název emise
     images: [
       "/img/1983/A2586.jpg" // Hlavní obrázek emise
     ],
