@@ -62,7 +62,12 @@ function DetailPage({ id, onBack }) {
       <div className="stamp-detail-layout" style={{ display: 'flex', gap: 32 }}>
         <div className="stamp-detail-img-col" style={{ flex: '0 0 auto' }}>
           <div className="stamp-detail-img-bg stamp-detail-img-bg-none">
-            <img src={item.images[0]} alt={item.emission} className="stamp-detail-img stamp-detail-img-main" />
+            <img
+              src={item.images[0]}
+              alt={item.emission}
+              className="stamp-detail-img stamp-detail-img-main"
+              onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
+            />
           </div>
         </div>
         <div className="stamp-spec stamp-detail-spec-col" style={{ flex: '1 1 0%' }}>
@@ -104,7 +109,8 @@ function DetailPage({ id, onBack }) {
                   {/* Info o podvariantách */}
                   {(() => {
                     const subCodes = defs.map(d => d.code).filter(c => c && c.length > 1);
-                    return subCodes.length > 0 ? (
+                    const uniqueSubCodes = Array.from(new Set(subCodes));
+                    return uniqueSubCodes.length > 0 ? (
                       <div className="variant-group-info">
                         <span className="variant-group-info-icon" title="Tato skupina obsahuje podvarianty">
                           <svg width="1em" height="1em" viewBox="0 0 24 24">
@@ -112,7 +118,7 @@ function DetailPage({ id, onBack }) {
                             <text x="12" y="16" textAnchor="middle" fontSize="14" fill="#fff" fontFamily="Arial" fontWeight="bold">i</text>
                           </svg>
                         </span>
-                        <span className="variant-group-info-text">Obsahuje podvarianty: {subCodes.join(", ")}</span>
+                        <span className="variant-group-info-text">Obsahuje podvarianty: {uniqueSubCodes.join(", ")}</span>
                       </div>
                     ) : null;
                   })()}
@@ -137,7 +143,11 @@ function DetailPage({ id, onBack }) {
                             className="variant-img-bg variant-img-bg-pointer"
                             onClick={() => openFancybox(defectIdx)}
                           >
-                            <img src={def.image} alt={autoLabel} />
+                            <img
+                              src={def.image}
+                              alt={autoLabel}
+                              onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
+                            />
                           </div>
                           <div className="variant-label">{autoLabel}</div>
                           {detail && (
@@ -279,7 +289,11 @@ export default function StampCatalog(props) {
                   }}>
                   <div className="stamp-img-bg">
                     {item.images && item.images.length ? (
-                      <img src={item.images[0]} alt={item.emission} />
+                      <img
+                        src={item.images[0]}
+                        alt={item.emission}
+                        onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
+                      />
                     ) : (
                       <div className="stamp-img-missing">obrázek chybí</div>
                     )}
