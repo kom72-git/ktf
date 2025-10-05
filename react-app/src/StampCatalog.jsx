@@ -200,20 +200,31 @@ export default function StampCatalog(props) {
     }
   }, [detailId]);
 
+
   const years = useMemo(() => {
     const s = new Set(sampleData.map((d) => d.year));
     return ["all", ...Array.from(s).sort((a, b) => b - a)];
   }, []);
 
-  const emissions = useMemo(() => {
-    const s = new Set(sampleData.map((d) => d.emission));
+  // Filtrované emise podle vybraného roku
+  const filteredEmissions = useMemo(() => {
+    let filtered = sampleData;
+    if (year !== "all") {
+      filtered = filtered.filter((d) => d.year === Number(year));
+    }
+    const s = new Set(filtered.map((d) => d.emission));
     return ["all", ...Array.from(s).sort()];
-  }, []);
+  }, [year]);
 
-  const catalogs = useMemo(() => {
-    const s = new Set(sampleData.map((d) => d.catalogNumber));
+  // Filtrovaná katalogová čísla podle vybraného roku
+  const filteredCatalogs = useMemo(() => {
+    let filtered = sampleData;
+    if (year !== "all") {
+      filtered = filtered.filter((d) => d.year === Number(year));
+    }
+    const s = new Set(filtered.map((d) => d.catalogNumber));
     return ["all", ...Array.from(s).sort((a, b) => katalogSort({catalogNumber: a}, {catalogNumber: b}))];
-  }, []);
+  }, [year]);
 
   const filtered = useMemo(() => {
     return sampleData
@@ -240,8 +251,10 @@ export default function StampCatalog(props) {
   return (
     <div className="page-bg">
       <header className="header">
-        <h1 className="main-title">Tiskové formy československých známek</h1>
-        <p className="subtitle">Katalog studií rozlišení tiskových forem, desek a polí při tisku československých známek v letech 1945-92.</p>
+        <h1 className="main-title">
+          <img src="/img/inicialy-K.png" alt="K" className="main-title-img" />atalog <img src="/img/inicialy-T.png" alt="T" className="main-title-img" />iskových <span className="main-title-nowrap"><img src="/img/inicialy-F.png" alt="F" className="main-title-img" />orem</span> československých známek
+        </h1>
+        <p className="subtitle">Seznam studií rozlišení tiskových forem, desek a polí při tisku československých známek v letech 1945-92.</p>
       </header>
       <main className="main">
         {detailId ? (
@@ -263,13 +276,13 @@ export default function StampCatalog(props) {
               </select>
               <select value={emission} onChange={(e) => setEmission(e.target.value)}>
                 <option value="all">Emise</option>
-                {emissions.filter(em => em !== "all").map((em) => (
+                {filteredEmissions.filter(em => em !== "all").map((em) => (
                   <option key={em} value={em}>{em}</option>
                 ))}
               </select>
               <select value={catalog} onChange={(e) => setCatalog(e.target.value)}>
                 <option value="all">Katalogové číslo</option>
-                {catalogs.filter(c => c !== "all").map((c) => (
+                {filteredCatalogs.filter(c => c !== "all").map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>

@@ -334,7 +334,7 @@ const sampleData = [
     id: "cz-1984-01",
     year: 1984,
     catalogNumber: "PL 2700",
-    emission: "Zkouška ",
+    emission: "Pokus",
     images: [
       "/img/1983/PL2596.jpg"
     ],
