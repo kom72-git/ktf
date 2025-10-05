@@ -106,7 +106,7 @@ const sampleData = [
       // --- Varianta C ---
       {
         code: "C",
-        descriptionText: "kupón vpravo od ZP2",
+        descriptionText: "pravá kresba ZP2",
         description: "hnědý bod vlevo nahoře nad číslicí '2' nápisu 'Sojuz 28'",
         image: "/img/1983/A2586-C-3.jpg"
       },
@@ -246,7 +246,123 @@ const sampleData = [
         code: "A2",
         descriptionText: "ZP1",
         description: "DV varianta A1",
-        image: "/img/1983/A2597-A1-2jpg"
+        image: "/img/1983/A2597-A2-2.jpg"
+      },
+      {
+        code: "B1",
+        descriptionText: "ZP1",
+        description: "'vylomená' pravá věžička na hlavní věži chrámu sv. Víta, velká modrá skvrna",
+        image: "/img/1983/A2597-B1-1.jpg"
+      },
+      {
+        code: "B2.1",
+        descriptionText: "ZP1",
+        description: "'vylomená' pravá věžička na hlavní věži chrámu sv. Víta, velká modrá skvrna",
+        image: "/img/1983/A2597-B2.1-1.jpg"
+      },
+      {
+        code: "B2.2",
+        descriptionText: "ZP1",
+        description: "'vylomená' pravá věžička na hlavní věži chrámu sv. Víta, velká modrá skvrna",
+        image: "/img/1983/A2597-B2.2-1.jpg"
+      },
+      {
+        code: "B2.2",
+        descriptionText: "ZP1",
+        description: "'vylomená' pravá věžička na hlavní věži chrámu sv. Víta, velká modrá skvrna",
+        image: "/img/1983/A2597-B2.2-2.jpg"
+      },
+      {
+        code: "B3.1",
+        descriptionText: "ZP1",
+        description: "'vylomená' pravá věžička na hlavní věži chrámu sv. Víta, velká modrá skvrna",
+        image: "/img/1983/A2597-B3.1-1.jpg"
+      },
+      {
+        code: "B3.1",
+        descriptionText: "ZP1",
+        description: "'vylomená' pravá věžička na hlavní věži chrámu sv. Víta, velká modrá skvrna",
+        image: "/img/1983/A2597-B3.1-2.jpg"
+      },
+      {
+        code: "B3.2",
+        descriptionText: "ZP1",
+        description: "'vylomená' pravá věžička na hlavní věži chrámu sv. Víta, velká modrá skvrna",
+        image: "/img/1983/A2597-B3.2-1.jpg"
+      },
+      {
+        code: "B3.2",
+        descriptionText: "ZP1",
+        description: "'vylomená' pravá věžička na hlavní věži chrámu sv. Víta, velká modrá skvrna",
+        image: "/img/1983/A2597-B3.2-2.jpg"
+      },
+      {
+        code: "B3.3",
+        descriptionText: "ZP1",
+        description: "'vylomená' pravá věžička na hlavní věži chrámu sv. Víta, velká modrá skvrna",
+        image: "/img/1983/A2597-B3.3-1.jpg"
+      },
+      {
+        code: "B3.3",
+        descriptionText: "ZP1",
+        description: "'vylomená' pravá věžička na hlavní věži chrámu sv. Víta, velká modrá skvrna",
+        image: "/img/1983/A2597-B3.3-2.jpg"
+      },
+      {
+        code: "C1",
+        descriptionText: "ZP3",
+        description: "hnědočerný bod na hřbětě holubice",
+        image: "/img/1983/A2597-C1-1.jpg"
+      },
+      {
+        code: "C2",
+        descriptionText: "ZP4",
+        description: "dvě sv. modré skvrnky pod písmeny 'OV' v nápisu 'ČESKOSLOVENSKO'",
+        image: "/img/1983/A2597-C2-1.jpg"
+      },
+      {
+        code: "D",
+        descriptionText: "ZP4",
+        description: "dlouhá vodorovná hnědočervená ryska přes písmeno 'N' slova 'JADERNÉ' retušována",
+        image: "/img/1983/A2597-D-1.jpg"
+      }
+    ]
+  },
+// === KONEC EMISE ===
+// === ZAČÁTEK EMISE - kopie ===
+  {
+    id: "cz-1984-01",
+    year: 1984,
+    catalogNumber: "PL 2700",
+    emission: "Zkouška ",
+    images: [
+      "/img/1983/PL2596.jpg"
+    ],
+    specs: [
+      { label: "Datum vydání", value: "6. 6. 1983" },
+      { label: "Návrh", value: "V. Kovářík" },
+      { label: "Rytec", value: "B. Housa" },
+      { label: "Druh tisku", value: "OTp (ocelotisk z plochy)" },
+      { label: "Tisková forma", value: "1 TF 4AP" },
+      { label: "Zoubkování", value: "RZ 11 3/4" },
+      { label: "Papír", value: "OZ" },
+      { label: "Rozměr", value: " " },
+      { label: "Náklad", value: "103 300 PL" },
+      { label: "Schéma TF", value: "viz obrázek", tfImage: "/img/1983/PL2596-TF.jpg" }
+    ],
+    studyNote: "F. Graman, publikováno ???",
+    defects: [
+      {
+        code: "A1",
+        descriptionText: "ZP3",
+        description: "Patka hodnotové číslice 2 neukončena svislou čarou, hodnota a nápis Kčs světlý",
+        image: "/img/1983/PL2596-A1-1.jpg"
+      },
+      {
+        code: "A2",
+        descriptionText: "ZP3",
+        description: "Patka hodnotové číslice je seříznuta šikmo (retuš), hodnota a nápis Kčs normální",
+        image: "/img/1983/PL2596-A2-1.jpg"
       },
       {
         code: "B",
@@ -284,9 +400,9 @@ const sampleData = [
         description: "dlouhá vodorovná hnědočervená ryska přes písmeno 'N' slova 'JADERNÉ' retušována",
         image: "/img/1983/PL2596-C2-2.jpg"
       }
-    ],
-  }
-// === KONEC EMISE ===
+    ]
+  },
+// === KONEC EMISE - kopie ===
 
 
 

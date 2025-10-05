@@ -240,8 +240,8 @@ export default function StampCatalog(props) {
   return (
     <div className="page-bg">
       <header className="header">
-        <h1 className="main-title">Katalog tiskových forem — československé známky</h1>
-        <p className="subtitle">Zde bude nějaký doplňující popisek.</p>
+        <h1 className="main-title">Tiskové formy československých známek</h1>
+        <p className="subtitle">Katalog studií rozlišení tiskových forem, desek a polí při tisku československých známek v letech 1945-92.</p>
       </header>
       <main className="main">
         {detailId ? (
