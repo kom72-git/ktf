@@ -252,7 +252,7 @@ export default function StampCatalog(props) {
     <div className="page-bg">
       <header className="header">
         <h1 className="main-title">
-          <img src="/img/inicialy-K.png" alt="K" className="main-title-img" />atalog <img src="/img/inicialy-T.png" alt="T" className="main-title-img" />iskových <span className="main-title-nowrap"><img src="/img/inicialy-F.png" alt="F" className="main-title-img" />orem</span> československých známek
+          <img src="/img/inicialy-K.png" alt="K" className="main-title-img" />atalog <span className="main-title-nowrap"><img src="/img/inicialy-T.png" alt="T" className="main-title-img" />iskových</span> <span className="main-title-nowrap"><img src="/img/inicialy-F.png" alt="F" className="main-title-img" />orem</span> českosloven&shy;ských známek
         </h1>
         <p className="subtitle">Seznam studií rozlišení tiskových forem, desek a polí při tisku československých známek v letech 1945-92.</p>
       </header>
