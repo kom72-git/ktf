@@ -1,0 +1,2 @@
+# Ignorovat .env soubor s citlivými údaji
+.env
