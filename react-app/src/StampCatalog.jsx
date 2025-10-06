@@ -1,166 +1,97 @@
-import React, { useState, useMemo } from "react";
-// ...existing code...
-import sampleData from "./sampleData";
+import React, { useState, useMemo, useEffect } from "react";
 import { Search, Image } from "lucide-react";
 import "./App.css";
 import { Fancybox } from "@fancyapps/ui";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
-// thumbs plugin není importován
 import "./fancybox-responsive.css";
 
+function DetailPage({ id, onBack, defects }) {
+  const [item, setItem] = useState(null);
+  useEffect(() => {
+    fetch(`/api/stamps/${id}`)
+      .then(res => res.json())
+      .then(data => setItem(data));
+  }, [id]);
+  if (!item) return <div className="p-8">Načítám…</div>;
 
-function DetailPage({ id, onBack }) {
-  // ...existing code...
-  const item = sampleData.find((d) => d.id === id);
-  if (!item) return <div className="p-8">Nenalezeno</div>;
+  // Vady pro tuto známku
+  const itemDefects = defects.filter(d => d.idZnamky === item.idZnamky);
 
-  // Mapování indexů variant na index v item.defects (podle pořadí v poli)
-  const defectIndexMap = {};
-  if (item.defects && item.defects.length > 0) {
-    item.defects.forEach((def, idx) => {
-      defectIndexMap[idx] = idx;
-    });
-  }
   // Funkce pro otevření Fancyboxu s galerií obrázků variant
-         const openFancybox = (startIndex = 0) => {
-           if (!item.defects || item.defects.length === 0) return;
-           const slides = item.defects.map(def => ({
-             src: def.image,
-             caption:
-               `<div style='text-align:center;'>`
-               + `<span style='font-weight:700;font-size:1.05em;'>${def.code || ''}${def.code && def.descriptionText ? ' – ' : ''}${def.descriptionText || ''}</span>`
-               + (def.description ? `<br><span style='font-size:1em;font-weight:400;margin-top:8px;display:inline-block;'>${def.description}</span>` : '')
-               + `</div>`
-           }));
-           Fancybox.show(slides, {
-             startIndex,
-             Toolbar: [
-               'thumbs',
-               'zoom',
-               'close',
-             ],
-             dragToClose: true,
-             animated: true,
-             compact: false,
-             showClass: 'fancybox-zoomIn',
-             hideClass: 'fancybox-zoomOut',
-             closeButton: 'top',
-             defaultType: 'image',
-             Carousel: {
-               Thumbs: {
-                 showOnStart: false,
-               },
-             },
-           });
+  const openFancybox = (startIndex = 0) => {
+    if (!itemDefects || itemDefects.length === 0) return;
+    const slides = itemDefects.map(def => ({
+      src: def.obrazekVady,
+      caption:
+        `<div style='text-align:center;'>`
+        + `<span style='font-weight:700;font-size:1.05em;'>${def.variantaVady || ''}${def.variantaVady && def.umisteniVady ? ' – ' : ''}${def.umisteniVady || ''}</span>`
+        + (def.popisVady ? `<br><span style='font-size:1em;font-weight:400;margin-top:8px;display:inline-block;'>${def.popisVady}</span>` : '')
+        + `</div>`
+    }));
+    Fancybox.show(slides, {
+      startIndex,
+      Toolbar: [ 'thumbs', 'zoom', 'close' ],
+      dragToClose: true,
+      animated: true,
+      compact: false,
+      showClass: 'fancybox-zoomIn',
+      hideClass: 'fancybox-zoomOut',
+      closeButton: 'top',
+      defaultType: 'image',
+      Carousel: { Thumbs: { showOnStart: false } },
+    });
   };
 
   return (
     <div className="stamp-detail-block">
       <button onClick={onBack} className="back-btn">← Zpět</button>
-      <div className="detail-title">{item.emission} ({item.year})</div>
-      <div className="detail-catalog">Katalogové číslo: <strong>{item.catalogNumber}</strong></div>
+      <div className="detail-title">{item.emise} ({item.rok})</div>
+      <div className="detail-catalog">Katalogové číslo: <strong>{item.katalogCislo}</strong></div>
       <div className="stamp-detail-layout" style={{ display: 'flex', gap: 32 }}>
         <div className="stamp-detail-img-col" style={{ flex: '0 0 auto' }}>
           <div className="stamp-detail-img-bg stamp-detail-img-bg-none">
             <img
-              src={item.images[0]}
-              alt={item.emission}
+              src={item.obrazek}
+              alt={item.emise}
               className="stamp-detail-img stamp-detail-img-main"
               onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
             />
           </div>
         </div>
         <div className="stamp-spec stamp-detail-spec-col" style={{ flex: '1 1 0%' }}>
-          {item.specs && item.specs.map((spec, idx) => (
-            spec.label === 'Schéma TF' && spec.tfImage ? (
-              <div key={idx} className="stamp-spec-row spec-tf-row">
-                <span className="stamp-spec-label">{spec.label}</span>
-                <span className="stamp-spec-value">
-                  <img src={spec.tfImage} alt="Schéma TF" className="tf-img" />
-                </span>
-              </div>
-            ) : (
-              <div key={idx} className="stamp-spec-row">
-                <span className="stamp-spec-label">{spec.label}</span>
-                <span className="stamp-spec-value">{spec.value}</span>
-              </div>
-            )
-          ))}
+          <div className="stamp-spec-row"><span className="stamp-spec-label">Datum vydání</span><span className="stamp-spec-value">{item.datumVydani}</span></div>
+          <div className="stamp-spec-row"><span className="stamp-spec-label">Návrh</span><span className="stamp-spec-value">{item.navrh}</span></div>
+          <div className="stamp-spec-row"><span className="stamp-spec-label">Rytec</span><span className="stamp-spec-value">{item.rytec}</span></div>
+          <div className="stamp-spec-row"><span className="stamp-spec-label">Druh tisku</span><span className="stamp-spec-value">{item.druhTisku}</span></div>
+          <div className="stamp-spec-row"><span className="stamp-spec-label">Tisková forma</span><span className="stamp-spec-value">{item.tiskovaForma}</span></div>
+          <div className="stamp-spec-row"><span className="stamp-spec-label">Zoubkování</span><span className="stamp-spec-value">{item.zoubkovani}</span></div>
+          <div className="stamp-spec-row"><span className="stamp-spec-label">Papír</span><span className="stamp-spec-value">{item.papir}</span></div>
+          <div className="stamp-spec-row"><span className="stamp-spec-label">Rozměr</span><span className="stamp-spec-value">{item.rozmer}</span></div>
+          <div className="stamp-spec-row"><span className="stamp-spec-label">Náklad</span><span className="stamp-spec-value">{item.naklad}</span></div>
+          <div className="stamp-spec-row"><span className="stamp-spec-label">Schéma TF</span><span className="stamp-spec-value">{item.schemaTF && <img src={item.schemaTF} alt="Schéma TF" className="tf-img" />}</span></div>
         </div>
       </div>
-      {item.defects && item.defects.length > 0 && (
+      {itemDefects.length > 0 && (
         <div>
-          {item.studyNote && (
-            <div className="study-inline-note" style={{ marginTop: 18, marginBottom: 18 }}><span className="study-inline-label">Rozlišeno dle studie:</span> {item.studyNote}</div>
+          {item.Studie && (
+            <div className="study-inline-note" style={{ marginTop: 18, marginBottom: 18 }}><span className="study-inline-label">Rozlišeno dle studie:</span> {item.Studie}</div>
           )}
-          {/* Seskupení variant podle prvního písmene code */}
-          {(() => {
-            // Seskupit varianty podle prvního písmene code
-            const groups = {};
-            item.defects.forEach((def) => {
-              const groupKey = def.code ? def.code[0] : "?";
-              if (!groups[groupKey]) groups[groupKey] = [];
-              groups[groupKey].push(def);
-            });
-            return Object.entries(groups).map(([group, defs]) => {
-              return (
-                <div key={group}>
-                  <div className="variant-subtitle">Varianta {group}</div>
-                  {/* Info o podvariantách */}
-                  {(() => {
-                    const subCodes = defs.map(d => d.code).filter(c => c && c.length > 1);
-                    const uniqueSubCodes = Array.from(new Set(subCodes));
-                    return uniqueSubCodes.length > 0 ? (
-                      <div className="variant-group-info">
-                        <span className="variant-group-info-icon" title="Tato skupina obsahuje podvarianty">
-                          <svg width="1em" height="1em" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10" fill="#2563eb"/>
-                            <text x="12" y="16" textAnchor="middle" fontSize="14" fill="#fff" fontFamily="Arial" fontWeight="bold">i</text>
-                          </svg>
-                        </span>
-                        <span className="variant-group-info-text">Obsahuje podvarianty: {uniqueSubCodes.join(", ")}</span>
-                      </div>
-                    ) : null;
-                  })()}
-                  <div className="variants">
-                    {defs.map((def, i) => {
-                      // ...existing code...
-                      const detail = def.description;
-                      // Label generovaný podle indexu v item.defects
-                      const defectIdx = item.defects.indexOf(def);
-                      const autoLabel = def.label ? def.label : `obr. ${defectIdx + 1}`;
-                      return (
-                        <div key={i} className="variant">
-                          {/* Hlavní popisek nad obrázkem */}
-                          {(def.code || def.descriptionText) && (
-                            <div className="variant-popis">
-                              {def.code && <span className="variant-popis-hlavni">{def.code}</span>}
-                              {def.code && def.descriptionText ? <span className="variant-dash">–</span> : null}
-                              {def.descriptionText && <span className="variant-popis-hlavni">{def.descriptionText}</span>}
-                            </div>
-                          )}
-                          <div
-                            className="variant-img-bg variant-img-bg-pointer"
-                            onClick={() => openFancybox(defectIdx)}
-                          >
-                            <img
-                              src={def.image}
-                              alt={autoLabel}
-                              onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
-                            />
-                          </div>
-                          <div className="variant-label">{autoLabel}</div>
-                          {detail && (
-                            <div className="variant-popis-detail">{detail}</div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+          <div className="variants">
+            {itemDefects.map((def, i) => (
+              <div key={i} className="variant">
+                <div className="variant-popis">
+                  {def.variantaVady && <span className="variant-popis-hlavni">{def.variantaVady}</span>}
+                  {def.variantaVady && def.umisteniVady ? <span className="variant-dash">–</span> : null}
+                  {def.umisteniVady && <span className="variant-popis-hlavni">{def.umisteniVady}</span>}
                 </div>
-              );
-            });
-          })()}
+                <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(i)}>
+                  <img src={def.obrazekVady} alt={def.idVady} onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }} />
+                </div>
+                <div className="variant-label">{def.idVady}</div>
+                {def.popisVady && <div className="variant-popis-detail">{def.popisVady}</div>}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -168,85 +99,95 @@ function DetailPage({ id, onBack }) {
 }
 
 export default function StampCatalog(props) {
-  // Funkce pro řazení podle číselné části katalogového čísla
-  function katalogSort(a, b) {
-    const numA = parseInt(a.catalogNumber.replace(/[^0-9]/g, ""), 10);
-    const numB = parseInt(b.catalogNumber.replace(/[^0-9]/g, ""), 10);
-    if (numA !== numB) return numA - numB;
-    return a.catalogNumber.localeCompare(b.catalogNumber);
-  }
+  const [stamps, setStamps] = useState([]);
+  const [defects, setDefects] = useState([]);
+  const [query, setQuery] = useState("");
+  const [year, setYear] = useState("all");
+  const [emission, setEmission] = useState("all");
+  const [catalog, setCatalog] = useState("all");
+  const [internalDetailId, setInternalDetailId] = useState(null);
+  const detailId = props && props.detailId ? props.detailId : internalDetailId;
+  const setDetailId = props && props.setDetailId ? props.setDetailId : setInternalDetailId;
+
+  useEffect(() => {
+    const API_BASE = "https://miniature-trout-4j995q7w9qx3qv67-3001.app.github.dev";
+    fetch(`${API_BASE}/api/stamps`)
+      .then(res => {
+        console.log('Stamps response:', res);
+        return res.json();
+      })
+      .then(data => {
+        console.log("Načtené známky:", data);
+        setStamps(data);
+      })
+      .catch(err => console.error("Chyba při načítání známek:", err));
+    fetch(`${API_BASE}/api/defects`)
+      .then(res => {
+        console.log('Defects response:', res);
+        return res.json();
+      })
+      .then(data => {
+        console.log("Načtené vady:", data);
+        setDefects(data);
+      })
+      .catch(err => console.error("Chyba při načítání vad:", err));
+  }, []);
+
+  useEffect(() => {
+    if (detailId) {
+      const item = stamps.find(d => d.idZnamky === detailId);
+      document.title = item ? `${item.emise} (${item.rok}) | Katalog TF` : 'Katalog TF';
+    } else {
+      document.title = 'Katalog TF';
+    }
+  }, [detailId, stamps]);
+
+  const years = useMemo(() => {
+    const s = new Set(stamps.map((d) => d.rok));
+    return ["all", ...Array.from(s).sort((a, b) => b - a)];
+  }, [stamps]);
+
+  const filteredEmissions = useMemo(() => {
+    let filtered = stamps;
+    if (year !== "all") {
+      filtered = filtered.filter((d) => d.rok === Number(year));
+    }
+    const s = new Set(filtered.map((d) => d.emise));
+    return ["all", ...Array.from(s).sort()];
+  }, [year, stamps]);
+
+  const filteredCatalogs = useMemo(() => {
+    let filtered = stamps;
+    if (year !== "all") {
+      filtered = filtered.filter((d) => d.rok === Number(year));
+    }
+    const s = new Set(filtered.map((d) => d.katalogCislo));
+    return ["all", ...Array.from(s).sort((a, b) => a.localeCompare(b))];
+  }, [year, stamps]);
+
+  const filtered = useMemo(() => {
+    return stamps
+      .filter((d) => {
+        if (year !== "all" && d.rok !== Number(year)) return false;
+        if (emission !== "all" && d.emise !== emission) return false;
+        if (catalog !== "all" && d.katalogCislo !== catalog) return false;
+        if (query) {
+          const q = query.toLowerCase();
+          return (
+            (d.emise && d.emise.toLowerCase().includes(q)) ||
+            (d.katalogCislo && d.katalogCislo.toLowerCase().includes(q)) ||
+            (d.rok && String(d.rok).includes(q))
+          );
+        }
+        return true;
+      });
+  }, [query, year, emission, catalog, stamps]);
+
   function sklonujPolozka(count) {
     if (count === 1) return 'položka';
     if (count >= 2 && count <= 4) return 'položky';
     return 'položek';
   }
-  const [query, setQuery] = useState("");
-  const [year, setYear] = useState("all");
-  const [emission, setEmission] = useState("all");
-  const [catalog, setCatalog] = useState("all");
-  const [lightboxIndex, setLightboxIndex] = useState(null);
-  // DetailId a setDetailId: pokud nejsou v props, použij interní stav
-  const [internalDetailId, setInternalDetailId] = useState(null);
-  const detailId = props && props.detailId ? props.detailId : internalDetailId;
-  const setDetailId = props && props.setDetailId ? props.setDetailId : setInternalDetailId;
-
-  // Dynamický titulek stránky
-  React.useEffect(() => {
-    if (detailId) {
-      const item = sampleData.find(d => d.id === detailId);
-      document.title = item ? `${item.emission} (${item.year}) | Katalog TF` : 'Katalog TF';
-    } else {
-      document.title = 'Katalog TF';
-    }
-  }, [detailId]);
-
-
-  const years = useMemo(() => {
-    const s = new Set(sampleData.map((d) => d.year));
-    return ["all", ...Array.from(s).sort((a, b) => b - a)];
-  }, []);
-
-  // Filtrované emise podle vybraného roku
-  const filteredEmissions = useMemo(() => {
-    let filtered = sampleData;
-    if (year !== "all") {
-      filtered = filtered.filter((d) => d.year === Number(year));
-    }
-    const s = new Set(filtered.map((d) => d.emission));
-    return ["all", ...Array.from(s).sort()];
-  }, [year]);
-
-  // Filtrovaná katalogová čísla podle vybraného roku
-  const filteredCatalogs = useMemo(() => {
-    let filtered = sampleData;
-    if (year !== "all") {
-      filtered = filtered.filter((d) => d.year === Number(year));
-    }
-    const s = new Set(filtered.map((d) => d.catalogNumber));
-    return ["all", ...Array.from(s).sort((a, b) => katalogSort({catalogNumber: a}, {catalogNumber: b}))];
-  }, [year]);
-
-  const filtered = useMemo(() => {
-    return sampleData
-      .filter((d) => {
-        if (year !== "all" && d.year !== Number(year)) return false;
-        if (emission !== "all" && d.emission !== emission) return false;
-        if (catalog !== "all" && d.catalogNumber !== catalog) return false;
-        if (query) {
-          const q = query.toLowerCase();
-          return (
-            d.description.toLowerCase().includes(q) ||
-            d.emission.toLowerCase().includes(q) ||
-            (d.catalogNumber && d.catalogNumber.toLowerCase().includes(q)) ||
-            (d.face && d.face.toLowerCase().includes(q)) ||
-            (d.printingForm && d.printingForm.toLowerCase().includes(q))
-          );
-        }
-        return true;
-      })
-      .sort(katalogSort);
-  }, [query, year, emission, catalog]);
-
 
   return (
     <div className="page-bg">
@@ -257,8 +198,9 @@ export default function StampCatalog(props) {
         <p className="subtitle">Seznam studií rozlišení tiskových forem, desek a polí při tisku československých známek v letech 1945-92.</p>
       </header>
       <main className="main">
+        {/* ...existující kód bez testovacího výpisu... */}
         {detailId ? (
-          <DetailPage id={detailId} onBack={() => setDetailId(null)} onLightbox={setLightboxIndex} />
+          <DetailPage id={detailId} onBack={() => setDetailId(null)} defects={defects} />
         ) : (
           <>
             <section className="search-row">
@@ -291,20 +233,19 @@ export default function StampCatalog(props) {
             <div className="count-info">Zobrazeno: {filtered.length} {sklonujPolozka(filtered.length)}</div>
             <div className="stamp-list-layout">
               {filtered.map((item) => (
-                <div key={item.id} className="stamp-card stamp-card-pointer"
+                <div key={item.idZnamky} className="stamp-card stamp-card-pointer"
                   onClick={() => {
-                    // Pokud je setDetailId z routeru, naviguj na detail (změna URL)
                     if (props && props.setDetailId) {
-                      props.setDetailId(item.id);
+                      props.setDetailId(item.idZnamky);
                     } else {
-                      setDetailId(item.id);
+                      setDetailId(item.idZnamky);
                     }
                   }}>
                   <div className="stamp-img-bg">
-                    {item.images && item.images.length ? (
+                    {item.obrazek ? (
                       <img
-                        src={item.images[0]}
-                        alt={item.emission}
+                        src={item.obrazek}
+                        alt={item.emise}
                         onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
                       />
                     ) : (
@@ -312,16 +253,16 @@ export default function StampCatalog(props) {
                     )}
                   </div>
                   <div className="stamp-title">
-                    <span className="emission">{item.emission}</span>
-                    <span className="year"> ({item.year})</span>
+                    <span className="emission">{item.emise}</span>
+                    <span className="year"> ({item.rok})</span>
                   </div>
                   <div className="stamp-bottom">
-                    <div>Katalog: <span className="catalog">{item.catalogNumber}</span></div>
+                    <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
                     <a href="#" className="details-link" onClick={e => { e.preventDefault(); 
                       if (props && props.setDetailId) {
-                        props.setDetailId(item.id);
+                        props.setDetailId(item.idZnamky);
                       } else {
-                        setDetailId(item.id);
+                        setDetailId(item.idZnamky);
                       }
                     }}>Detaily</a>
                   </div>
@@ -330,27 +271,6 @@ export default function StampCatalog(props) {
             </div>
           </>
         )}
-        {/* Fancybox lightbox s podporou zoomu, klávesnice a vlastních popisků */}
-        {typeof lightboxIndex === 'number' && detailId && (() => {
-          const item = sampleData.find((d) => d.id === detailId);
-          if (!item || !item.defects) return null;
-          // Fancybox potřebuje HTML elementy s data-fancybox atributem
-          return (
-            <div style={{ display: 'none' }}>
-              {item.defects.map((def, i) => (
-                <a
-                  key={i}
-                  href={def.image}
-                  data-fancybox="gallery"
-                  data-caption={`<div><strong>${def.code || ''}${def.code && def.descriptionText ? ' – ' : ''}${def.descriptionText || ''}</strong><br/>${def.description || ''}</div>`}
-                  style={{ display: 'none' }}
-                >
-                  Obrázek
-                </a>
-              ))}
-            </div>
-          );
-        })()}
       </main>
     </div>
   );
