@@ -38,10 +38,16 @@ app.get("/api/stamps", async (req, res) => {
 // Endpoint pro detail známky podle idZnamky
 app.get("/api/stamps/:id", async (req, res) => {
   try {
+    console.log("[API] Detail známky: požadované id:", req.params.id);
     const stamp = await mongoose.connection.db.collection("stamps").findOne({ idZnamky: req.params.id });
-    if (!stamp) return res.status(404).json({ error: "Známka nenalezena" });
+    console.log("[API] Výsledek dotazu:", stamp);
+    if (!stamp) {
+      console.log("[API] Známka nenalezena pro id:", req.params.id);
+      return res.status(404).json({ error: "Známka nenalezena" });
+    }
     res.json(stamp);
   } catch (err) {
+    console.error("[API] Chyba při načítání známky:", err);
     res.status(500).json({ error: "Chyba při načítání známky" });
   }
 });
@@ -53,6 +59,16 @@ app.get("/api/defects", async (req, res) => {
     res.json(defects);
   } catch (err) {
     res.status(500).json({ error: "Chyba při načítání vad" });
+  }
+});
+
+// Endpoint pro výpis všech idZnamky
+app.get("/api/stamps-ids", async (req, res) => {
+  try {
+    const ids = await mongoose.connection.db.collection("stamps").find({}, { projection: { idZnamky: 1, _id: 0 } }).toArray();
+    res.json(ids.map(d => d.idZnamky));
+  } catch (err) {
+    res.status(500).json({ error: "Chyba při načítání idZnamky" });
   }
 });
 

@@ -10,9 +10,19 @@ function DetailPage({ id, onBack, defects }) {
   useEffect(() => {
     fetch(`/api/stamps/${id}`)
       .then(res => res.json())
-      .then(data => setItem(data));
+      .then(data => {
+        console.log("[DetailPage] Načtená data:", data);
+        setItem(data);
+      })
+      .catch(err => {
+        console.error("[DetailPage] Chyba při načítání detailu:", err);
+      });
   }, [id]);
   if (!item) return <div className="p-8">Načítám…</div>;
+  if (item.error) {
+    console.error("[DetailPage] API vrátilo chybu:", item.error);
+    return <div className="p-8 text-red-600">Chyba: {item.error}</div>;
+  }
 
   // Vady pro tuto známku
   const itemDefects = defects.filter(d => d.idZnamky === item.idZnamky);
