@@ -8,7 +8,12 @@ import "./fancybox-responsive.css";
 function DetailPage({ id, onBack, defects }) {
   const [item, setItem] = useState(null);
   useEffect(() => {
-    fetch(`/api/stamps/${id}`)
+    const API_BASE =
+      import.meta.env.VITE_API_BASE ||
+      (window.location.hostname.endsWith("app.github.dev")
+        ? `https://${window.location.hostname}`
+        : "");
+    fetch(`${API_BASE}/api/stamps/${id}`)
       .then(res => res.json())
       .then(data => {
         console.log("[DetailPage] Načtená data:", data);
@@ -120,7 +125,11 @@ export default function StampCatalog(props) {
   const setDetailId = props && props.setDetailId ? props.setDetailId : setInternalDetailId;
 
   useEffect(() => {
-    const API_BASE = "https://miniature-trout-4j995q7w9qx3qv67-3001.app.github.dev";
+    const API_BASE =
+      import.meta.env.VITE_API_BASE ||
+      (window.location.hostname.endsWith("app.github.dev")
+        ? `https://${window.location.hostname}`
+        : "");
     fetch(`${API_BASE}/api/stamps`)
       .then(res => {
         console.log('Stamps response:', res);
