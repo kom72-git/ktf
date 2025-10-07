@@ -1,3 +1,23 @@
+/* --- Patička webu --- */
+.footer {
+  width: 100%;
+  text-align: center;
+  margin-top: 48px;
+  padding: 18px 0 8px 0;
+  color: #888;
+  font-size: 0.98rem;
+  background: none;
+}
+.footer-inner {
+  display: inline-block;
+  text-align: center;
+  opacity: 0.95;
+}
+.footer a {
+  color: #2563eb;
+  text-decoration: underline;
+  font-weight: 500;
+}
 .main-title-nowrap {
   white-space: nowrap;
 }
@@ -475,7 +495,7 @@
 .header {
   max-width: 900px;
   margin: 0 auto;
-  padding: 2rem 0 0 0;
+  padding: 10px 0 0 0;
   text-align: left;
   width: 100%;
   box-sizing: border-box;
@@ -485,6 +505,7 @@
   font-size: 2rem;
   margin-bottom: 4px;
   padding-left: 0.5rem;
+  color: #3a3530;
 }
 .subtitle {
   color: #555;

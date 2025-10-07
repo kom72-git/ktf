@@ -2,9 +2,21 @@
   "name": "ktf-devcontainer",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
   "workspaceFolder": "/workspaces/ktf",
-  "forwardPorts": [5173],
-  "postCreateCommand": "cd react-app && npm install && npm run dev",
-  "postStartCommand": "cd react-app && npm run dev",
+  "forwardPorts": [5173, 3001],
+  "portsAttributes": {
+    "5173": {
+      "label": "Vite (frontend)",
+      "onAutoForward": "openBrowser",
+      "visibility": "public"
+    },
+    "3001": {
+      "label": "Express (backend)",
+      "onAutoForward": "notify",
+      "visibility": "public"
+    }
+  },
+  "postCreateCommand": "npm install -g concurrently && concurrently \"cd server && npm install && npm start\" \"cd react-app && npm install && npm run dev\"",
+  "postStartCommand": "concurrently \"cd server && npm start\" \"cd react-app && npm run dev\"",
   "customizations": {
     "vscode": {
       "settings": {},

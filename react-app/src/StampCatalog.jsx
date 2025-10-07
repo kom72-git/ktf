@@ -32,8 +32,20 @@ function DetailPage({ id, onBack, defects }) {
   // Vady pro tuto známku
   const itemDefects = defects.filter(d => d.idZnamky === item.idZnamky);
 
-  // Funkce pro otevření Fancyboxu s galerií obrázků variant
-  const openFancybox = (startIndex = 0) => {
+  // Seskupení variant podle hlavního písmene (Varianta A, B, ...)
+  // Podvarianty (A1, B2.1, ...) se vypisují pod tímto nadpisem, každá jen jednou
+  const grouped = {};
+  itemDefects.forEach(def => {
+    if (!def.variantaVady) return;
+    // Hlavní varianta je první písmeno (A, B, ...)
+    const main = def.variantaVady.match(/^[A-Z]/i);
+    const groupKey = main ? main[0] : '?';
+    if (!grouped[groupKey]) grouped[groupKey] = [];
+    grouped[groupKey].push(def);
+  });
+
+  // Fancybox galerie pro skupinu
+  const openFancybox = (flatIndex = 0) => {
     if (!itemDefects || itemDefects.length === 0) return;
     const slides = itemDefects.map(def => ({
       src: def.obrazekVady,
@@ -44,7 +56,7 @@ function DetailPage({ id, onBack, defects }) {
         + `</div>`
     }));
     Fancybox.show(slides, {
-      startIndex,
+      startIndex: flatIndex,
       Toolbar: [ 'thumbs', 'zoom', 'close' ],
       dragToClose: true,
       animated: true,
@@ -83,7 +95,7 @@ function DetailPage({ id, onBack, defects }) {
           <div className="stamp-spec-row"><span className="stamp-spec-label">Papír</span><span className="stamp-spec-value">{item.papir}</span></div>
           <div className="stamp-spec-row"><span className="stamp-spec-label">Rozměr</span><span className="stamp-spec-value">{item.rozmer}</span></div>
           <div className="stamp-spec-row"><span className="stamp-spec-label">Náklad</span><span className="stamp-spec-value">{item.naklad}</span></div>
-          <div className="stamp-spec-row"><span className="stamp-spec-label">Schéma TF</span><span className="stamp-spec-value">{item.schemaTF && <img src={item.schemaTF} alt="Schéma TF" className="tf-img" />}</span></div>
+          <div className="stamp-spec-row"><span className="stamp-spec-label">Schéma TF</span><span className="stamp-spec-value">{item.schemaTF && <img src={item.schemaTF} alt="Schéma TF" className="tf-img" style={{maxWidth:'220px',maxHeight:'120px',width:'auto',height:'auto'}} onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }} />}</span></div>
         </div>
       </div>
       {itemDefects.length > 0 && (
@@ -91,22 +103,74 @@ function DetailPage({ id, onBack, defects }) {
           {item.Studie && (
             <div className="study-inline-note" style={{ marginTop: 18, marginBottom: 18 }}><span className="study-inline-label">Rozlišeno dle studie:</span> {item.Studie}</div>
           )}
-          <div className="variants">
-            {itemDefects.map((def, i) => (
-              <div key={i} className="variant">
-                <div className="variant-popis">
-                  {def.variantaVady && <span className="variant-popis-hlavni">{def.variantaVady}</span>}
-                  {def.variantaVady && def.umisteniVady ? <span className="variant-dash">–</span> : null}
-                  {def.umisteniVady && <span className="variant-popis-hlavni">{def.umisteniVady}</span>}
+          {/* Seskupení variant podle hlavní varianty (A, B, ...) */}
+          {Object.entries(grouped).map(([group, defs]) => {
+            // Unikátní podvarianty (A1, B2.1, ...), pouze první výskyt
+            const seen = new Set();
+            const uniqueSubvariants = defs.filter(def => {
+              // Podvarianta = variantaVady delší než 1 znak (A1, B2.1, ...)
+              if (def.variantaVady && def.variantaVady.length > 1) {
+                if (seen.has(def.variantaVady)) return false;
+                seen.add(def.variantaVady);
+                return true;
+              }
+              return false;
+            });
+            // Info řádek s podvariantami
+            const subvariantLabels = uniqueSubvariants.map(d => d.variantaVady);
+            return (
+              <div key={group}>
+                <div className="variant-subtitle">Varianta {group}</div>
+                {subvariantLabels.length > 0 && (
+                  <div className="variant-group-info">
+                    <span className="variant-group-info-icon" title="Obsahuje podvarianty">
+                      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{display:'inline',verticalAlign:'middle'}}>
+                        <circle cx="10" cy="10" r="10" fill="#2563eb"/>
+                        <text x="10" y="14" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#fff" fontFamily="Arial,Helvetica,sans-serif">i</text>
+                      </svg>
+                    </span>
+                    <span className="variant-group-info-text">Obsahuje podvarianty: {subvariantLabels.join(", ")}</span>
+                  </div>
+                )}
+                <div className="variants">
+                  {/* Nejprve hlavní varianta (A, B, ...) pokud existuje */}
+                  {defs.filter(def => def.variantaVady && def.variantaVady.length === 1).map((def, i) => {
+                    const flatIndex = itemDefects.findIndex(d => d === def);
+                    return (
+                      <div key={def.idVady || `main-${i}`} className="variant">
+                        <div className="variant-popis">
+                          <span className="variant-popis-hlavni">{def.variantaVady}</span>
+                          {def.umisteniVady && <><span className="variant-dash">–</span><span className="variant-popis-hlavni">{def.umisteniVady}</span></>}
+                        </div>
+                        <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(flatIndex)}>
+                          <img src={def.obrazekVady} alt={def.idVady} onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }} />
+                        </div>
+                        <div className="variant-label">Obr. {flatIndex + 1}</div>
+                        {def.popisVady && <div className="variant-popis-detail">{def.popisVady}</div>}
+                      </div>
+                    );
+                  })}
+                  {/* Poté unikátní podvarianty (A1, B2.1, ...) */}
+                  {uniqueSubvariants.map((def, i) => {
+                    const flatIndex = itemDefects.findIndex(d => d === def);
+                    return (
+                      <div key={def.idVady || `sub-${i}`} className="variant">
+                        <div className="variant-popis">
+                          <span className="variant-popis-hlavni">{def.variantaVady}</span>
+                          {def.umisteniVady && <><span className="variant-dash">–</span><span className="variant-popis-hlavni">{def.umisteniVady}</span></>}
+                        </div>
+                        <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(flatIndex)}>
+                          <img src={def.obrazekVady} alt={def.idVady} onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }} />
+                        </div>
+                        <div className="variant-label">Obr. {flatIndex + 1}</div>
+                        {def.popisVady && <div className="variant-popis-detail">{def.popisVady}</div>}
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(i)}>
-                  <img src={def.obrazekVady} alt={def.idVady} onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }} />
-                </div>
-                <div className="variant-label">{def.idVady}</div>
-                {def.popisVady && <div className="variant-popis-detail">{def.popisVady}</div>}
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       )}
     </div>
@@ -163,7 +227,7 @@ export default function StampCatalog(props) {
 
   const years = useMemo(() => {
     const s = new Set(stamps.map((d) => d.rok));
-    return ["all", ...Array.from(s).sort((a, b) => b - a)];
+    return ["all", ...Array.from(s).sort((a, b) => a - b)]; // od nejstaršího nahoru
   }, [stamps]);
 
   const filteredEmissions = useMemo(() => {
@@ -181,11 +245,24 @@ export default function StampCatalog(props) {
       filtered = filtered.filter((d) => d.rok === Number(year));
     }
     const s = new Set(filtered.map((d) => d.katalogCislo));
-    return ["all", ...Array.from(s).sort((a, b) => a.localeCompare(b))];
+    // Nejprve podle číselné části, pak podle prefixu
+    function katalogSort(a, b) {
+      const numA = (a.match(/\d+/) || [""])[0];
+      const numB = (b.match(/\d+/) || [""])[0];
+      if (numA !== numB) {
+        return Number(numA) - Number(numB);
+      }
+      // Pokud čísla stejná, porovnej prefixy
+      const prefixA = a.replace(numA, "");
+      const prefixB = b.replace(numB, "");
+      return prefixA.localeCompare(prefixB);
+    }
+    return ["all", ...Array.from(s).sort(katalogSort)];
   }, [year, stamps]);
 
+  // Výchozí náhled: 20 nejnovějších známek podle _id (největší = nejnovější)
   const filtered = useMemo(() => {
-    return stamps
+    let arr = stamps
       .filter((d) => {
         if (year !== "all" && d.rok !== Number(year)) return false;
         if (emission !== "all" && d.emise !== emission) return false;
@@ -200,6 +277,16 @@ export default function StampCatalog(props) {
         }
         return true;
       });
+    // Pokud nejsou použity žádné filtry, zobrazíme pouze 20 nejnovějších
+    if (
+      year === "all" &&
+      emission === "all" &&
+      catalog === "all" &&
+      !query
+    ) {
+      arr = [...arr].sort((a, b) => b._id.localeCompare(a._id)).slice(0, 20);
+    }
+    return arr;
   }, [query, year, emission, catalog, stamps]);
 
   function sklonujPolozka(count) {
@@ -249,7 +336,11 @@ export default function StampCatalog(props) {
               </select>
               <button onClick={() => { setQuery(""); setYear("all"); setEmission("all"); setCatalog("all"); }}>Vyčistit</button>
             </section>
-            <div className="count-info">Zobrazeno: {filtered.length} {sklonujPolozka(filtered.length)}</div>
+            <div className="count-info">
+              {year === "all" && emission === "all" && catalog === "all" && !query
+                ? <>Poslední přidané položky z celkových <strong>{stamps.length}</strong> v katalogu</>
+                : <>Obsahuje: <strong>{filtered.length}</strong> {sklonujPolozka(filtered.length)}</>}
+            </div>
             <div className="stamp-list-layout">
               {filtered.map((item) => (
                 <div key={item.idZnamky} className="stamp-card stamp-card-pointer"
@@ -291,6 +382,11 @@ export default function StampCatalog(props) {
           </>
         )}
       </main>
+      <footer className="footer">
+        <div className="footer-inner">
+          © {new Date().getFullYear()} kom72 &nbsp;|&nbsp; <a href="https://github.com/kom72/ktf" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
+      </footer>
     </div>
   );
 }
