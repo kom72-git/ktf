@@ -119,20 +119,51 @@ function DetailPage({ id, onBack, defects }) {
           )}
           {/* Seskupení variant podle hlavní varianty (A, B, ...) */}
           {Object.entries(grouped).map(([group, defs]) => {
-            // Unikátní podvarianty (A1, B2.1, ...), pouze první výskyt
-            const seen = new Set();
-            const uniqueSubvariants = defs.filter(def => {
-              // Podvarianta = variantaVady delší než 1 znak (A1, B2.1, ...)
-              if (def.variantaVady && def.variantaVady.length > 1) {
-                if (seen.has(def.variantaVady)) return false;
-                seen.add(def.variantaVady);
-                return true;
-              }
-              return false;
+            // --- PŮVODNÍ ČÍSLOVÁNÍ OBRÁZKŮ PODLE SKUPIN ---
+            /*
+            // Varianta: číslování obrázků v rámci skupiny (A, B, ...)
+            // Pokud chcete obnovit tuto logiku, odkomentujte níže:
+            let imageCounter = 1;
+            ...
+            <div className="variant-label">Obr. {currentImageNumber}</div>
+            ...
+            */
+
+            // NOVÁ VARIANTA: Globální číslování obrázků napříč všemi variantami, číslo obrázku vždy
+            const NO_IMAGE = '/img/no-image.png';
+            // Vytvoříme pole všech zobrazených variant v pořadí (hlavní + podvarianty napříč skupinami)
+            // a pro každou variantu vypíšeme její globální číslo
+            // Nejprve sestavíme pole všech variant v pořadí zobrazení
+            const allVariantsInOrder = [];
+            Object.entries(grouped).forEach(([g, d]) => {
+              // hlavní varianty
+              d.filter(def => def.variantaVady && def.variantaVady.length === 1).forEach(def => allVariantsInOrder.push(def));
+              // podvarianty (unikátní)
+              const seen = new Set();
+              d.filter(def => {
+                if (def.variantaVady && def.variantaVady.length > 1) {
+                  if (seen.has(def.variantaVady)) return false;
+                  seen.add(def.variantaVady);
+                  return true;
+                }
+                return false;
+              }).forEach(def => allVariantsInOrder.push(def));
             });
-            // Info řádek s podvariantami
-            const subvariantLabels = uniqueSubvariants.map(d => d.variantaVady);
-            // Získání popisu varianty (typVarianty) z první hlavní varianty, pokud existuje
+            // Funkce pro zjištění globálního čísla obrázku
+            function getGlobalImageNumber(def) {
+              return allVariantsInOrder.indexOf(def) + 1;
+            }
+            const subvariantLabels = (() => {
+              const seen = new Set();
+              return defs.filter(def => {
+                if (def.variantaVady && def.variantaVady.length > 1) {
+                  if (seen.has(def.variantaVady)) return false;
+                  seen.add(def.variantaVady);
+                  return true;
+                }
+                return false;
+              }).map(d => d.variantaVady);
+            })();
             const mainDef = defs.find(def => def.variantaVady && def.variantaVady.length === 1);
             const typVarianty = mainDef && mainDef.typVarianty ? mainDef.typVarianty : '';
             return (
@@ -165,30 +196,40 @@ function DetailPage({ id, onBack, defects }) {
                           {def.umisteniVady && <><span className="variant-dash">–</span><span className="variant-popis-hlavni">{def.umisteniVady}</span></>}
                         </div>
                         <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(flatIndex)}>
-                          <img src={def.obrazekVady} alt={def.idVady} onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }} />
+                          <img src={def.obrazekVady} alt={def.idVady} onError={e => { e.target.onerror = null; e.target.src = NO_IMAGE; }} />
                         </div>
-                        <div className="variant-label">Obr. {flatIndex + 1}</div>
+                        <div className="variant-label">Obr. {getGlobalImageNumber(def)}</div>
                         {def.popisVady && <div className="variant-popis-detail">{def.popisVady}</div>}
                       </div>
                     );
                   })}
                   {/* Poté unikátní podvarianty (A1, B2.1, ...) */}
-                  {uniqueSubvariants.map((def, i) => {
-                    const flatIndex = itemDefects.findIndex(d => d === def);
-                    return (
-                      <div key={def.idVady || `sub-${i}`} className="variant">
-                        <div className="variant-popis">
-                          <span className="variant-popis-hlavni">{def.variantaVady}</span>
-                          {def.umisteniVady && <><span className="variant-dash">–</span><span className="variant-popis-hlavni">{def.umisteniVady}</span></>}
+                  {(() => {
+                    const seen = new Set();
+                    return defs.filter(def => {
+                      if (def.variantaVady && def.variantaVady.length > 1) {
+                        if (seen.has(def.variantaVady)) return false;
+                        seen.add(def.variantaVady);
+                        return true;
+                      }
+                      return false;
+                    }).map((def, i) => {
+                      const flatIndex = itemDefects.findIndex(d => d === def);
+                      return (
+                        <div key={def.idVady || `sub-${i}`} className="variant">
+                          <div className="variant-popis">
+                            <span className="variant-popis-hlavni">{def.variantaVady}</span>
+                            {def.umisteniVady && <><span className="variant-dash">–</span><span className="variant-popis-hlavni">{def.umisteniVady}</span></>}
+                          </div>
+                          <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(flatIndex)}>
+                            <img src={def.obrazekVady} alt={def.idVady} onError={e => { e.target.onerror = null; e.target.src = NO_IMAGE; }} />
+                          </div>
+                          <div className="variant-label">Obr. {getGlobalImageNumber(def)}</div>
+                          {def.popisVady && <div className="variant-popis-detail">{def.popisVady}</div>}
                         </div>
-                        <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(flatIndex)}>
-                          <img src={def.obrazekVady} alt={def.idVady} onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }} />
-                        </div>
-                        <div className="variant-label">Obr. {flatIndex + 1}</div>
-                        {def.popisVady && <div className="variant-popis-detail">{def.popisVady}</div>}
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             );
