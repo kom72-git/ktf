@@ -100,8 +100,22 @@ function DetailPage({ id, onBack, defects }) {
       </div>
       {itemDefects.length > 0 && (
         <div>
-          {item.Studie && (
-            <div className="study-inline-note" style={{ marginTop: 18, marginBottom: 18 }}><span className="study-inline-label">Rozlišeno dle studie:</span> {item.Studie}</div>
+          {item.Studie && item.studieUrl ? (() => {
+            const parts = item.Studie.split(',');
+            const before = parts[0] || '';
+            const after = parts.slice(1).join(',').trim();
+            return (
+              <div className="study-inline-note" style={{ marginTop: 18, marginBottom: 18 }}>
+                <span className="study-inline-label">Rozlišeno dle studie:</span> {before}{after && ', '}
+                {after && (
+                  <a href={item.studieUrl} target="_blank" rel="noopener noreferrer">{after}</a>
+                )}
+              </div>
+            );
+          })() : item.Studie && (
+            <div className="study-inline-note" style={{ marginTop: 18, marginBottom: 18 }}>
+              <span className="study-inline-label">Rozlišeno dle studie:</span> {item.Studie}
+            </div>
           )}
           {/* Seskupení variant podle hlavní varianty (A, B, ...) */}
           {Object.entries(grouped).map(([group, defs]) => {
@@ -118,9 +132,17 @@ function DetailPage({ id, onBack, defects }) {
             });
             // Info řádek s podvariantami
             const subvariantLabels = uniqueSubvariants.map(d => d.variantaVady);
+            // Získání popisu varianty (typVarianty) z první hlavní varianty, pokud existuje
+            const mainDef = defs.find(def => def.variantaVady && def.variantaVady.length === 1);
+            const typVarianty = mainDef && mainDef.typVarianty ? mainDef.typVarianty : '';
             return (
               <div key={group}>
-                <div className="variant-subtitle">Varianta {group}</div>
+                <div className="variant-subtitle">
+                  Varianta {group}
+                  {typVarianty && (
+                    <><span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span><span className="variant-type">{typVarianty}</span></>
+                  )}
+                </div>
                 {subvariantLabels.length > 0 && (
                   <div className="variant-group-info">
                     <span className="variant-group-info-icon" title="Obsahuje podvarianty">
