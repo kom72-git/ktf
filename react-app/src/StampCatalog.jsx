@@ -12,8 +12,10 @@ function DetailPage({ id, onBack, defects }) {
       import.meta.env.VITE_API_BASE ||
       (window.location.hostname.endsWith("app.github.dev")
         ? `https://${window.location.hostname}`
+        : window.location.hostname.endsWith("vercel.app")
+        ? "https://curly-space-happiness-g4v6qp4rxxvw3wvj5-3001.app.github.dev"
         : "");
-    fetch(`${API_BASE}/api/stamps/${id}`)
+        fetch(`${API_BASE}/api/stamps/${id}`)
       .then(res => res.json())
       .then(data => {
         console.log("[DetailPage] Načtená data:", data);
@@ -256,8 +258,10 @@ export default function StampCatalog(props) {
       import.meta.env.VITE_API_BASE ||
       (window.location.hostname.endsWith("app.github.dev")
         ? `https://${window.location.hostname}`
+        : window.location.hostname.endsWith("vercel.app")
+        ? "https://curly-space-happiness-g4v6qp4rxxvw3wvj5-3001.app.github.dev"
         : "");
-    fetch(`${API_BASE}/api/stamps`)
+        fetch(`${API_BASE}/api/stamps`)
       .then(res => {
         console.log('Stamps response:', res);
         return res.json();
