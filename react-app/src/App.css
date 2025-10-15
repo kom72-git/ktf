@@ -483,6 +483,10 @@
   max-width: 160px;
   text-align: center;
 }
+.variant-popis {
+  min-height: 2.4em; /* výška pro 2 řádky, zarovná obrázky v řádku */
+  display: block;
+}
 .variant img {
   max-width: 100%;
   border-radius: 8px;
