@@ -13,8 +13,8 @@ function DetailPage({ id, onBack, defects }) {
       (window.location.hostname.endsWith("app.github.dev")
         ? `https://${window.location.hostname}`
         : window.location.hostname.endsWith("vercel.app")
-        ? "https://curly-space-happiness-g4v6qp4rxxvw3wvj5-3001.app.github.dev"
-        : "");
+        ? "" // Pro Vercel používáme relativní cesty, backend bude na stejné doméně
+        : "http://localhost:3001"); // Lokální vývoj
         fetch(`${API_BASE}/api/stamps/${id}`)
       .then(res => res.json())
       .then(data => {
@@ -259,8 +259,8 @@ export default function StampCatalog(props) {
       (window.location.hostname.endsWith("app.github.dev")
         ? `https://${window.location.hostname}`
         : window.location.hostname.endsWith("vercel.app")
-        ? "https://curly-space-happiness-g4v6qp4rxxvw3wvj5-3001.app.github.dev"
-        : "");
+        ? "" // Pro Vercel používáme relativní cesty, backend bude na stejné doméně
+        : "http://localhost:3001"); // Lokální vývoj
         fetch(`${API_BASE}/api/stamps`)
       .then(res => {
         console.log('Stamps response:', res);

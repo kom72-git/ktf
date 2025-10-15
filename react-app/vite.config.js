@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://curly-space-happiness-g4v6qp4rxxvw3wvj5-3001.app.github.dev',
+        target: 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
       },

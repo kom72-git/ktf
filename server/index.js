@@ -11,10 +11,12 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({
   origin: function(origin, callback) {
     const allowed = [
-      'https://ktf.vercel.app'
+      'https://ktf.vercel.app',
+      'http://localhost:5173',
+      'http://127.0.0.1:5173'
     ];
-    // Povolit všechny Codespaces subdomény
-    if (origin && (allowed.includes(origin) || origin.endsWith('.app.github.dev'))) {
+    // Povolit všechny Codespaces subdomény a lokální vývoj
+    if (!origin || allowed.includes(origin) || origin.endsWith('.app.github.dev')) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
