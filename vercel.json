@@ -1,6 +1,6 @@
 {
   "outputDirectory": "./react-app/dist",
-  "installCommand": "npm install && cd react-app && npm install",
+  "installCommand": "cd react-app && npm install",
   "buildCommand": "cd react-app && npm run build",
   "functions": {
     "server/index.js": {
