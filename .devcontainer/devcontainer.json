@@ -15,8 +15,8 @@
       "visibility": "public"
     }
   },
-  "postCreateCommand": "npm install -g concurrently && concurrently \"cd server && npm install && npm start\" \"cd react-app && npm install && npm run dev\"",
-  "postStartCommand": "concurrently \"cd server && npm start\" \"cd react-app && npm run dev\"",
+  "postCreateCommand": "npm install -g concurrently && npm install && cd server && npm install",
+  "postStartCommand": "concurrently \"cd server && npm start\" \"npm run dev\"",
   "customizations": {
     "vscode": {
       "settings": {},

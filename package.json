@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fancyapps/ui": "^6.0.34",
     "@tailwindcss/postcss": "^4.1.13",
     "framer-motion": "^12.23.22",
     "lucide-react": "^0.544.0",
