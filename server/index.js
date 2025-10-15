@@ -9,7 +9,10 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({
-  origin: true,
+  origin: [
+    'https://ktf.vercel.app',
+    'https://curly-space-happiness-g4v6qp4rxxvw3wvj5-3001.app.github.dev'
+  ],
   credentials: true
 }));
 app.use(express.json());
