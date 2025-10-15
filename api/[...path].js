@@ -30,24 +30,31 @@ export default async function handler(req, res) {
   try {
     await connectToDatabase();
     const path = req.query.path || [];
-    if (path.length === 0) {
+    
+    // Pokud je path string, převedeme na array
+    const pathArray = Array.isArray(path) ? path : [path];
+    
+    console.log("API called with path:", pathArray);
+    
+    if (pathArray.length === 0) {
       return res.status(200).json({ message: "API běží" });
     }
-    if (path[0] === 'stamps') {
-      if (path.length === 1) {
+    if (pathArray[0] === 'stamps') {
+      if (pathArray.length === 1) {
         const stamps = await mongoose.connection.db.collection("stamps").find({}).toArray();
+        console.log("Loaded stamps:", stamps.length);
         return res.status(200).json(stamps);
       } else {
-        const stamp = await mongoose.connection.db.collection("stamps").findOne({ idZnamky: path[1] });
+        const stamp = await mongoose.connection.db.collection("stamps").findOne({ idZnamky: pathArray[1] });
         if (!stamp) return res.status(404).json({ error: "Známka nenalezena" });
         return res.status(200).json(stamp);
       }
     }
-    if (path[0] === 'defects') {
+    if (pathArray[0] === 'defects') {
       const defects = await mongoose.connection.db.collection("defects").find({}).toArray();
       return res.status(200).json(defects);
     }
-    if (path[0] === 'stamps-ids') {
+    if (pathArray[0] === 'stamps-ids') {
       const ids = await mongoose.connection.db.collection("stamps").find({}, { projection: { idZnamky: 1, _id: 0 } }).toArray();
       return res.status(200).json(ids.map(d => d.idZnamky));
     }
