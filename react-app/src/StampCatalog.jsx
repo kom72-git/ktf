@@ -78,7 +78,7 @@ function DetailPage({ id, onBack, defects }) {
         <div className="stamp-detail-img-col" style={{ flex: '0 0 auto' }}>
           <div className="stamp-detail-img-bg stamp-detail-img-bg-none">
             <img
-              src={item.obrazek}
+              src={item.obrazekStudie || item.obrazek}
               alt={item.emise}
               className="stamp-detail-img stamp-detail-img-main"
               onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
@@ -135,7 +135,7 @@ function DetailPage({ id, onBack, defects }) {
             // a pro každou variantu vypíšeme její globální číslo
             // Nejprve sestavíme pole všech variant v pořadí zobrazení
             const allVariantsInOrder = [];
-            Object.entries(grouped).forEach(([g, d]) => {
+            Object.entries(grouped).forEach(([, d]) => {
               // hlavní varianty
               d.filter(def => def.variantaVady && def.variantaVady.length === 1).forEach(def => allVariantsInOrder.push(def));
               // podvarianty (unikátní)

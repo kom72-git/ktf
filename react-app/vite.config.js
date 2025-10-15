@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://miniature-trout-4j995q7w9qx3qv67-3001.app.github.dev',
+        target: 'https://curly-space-happiness-g4v6qp4rxxvw3wvj5-3001.app.github.dev',
         changeOrigin: true,
         secure: false,
       },
