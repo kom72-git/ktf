@@ -1,17 +1,11 @@
 {
-  "builds": [
-    {
-      "src": "react-app/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    },
-    {
-      "src": "server/index.js",
-      "use": "@vercel/node"
+  "buildCommand": "cd react-app && npm run build",
+  "outputDirectory": "react-app/dist",
+  "functions": {
+    "server/index.js": {
+      "runtime": "nodejs18.x"
     }
-  ],
+  },
   "routes": [
     {
       "src": "/api/(.*)",
@@ -21,6 +15,5 @@
       "src": "/(.*)",
       "dest": "/react-app/dist/$1"
     }
-  ],
-  "outputDirectory": "react-app/dist"
+  ]
 }
