@@ -1,6 +1,6 @@
-const dotenv = require("dotenv");
+import dotenv from "dotenv";
 dotenv.config();
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://<username>:<password>@cluster0.3y2ox5f.mongodb.net/?retryWrites=true&w=majority";
 let cachedDb = null;
@@ -19,7 +19,7 @@ async function connectToDatabase() {
   }
 }
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -55,4 +55,4 @@ module.exports = async (req, res) => {
   } catch (err) {
     return res.status(500).json({ error: "Chyba serveru" });
   }
-};
+}
