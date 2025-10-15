@@ -1,7 +1,4 @@
 {
-  "outputDirectory": "./react-app/dist",
-  "installCommand": "cd react-app && npm install",
-  "buildCommand": "cd react-app && npm run build",
   "functions": {
     "server/index.js": {
       "runtime": "nodejs18.x"
@@ -14,7 +11,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/react-app/dist/$1"
+      "dest": "/$1"
     }
   ]
 }
