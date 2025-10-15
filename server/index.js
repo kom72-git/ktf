@@ -11,7 +11,8 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({
   origin: [
     'https://ktf.vercel.app',
-    'https://curly-space-happiness-g4v6qp4rxxvw3wvj5-3001.app.github.dev'
+    'https://curly-space-happiness-g4v6qp4rxxvw3wvj5-3001.app.github.dev',
+    'https://miniature-trout-4j995q7w9qx3qv67-3001.app.github.dev'
   ],
   credentials: true
 }));
