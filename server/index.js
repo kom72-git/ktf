@@ -9,11 +9,17 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({
-  origin: [
-    'https://ktf.vercel.app',
-    'https://curly-space-happiness-g4v6qp4rxxvw3wvj5-3001.app.github.dev',
-    'https://miniature-trout-4j995q7w9qx3qv67-3001.app.github.dev'
-  ],
+  origin: function(origin, callback) {
+    const allowed = [
+      'https://ktf.vercel.app'
+    ];
+    // Povolit všechny Codespaces subdomény
+    if (origin && (allowed.includes(origin) || origin.endsWith('.app.github.dev'))) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
