@@ -243,6 +243,9 @@
 .variant-img-bg-pointer {
   cursor: pointer;
 }
+.stamp-detail-img-bg-pointer {
+  cursor: pointer;
+}
 /* Seznam známek */
 .stamp-list-layout {
   display: grid;
@@ -692,4 +695,10 @@
   font-weight: 400;
   text-align: left;
   display: block;
+}
+
+/* Textarea s resize handlem v pravém dolním rohu */
+textarea.resize-corner {
+  resize: both;
+  overflow: auto;
 }

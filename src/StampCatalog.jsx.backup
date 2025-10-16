@@ -1516,8 +1516,8 @@ export default function StampCatalog(props) {
   }, []);
 
   const handleAdminLogin = (password) => {
-    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin';
-    if (password === adminPassword) {
+    // TODO: Set real password later
+    if (password === 'admin') {
       localStorage.setItem('ktf_admin_session', 'active');
       setIsAdmin(true);
       setShowAdminLogin(false);
@@ -1798,9 +1798,8 @@ export default function StampCatalog(props) {
               />
               <button
                 onClick={(e) => {
-                  const popup = e.target.closest('div[style*="position: fixed"]');
-                  const input = popup.querySelector('input[type="password"]');
-                  handleAdminLogin(input?.value || '');
+                  const input = e.target.previousElementSibling;
+                  handleAdminLogin(input.value);
                 }}
                 style={{
                   background: '#3b82f6',
