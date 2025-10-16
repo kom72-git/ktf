@@ -1517,6 +1517,12 @@ export default function StampCatalog(props) {
 
   const handleAdminLogin = (password) => {
     const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin';
+    console.log('Admin login debug:', {
+      password,
+      adminPassword,
+      envVar: import.meta.env.VITE_ADMIN_PASSWORD,
+      allEnvVars: import.meta.env
+    });
     if (password === adminPassword) {
       localStorage.setItem('ktf_admin_session', 'active');
       setIsAdmin(true);
