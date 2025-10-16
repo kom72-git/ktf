@@ -1516,7 +1516,7 @@ export default function StampCatalog(props) {
   }, []);
 
   const handleAdminLogin = (password) => {
-    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'admin';
+    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || '590745pp2/admin';
     console.log('Admin login debug:', {
       password,
       adminPassword,
