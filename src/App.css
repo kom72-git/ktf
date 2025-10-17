@@ -1,3 +1,38 @@
+/* Umožní, aby oba editační bloky (studie) byly vedle sebe */
+.study-inline-note {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+/* Zelené potvrzovací tlačítko (✓) */
+.ktf-btn-confirm {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 8px;
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.ktf-btn-confirm:hover, .ktf-btn-confirm:focus {
+  background: #059669;
+}
+/* Fancybox popisky - extrahováno z inline stylů */
+.fancybox-caption-center {
+  text-align: center;
+}
+.fancybox-caption-variant {
+  font-weight: 700;
+  font-size: 1.05em;
+}
+.fancybox-caption-desc {
+  font-size: 1em;
+  font-weight: 400;
+  margin-top: 8px;
+  display: inline-block;
+}
 .variant-type-sep {
   margin: 0 0.5em;
   font-weight: normal;
@@ -117,11 +152,33 @@
  .study-inline-note {
   font-size: 1.05rem;
   font-weight: 400;
-  color: #444;
-  margin-bottom: 10px;
-  font-family: inherit;
-  text-shadow: none;
-  vertical-align: baseline;
+.ktf-edit-row-flex {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+.ktf-edit-field-inline {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  width: 320px;
+}
+.ktf-edit-label {
+  font-weight: 500;
+  font-size: 12px;
+  margin-bottom: 0;
+  min-width: 90px;
+}
+.ktf-edit-input {
+  flex: 1 1 0%;
+  min-width: 340px;
+  padding: 4px 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 13px;
+  background: #fff;
+}
 }
 /* Opravený blok variant-popis */
 .variant-popis {
@@ -701,4 +758,17 @@
 textarea.resize-corner {
   resize: both;
   overflow: auto;
+}
+
+/* Notifikace "Uloženo" - přesunuto z inline stylů */
+.ktf-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #10b981;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  z-index: 1000;
+  font-size: 14px;
 }

@@ -110,17 +110,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
         // Zobraz dočasnou hlášku
         const notification = document.createElement('div');
         notification.textContent = 'Uloženo';
-        notification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: #10b981;
-          color: white;
-          padding: 8px 16px;
-          border-radius: 4px;
-          z-index: 1000;
-          font-size: 14px;
-        `;
+        notification.className = 'ktf-notification';
         document.body.appendChild(notification);
         setTimeout(() => document.body.removeChild(notification), 2000);
       } else {
@@ -203,17 +193,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
         // Zobraz dočasnou hlášku
         const notification = document.createElement('div');
         notification.textContent = 'Uloženo';
-        notification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: #10b981;
-          color: white;
-          padding: 8px 16px;
-          border-radius: 4px;
-          z-index: 1000;
-          font-size: 14px;
-        `;
+        notification.className = 'ktf-notification';
         document.body.appendChild(notification);
         setTimeout(() => document.body.removeChild(notification), 2000);
         
@@ -291,17 +271,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
         // Zobraz dočasnou hlášku
         const notification = document.createElement('div');
         notification.textContent = 'Uloženo';
-        notification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: #10b981;
-          color: white;
-          padding: 8px 16px;
-          border-radius: 4px;
-          z-index: 1000;
-          font-size: 14px;
-        `;
+        notification.className = 'ktf-notification';
         document.body.appendChild(notification);
         setTimeout(() => document.body.removeChild(notification), 2000);
         
@@ -354,9 +324,9 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
     const slides = itemDefects.map(def => ({
       src: def.obrazekVady,
       caption:
-        `<div style='text-align:center;'>`
-        + `<span style='font-weight:700;font-size:1.05em;'>${def.variantaVady || ''}${def.variantaVady && def.umisteniVady ? ' – ' : ''}${def.umisteniVady || ''}</span>`
-        + (def.popisVady ? `<br><span style='font-size:1em;font-weight:400;margin-top:8px;display:inline-block;'>${def.popisVady}</span>` : '')
+        `<div class='fancybox-caption-center'>`
+        + `<span class='fancybox-caption-variant'>${def.variantaVady || ''}${def.variantaVady && def.umisteniVady ? ' – ' : ''}${def.umisteniVady || ''}</span>`
+        + (def.popisVady ? `<br><span class='fancybox-caption-desc'>${def.popisVady}</span>` : '')
         + `</div>`
     }));
     Fancybox.show(slides, {
@@ -415,20 +385,12 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
               }}
               placeholder="Název emise"
             />
-            <button
-              onClick={() => saveTechnicalField('emise', editStampData.emise)}
-              style={{
-                padding: '2px 6px',
-                backgroundColor: '#10b981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
-            >
-              ✓
-            </button>
+              <button
+                onClick={() => saveTechnicalField('emise', editStampData.emise)}
+                className="ktf-btn-confirm"
+              >
+                ✓
+              </button>
             <span>(</span>
             <input
               type="text"
@@ -447,15 +409,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             />
             <button
               onClick={() => saveTechnicalField('rok', editStampData.rok)}
-              style={{
-                padding: '2px 6px',
-                backgroundColor: '#10b981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '3px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
+              className="ktf-btn-confirm"
             >
               ✓
             </button>
@@ -486,15 +440,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
               />
               <button
                 onClick={() => saveTechnicalField('katalogCislo', editStampData.katalogCislo)}
-                style={{
-                  padding: '2px 6px',
-                  backgroundColor: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '3px',
-                  cursor: 'pointer',
-                  fontSize: '12px'
-                }}
+                className="ktf-btn-confirm"
               >
                 ✓
               </button>
@@ -554,15 +500,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('datumVydani', editStampData.datumVydani)}
-                    style={{
-                      padding: '2px 6px',
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
+                    className="ktf-btn-confirm"
                   >
                     ✓
                   </button>
@@ -596,15 +534,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('navrh', editStampData.navrh)}
-                    style={{
-                      padding: '2px 6px',
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
+                    className="ktf-btn-confirm"
                   >
                     ✓
                   </button>
@@ -638,15 +568,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('rytec', editStampData.rytec)}
-                    style={{
-                      padding: '2px 6px',
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
+                    className="ktf-btn-confirm"
                   >
                     ✓
                   </button>
@@ -680,15 +602,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('druhTisku', editStampData.druhTisku)}
-                    style={{
-                      padding: '2px 6px',
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
+                    className="ktf-btn-confirm"
                   >
                     ✓
                   </button>
@@ -722,15 +636,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('tiskovaForma', editStampData.tiskovaForma)}
-                    style={{
-                      padding: '2px 6px',
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
+                    className="ktf-btn-confirm"
                   >
                     ✓
                   </button>
@@ -764,15 +670,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('zoubkovani', editStampData.zoubkovani)}
-                    style={{
-                      padding: '2px 6px',
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
+                    className="ktf-btn-confirm"
                   >
                     ✓
                   </button>
@@ -806,15 +704,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('papir', editStampData.papir)}
-                    style={{
-                      padding: '2px 6px',
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
+                    className="ktf-btn-confirm"
                   >
                     ✓
                   </button>
@@ -848,15 +738,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('rozmer', editStampData.rozmer)}
-                    style={{
-                      padding: '2px 6px',
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
+                    className="ktf-btn-confirm"
                   >
                     ✓
                   </button>
@@ -890,15 +772,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('naklad', editStampData.naklad)}
-                    style={{
-                      padding: '2px 6px',
-                      backgroundColor: '#10b981',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '3px',
-                      cursor: 'pointer',
-                      fontSize: '12px'
-                    }}
+                    className="ktf-btn-confirm"
                   >
                     ✓
                   </button>
@@ -931,15 +805,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                     />
                     <button
                       onClick={() => saveTechnicalField('schemaTF', editStampData.schemaTF)}
-                      style={{
-                        padding: '2px 6px',
-                        backgroundColor: '#10b981',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '3px',
-                        cursor: 'pointer',
-                        fontSize: '11px'
-                      }}
+                      className="ktf-btn-confirm"
                     >
                       ✓
                     </button>
@@ -972,15 +838,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
           />
           <button
             onClick={() => saveTechnicalField('obrazek', editStampData.obrazek)}
-            style={{
-              padding: '2px 6px',
-              backgroundColor: '#10b981',
-              color: 'white',
-              border: 'none',
-              borderRadius: '3px',
-              cursor: 'pointer',
-              fontSize: '11px'
-            }}
+            className="ktf-btn-confirm"
           >
             ✓
           </button>
@@ -990,79 +848,47 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
         <div>
           {isEditingAll ? (
             <div className="study-inline-note" style={{ marginTop: 18, marginBottom: 18 }}>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-                <div style={{ width: '300px' }}>
-                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500', fontSize: '12px' }}>
-                    Text studie:
-                  </label>
-                  <input
-                    type="text"
-                    value={editStampData.Studie || ''}
-                    onChange={(e) => setEditStampData({...editStampData, Studie: e.target.value})}
-                    style={{
-                      width: '100%',
-                      padding: '4px 6px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '4px',
-                      fontSize: '13px',
-                      background: '#fff'
-                    }}
-                    placeholder="Rozlišeno dle studie: text, část pro link"
-                  />
+              <div className="ktf-edit-row-flex">
+                <div className="ktf-edit-field-vertical">
+                  <label className="ktf-edit-label">Text studie:</label>
+                  <div className="ktf-edit-field-row">
+                    <input
+                      type="text"
+                      value={editStampData.Studie || ''}
+                      onChange={(e) => setEditStampData({...editStampData, Studie: e.target.value})}
+                      className="ktf-edit-input"
+                      placeholder="Rozlišeno dle studie: text, část pro link"
+                    />
+                    <button
+                      onClick={() => {
+                        saveStudyField('Studie', editStampData.Studie || '');
+                      }}
+                      className="ktf-btn-confirm"
+                    >
+                      ✓
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => {
-                    saveStudyField('Studie', editStampData.Studie || '');
-                  }}
-                  style={{
-                    background: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    cursor: 'pointer',
-                    height: 'fit-content'
-                  }}
-                >
-                  ✓
-                </button>
-                <div style={{ width: '300px' }}>
-                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500', fontSize: '12px' }}>
-                    URL pro část za čárkou:
-                  </label>
-                  <input
-                    type="text"
-                    value={editStampData.studieUrl || ''}
-                    onChange={(e) => setEditStampData({...editStampData, studieUrl: e.target.value})}
-                    style={{
-                      width: '100%',
-                      padding: '4px 6px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '4px',
-                      fontSize: '13px',
-                      background: '#fff'
-                    }}
-                    placeholder="https://example.com/studie"
-                  />
+                <div className="ktf-edit-field-vertical">
+                  <label className="ktf-edit-label">URL pro část za čárkou:</label>
+                  <div className="ktf-edit-field-row">
+                    <input
+                      type="text"
+                      value={editStampData.studieUrl || ''}
+                      onChange={(e) => setEditStampData({...editStampData, studieUrl: e.target.value})}
+                      className="ktf-edit-input"
+                      placeholder="https://example.com/studie"
+                    />
+                    <button
+                      onClick={() => {
+                        saveStudyField('studieUrl', editStampData.studieUrl || '');
+                      }}
+                      className="ktf-btn-confirm"
+                    >
+                      ✓
+                    </button>
+                  </div>
                 </div>
-                <button
-                  onClick={() => {
-                    saveStudyField('studieUrl', editStampData.studieUrl || '');
-                  }}
-                  style={{
-                    background: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    cursor: 'pointer',
-                    height: 'fit-content'
-                  }}
-                >
-                  ✓
-                </button>
               </div>
             </div>
           ) : (
@@ -1234,15 +1060,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                                     obrazekVady: imageInput?.value || ''
                                   });
                                 }}
-                                style={{
-                                  padding: '2px 6px',
-                                  backgroundColor: '#10b981',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '3px',
-                                  cursor: 'pointer',
-                                  fontSize: '11px'
-                                }}
+                                className="ktf-btn-confirm"
                               >
                                 ✓
                               </button>
@@ -1273,9 +1091,9 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                                 onClick={(e) => {
                                   // Najdeme všechny tři input/textarea prvky v této variantě
                                   const container = e.target.closest('.variant');
-                                  const variantInput = container.querySelector('input[placeholder=\"Varianta\"]');
-                                  const umisteniInput = container.querySelector('textarea[placeholder=\"Umístění\"]');
-                                  const popisTextarea = container.querySelector('textarea:not([placeholder=\"Umístění\"])');
+                                  const variantInput = container.querySelector('input[placeholder="Varianta"]');
+                                  const umisteniInput = container.querySelector('textarea[placeholder="Umístění"]');
+                                  const popisTextarea = container.querySelector('textarea:not([placeholder="Umístění"])');
                                   // Uložíme všechny tři hodnoty najednou
                                   saveDefectEdit(def._id, { 
                                     ...def, 
@@ -1284,15 +1102,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                                     popisVady: popisTextarea?.value || ''
                                   });
                                 }}
-                                style={{
-                                  background: '#10b981',
-                                  color: 'white',
-                                  border: 'none',
-                                  padding: '2px 8px',
-                                  borderRadius: '4px',
-                                  fontSize: '11px',
-                                  cursor: 'pointer'
-                                }}
+                                className="ktf-btn-confirm"
                               >
                                 ✓
                               </button>
