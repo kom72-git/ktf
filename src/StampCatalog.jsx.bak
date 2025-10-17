@@ -1,3 +1,4 @@
+// ZALOHA: 2025-10-17 19:40:00 (vytvořeno automaticky)
 import React, { useState, useMemo, useEffect } from "react";
 import { Search, Image } from "lucide-react";
 import "./App.css";
