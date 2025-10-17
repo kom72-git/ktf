@@ -375,7 +375,6 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
 
   return (
     <div className="stamp-detail-block">
-      <div style={{fontSize:'2em',color:'red',fontWeight:'bold'}}>X</div>
       <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
         <button onClick={onBack} className="back-btn">← Zpět</button>
         {isAdmin && (
