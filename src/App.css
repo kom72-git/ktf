@@ -241,7 +241,11 @@
   margin-top: 4px;
 }
 .tf-img {
-  height: 7em;
+  /* Původní výška byla 7em, nyní přidáváme max velikost dle inline stylu */
+  max-width: 220px;
+  max-height: 120px;
+  width: auto;
+  height: auto; /* Pokud by bylo potřeba zachovat 7em, lze přidat !important, ale pro správné měřítko obrázku je lepší auto */
   vertical-align: top;
   margin-top: 0;
 }

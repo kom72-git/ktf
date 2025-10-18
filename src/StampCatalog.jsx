@@ -395,14 +395,15 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
         )}
       </div>
       <div className="detail-catalog">
-        Katalogové číslo: <strong>
+        <span>Katalogové číslo:</span>
+        <strong>
           {isEditingAll ? (
-            <div className="edit-catalog-row">
+            <div className="edit-field-row">
               <input
                 type="text"
                 value={editStampData.katalogCislo}
                 onChange={(e) => setEditStampData({...editStampData, katalogCislo: e.target.value})}
-                className="edit-catalog-input"
+                className="ktf-edit-input-short"
                 placeholder="Katalogové číslo"
               />
               <button
@@ -420,6 +421,25 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
       
       {/* Editační formulář a vykreslení základních údajů známky */}
 
+      {/* Editační pole pro hlavní obrázek - přesunuto nad celý blok s obrázkem */}
+      {isEditingAll && (
+        <div className="edit-field-row">
+          <span>Hlavní obrázek:</span>
+          <input
+            type="text"
+            value={editStampData.obrazek}
+            onChange={(e) => setEditStampData({...editStampData, obrazek: e.target.value})}
+            className="ktf-edit-input-short"
+            placeholder="https://example.com/obrazek.jpg"
+          />
+          <button
+            onClick={() => saveTechnicalField('obrazek', editStampData.obrazek)}
+            className="ktf-btn-confirm"
+          >
+            ✓
+          </button>
+        </div>
+      )}
       <div className="stamp-detail-layout">
         <div className="stamp-detail-img-col">
           <div className="stamp-detail-img-bg stamp-detail-img-bg-none stamp-detail-img-bg-pointer" onClick={() => {
@@ -709,67 +729,26 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   </div>
                 </div>
               ) : (
-                item.schemaTF && <img src={item.schemaTF} alt="Schéma TF" className="tf-img" style={{maxWidth:'220px',maxHeight:'120px',width:'auto',height:'auto'}} onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }} />
+                item.schemaTF && <img src={item.schemaTF} alt="Schéma TF" className="tf-img" onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }} />
               )}
             </span>
           </div>
         </div>
       </div>
-      {/* Editační pole pro hlavní obrázek - pod celým layoutem */}
-      {isEditingAll && (
-        <div style={{ display: 'flex', gap: '5px', alignItems: 'center', marginTop: '16px' }}>
-          <span style={{ fontSize: '12px', fontWeight: '500', minWidth: '80px' }}>Hlavní obrázek:</span>
-          <input
-            type="text"
-            value={editStampData.obrazek}
-            onChange={(e) => setEditStampData({...editStampData, obrazek: e.target.value})}
-            style={{
-              width: '200px',
-              padding: '3px 5px',
-              border: '1px solid #d1d5db',
-              borderRadius: '3px',
-              fontSize: '11px',
-              background: '#fff'
-            }}
-            placeholder="https://example.com/obrazek.jpg"
-          />
-          <button
-            onClick={() => saveTechnicalField('obrazek', editStampData.obrazek)}
-            style={{
-              padding: '2px 6px',
-              backgroundColor: '#10b981',
-              color: 'white',
-              border: 'none',
-              borderRadius: '3px',
-              cursor: 'pointer',
-              fontSize: '11px'
-            }}
-          >
-            ✓
-          </button>
-        </div>
-      )}
       {itemDefects.length > 0 && (
         <div>
           {isEditingAll ? (
-            <div className="study-inline-note" style={{ marginTop: 18, marginBottom: 18 }}>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-                <div style={{ width: '300px' }}>
-                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500', fontSize: '12px' }}>
+            <div className="study-inline-note">
+              <div className="edit-field-row">
+                <div className="edit-catalog-row">
+                  <label className="ktf-edit-label">
                     Text studie:
                   </label>
                   <input
                     type="text"
                     value={editStampData.Studie || ''}
                     onChange={(e) => setEditStampData({...editStampData, Studie: e.target.value})}
-                    style={{
-                      width: '100%',
-                      padding: '4px 6px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '4px',
-                      fontSize: '13px',
-                      background: '#fff'
-                    }}
+                    className="ktf-edit-input-short"
                     placeholder="Rozlišeno dle studie: text, část pro link"
                   />
                 </div>
@@ -781,22 +760,15 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                 >
                   ✓
                 </button>
-                <div style={{ width: '300px' }}>
-                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500', fontSize: '12px' }}>
+                <div className="edit-catalog-row">
+                  <label className="ktf-edit-label">
                     URL pro část za čárkou:
                   </label>
                   <input
                     type="text"
                     value={editStampData.studieUrl || ''}
                     onChange={(e) => setEditStampData({...editStampData, studieUrl: e.target.value})}
-                    style={{
-                      width: '100%',
-                      padding: '4px 6px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '4px',
-                      fontSize: '13px',
-                      background: '#fff'
-                    }}
+                    className="ktf-edit-input-short"
                     placeholder="https://example.com/studie"
                   />
                 </div>
