@@ -1,3 +1,105 @@
+@media (max-width: 412px) {
+  .stamp-spec-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  .stamp-spec-label,
+  .stamp-spec-value {
+    width: 100% !important;
+    display: block !important;
+    margin-right: 0 !important;
+    min-width: 0 !important;
+    text-align: left !important;
+  }
+}
+/* Krátké pole pro editaci technických údajů (refaktorované z inline stylu) */
+.ktf-edit-input-short {
+  flex: 1;
+  padding: 2px 4px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font-size: inherit;
+  background: #fff;
+}
+/* Pro refaktoring inline stylů v StampCatalog.jsx */
+.edit-field-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+/* Input pro editaci roku */
+.edit-year-input {
+  padding: 4px 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: inherit;
+  font-weight: inherit;
+  background: #fff;
+  width: 60px;
+}
+/* Notifikační hláška "Uloženo" */
+.ktf-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #10b981;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+  z-index: 1000;
+  font-size: 14px;
+}
+/* Třída pro řádek editace katalogového čísla */
+.edit-catalog-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+/* Třída pro řádek editace varianty/podvarianty */
+.edit-variant-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+/* Třída pro řádek editace názvu emise */
+.edit-title-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+/* Třída pro input editace názvu emise */
+.edit-title-input {
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: inherit;
+  font-weight: inherit;
+  background: #fff;
+  min-width: 600px;
+}
+/* Třída pro admin edit tlačítko */
+.admin-edit-btn {
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+.admin-edit-btn.success {
+  background: #10b981;
+}
+.admin-edit-btn.danger {
+  background: #ef4444;
+}
+/* Třída pro řádek tlačítek v detailu známky */
+.button-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
 /* Umožní, aby oba editační bloky (studie) byly vedle sebe */
 .study-inline-note {
   display: flex;
@@ -9,10 +111,10 @@
   background: #10b981;
   color: #fff;
   border: none;
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
-  font-size: 12px;
-  padding: 2px 8px;
+  font-size: 11px;
+  padding: 2px 6px;
   font-weight: 500;
   transition: background 0.15s;
 }
@@ -196,6 +298,7 @@
 /* Layout pro detail známky */
 .stamp-detail-layout {
   display: flex;
+  gap: 32px;
   flex-direction: row;
   align-items: flex-start;
   width: 100%;
@@ -243,6 +346,7 @@
   padding: 0;
   display: flex;
   align-items: flex-start;
+  flex: 0 0 auto;
 }
 .stamp-detail-img-bg-none {
   background: none !important;
@@ -276,6 +380,7 @@
   width: 100%;
   height: auto;
   max-width: 480px;
+  flex: 1 1 0%;
 }
 .clear-both {
   clear: both;

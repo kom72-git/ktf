@@ -324,10 +324,10 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
     const slides = itemDefects.map(def => ({
       src: def.obrazekVady,
       caption:
-        `<div class='fancybox-caption-center'>`
-        + `<span class='fancybox-caption-variant'>${def.variantaVady || ''}${def.variantaVady && def.umisteniVady ? ' – ' : ''}${def.umisteniVady || ''}</span>`
-        + (def.popisVady ? `<br><span class='fancybox-caption-desc'>${def.popisVady}</span>` : '')
-        + `</div>`
+  `<div class='fancybox-caption-center'>`
+  + `<span class='fancybox-caption-variant'>${def.variantaVady || ''}${def.variantaVady && def.umisteniVady ? ' – ' : ''}${def.umisteniVady || ''}</span>`
+  + (def.popisVady ? `<br><span class='fancybox-caption-desc'>${def.popisVady}</span>` : '')
+  + `</div>`
     }));
     Fancybox.show(slides, {
       startIndex: flatIndex,
@@ -345,22 +345,13 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
 
   return (
     <div className="stamp-detail-block">
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+      <div className="button-row">
         <button onClick={onBack} className="back-btn">← Zpět</button>
         {isAdmin && (
           <>
             <button 
               onClick={() => setIsEditingAll(!isEditingAll)}
-              style={{
-                background: isEditingAll ? '#ef4444' : '#10b981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '8px 16px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
+              className={isEditingAll ? "admin-edit-btn danger" : "admin-edit-btn success"}
             >
               {isEditingAll ? '❌ Zrušit editaci' : '✏️ Editovat'}
             </button>
@@ -369,42 +360,26 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
       </div>
       <div className="detail-title">
         {isEditingAll ? (
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <div className="edit-title-row">
             <input
               type="text"
               value={editStampData.emise}
               onChange={(e) => setEditStampData({...editStampData, emise: e.target.value})}
-              style={{
-                padding: '4px 6px',
-                border: '1px solid #d1d5db',
-                borderRadius: '4px',
-                fontSize: 'inherit',
-                fontWeight: 'inherit',
-                background: '#fff',
-                minWidth: '600px'
-              }}
+              className="edit-title-input"
               placeholder="Název emise"
             />
-              <button
-                onClick={() => saveTechnicalField('emise', editStampData.emise)}
-                className="ktf-btn-confirm"
-              >
-                ✓
-              </button>
+            <button
+              onClick={() => saveTechnicalField('emise', editStampData.emise)}
+              className="ktf-btn-confirm"
+            >
+              ✓
+            </button>
             <span>(</span>
             <input
               type="text"
               value={editStampData.rok}
               onChange={(e) => setEditStampData({...editStampData, rok: e.target.value})}
-              style={{
-                padding: '4px 6px',
-                border: '1px solid #d1d5db',
-                borderRadius: '4px',
-                fontSize: 'inherit',
-                fontWeight: 'inherit',
-                background: '#fff',
-                width: '60px'
-              }}
+              className="edit-year-input"
               placeholder="Rok"
             />
             <button
@@ -422,20 +397,12 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
       <div className="detail-catalog">
         Katalogové číslo: <strong>
           {isEditingAll ? (
-            <div style={{display: 'inline-flex', alignItems: 'center', gap: '5px'}}>
+            <div className="edit-catalog-row">
               <input
                 type="text"
                 value={editStampData.katalogCislo}
                 onChange={(e) => setEditStampData({...editStampData, katalogCislo: e.target.value})}
-                style={{
-                  padding: '2px 4px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '3px',
-                  fontSize: 'inherit',
-                  fontWeight: 'inherit',
-                  background: '#fff',
-                  minWidth: '100px'
-                }}
+                className="edit-catalog-input"
                 placeholder="Katalogové číslo"
               />
               <button
@@ -451,14 +418,14 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
         </strong>
       </div>
       
-      {/* Editační formulář pro základní údaje známky */}
+      {/* Editační formulář a vykreslení základních údajů známky */}
 
-      <div className="stamp-detail-layout" style={{ display: 'flex', gap: 32 }}>
-        <div className="stamp-detail-img-col" style={{ flex: '0 0 auto' }}>
+      <div className="stamp-detail-layout">
+        <div className="stamp-detail-img-col">
           <div className="stamp-detail-img-bg stamp-detail-img-bg-none stamp-detail-img-bg-pointer" onClick={() => {
             Fancybox.show([{
               src: item.obrazekStudie || item.obrazek,
-              caption: `<div style='text-align:center;'><span style='font-weight:700;font-size:1.1em;'>${item.emise} (${item.rok})</span><br><span style='font-size:1em;font-weight:400;margin-top:8px;display:inline-block;'>Katalogové číslo: ${item.katalogCislo}</span></div>`
+              caption: `<div class='fancybox-caption-center'><span class='fancybox-caption-variant'>${item.emise} (${item.rok})</span><br><span class='fancybox-caption-desc'>Katalogové číslo: ${item.katalogCislo}</span></div>`
             }], {
               Toolbar: [ 'zoom', 'close' ],
               dragToClose: true,
@@ -478,25 +445,18 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             />
           </div>
         </div>
-        <div className="stamp-spec stamp-detail-spec-col" style={{ flex: '1 1 0%' }}>
+  <div className="stamp-spec stamp-detail-spec-col">
 
           <div className="stamp-spec-row">
             <span className="stamp-spec-label">Datum vydání</span>
             <span className="stamp-spec-value">
               {isEditingAll ? (
-                <div style={{display: 'flex', alignItems: 'center', gap: '5px'}}>
+                <div className="edit-field-row">
                   <input
                     type="text"
                     value={editStampData.datumVydani}
                     onChange={(e) => setEditStampData({...editStampData, datumVydani: e.target.value})}
-                    style={{
-                      flex: 1,
-                      padding: '2px 4px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '3px',
-                      fontSize: 'inherit',
-                      background: '#fff'
-                    }}
+                    className="ktf-edit-input-short"
                   />
                   <button
                     onClick={() => saveTechnicalField('datumVydani', editStampData.datumVydani)}
@@ -514,7 +474,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             <span className="stamp-spec-label">Návrh</span>
             <span className="stamp-spec-value">
               {isEditingAll ? (
-                <div style={{display: 'flex', alignItems: 'center', gap: '5px'}}>
+                <div className="edit-field-row">
                   <input
                     type="text"
                     value={editStampData.navrh}
@@ -523,14 +483,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       if (e.ctrlKey && e.key === 'Enter') {
                       }
                     }}
-                    style={{
-                      flex: 1,
-                      padding: '2px 4px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '3px',
-                      fontSize: 'inherit',
-                      background: '#fff'
-                    }}
+                    className="ktf-edit-input-short"
                   />
                   <button
                     onClick={() => saveTechnicalField('navrh', editStampData.navrh)}
@@ -548,7 +501,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             <span className="stamp-spec-label">Rytec</span>
             <span className="stamp-spec-value">
               {isEditingAll ? (
-                <div style={{display: 'flex', alignItems: 'center', gap: '5px'}}>
+                <div className="edit-field-row">
                   <input
                     type="text"
                     value={editStampData.rytec}
@@ -557,14 +510,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       if (e.ctrlKey && e.key === 'Enter') {
                       }
                     }}
-                    style={{
-                      flex: 1,
-                      padding: '2px 4px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '3px',
-                      fontSize: 'inherit',
-                      background: '#fff'
-                    }}
+                    className="ktf-edit-input-short"
                   />
                   <button
                     onClick={() => saveTechnicalField('rytec', editStampData.rytec)}
@@ -582,7 +528,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             <span className="stamp-spec-label">Druh tisku</span>
             <span className="stamp-spec-value">
               {isEditingAll ? (
-                <div style={{display: 'flex', alignItems: 'center', gap: '5px'}}>
+                <div className="edit-field-row">
                   <input
                     type="text"
                     value={editStampData.druhTisku}
@@ -591,14 +537,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       if (e.ctrlKey && e.key === 'Enter') {
                       }
                     }}
-                    style={{
-                      flex: 1,
-                      padding: '2px 4px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '3px',
-                      fontSize: 'inherit',
-                      background: '#fff'
-                    }}
+                    className="ktf-edit-input-short"
                   />
                   <button
                     onClick={() => saveTechnicalField('druhTisku', editStampData.druhTisku)}
@@ -616,7 +555,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             <span className="stamp-spec-label">Tisková forma</span>
             <span className="stamp-spec-value">
               {isEditingAll ? (
-                <div style={{display: 'flex', alignItems: 'center', gap: '5px'}}>
+                <div className="edit-field-row">
                   <input
                     type="text"
                     value={editStampData.tiskovaForma}
@@ -625,14 +564,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       if (e.ctrlKey && e.key === 'Enter') {
                       }
                     }}
-                    style={{
-                      flex: 1,
-                      padding: '2px 4px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '3px',
-                      fontSize: 'inherit',
-                      background: '#fff'
-                    }}
+                    className="ktf-edit-input-short"
                   />
                   <button
                     onClick={() => saveTechnicalField('tiskovaForma', editStampData.tiskovaForma)}
@@ -650,7 +582,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             <span className="stamp-spec-label">Zoubkování</span>
             <span className="stamp-spec-value">
               {isEditingAll ? (
-                <div style={{display: 'flex', alignItems: 'center', gap: '5px'}}>
+                <div className="edit-field-row">
                   <input
                     type="text"
                     value={editStampData.zoubkovani}
@@ -659,14 +591,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       if (e.ctrlKey && e.key === 'Enter') {
                       }
                     }}
-                    style={{
-                      flex: 1,
-                      padding: '2px 4px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '3px',
-                      fontSize: 'inherit',
-                      background: '#fff'
-                    }}
+                    className="ktf-edit-input-short"
                   />
                   <button
                     onClick={() => saveTechnicalField('zoubkovani', editStampData.zoubkovani)}
@@ -684,7 +609,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             <span className="stamp-spec-label">Papír</span>
             <span className="stamp-spec-value">
               {isEditingAll ? (
-                <div style={{display: 'flex', alignItems: 'center', gap: '5px'}}>
+                <div className="edit-field-row">
                   <input
                     type="text"
                     value={editStampData.papir}
@@ -693,14 +618,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       if (e.ctrlKey && e.key === 'Enter') {
                       }
                     }}
-                    style={{
-                      flex: 1,
-                      padding: '2px 4px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '3px',
-                      fontSize: 'inherit',
-                      background: '#fff'
-                    }}
+                    className="ktf-edit-input-short"
                   />
                   <button
                     onClick={() => saveTechnicalField('papir', editStampData.papir)}
@@ -718,7 +636,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             <span className="stamp-spec-label">Rozměr</span>
             <span className="stamp-spec-value">
               {isEditingAll ? (
-                <div style={{display: 'flex', alignItems: 'center', gap: '5px'}}>
+                <div className="edit-field-row">
                   <input
                     type="text"
                     value={editStampData.rozmer}
@@ -727,14 +645,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       if (e.ctrlKey && e.key === 'Enter') {
                       }
                     }}
-                    style={{
-                      flex: 1,
-                      padding: '2px 4px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '3px',
-                      fontSize: 'inherit',
-                      background: '#fff'
-                    }}
+                    className="ktf-edit-input-short"
                   />
                   <button
                     onClick={() => saveTechnicalField('rozmer', editStampData.rozmer)}
@@ -752,7 +663,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             <span className="stamp-spec-label">Náklad</span>
             <span className="stamp-spec-value">
               {isEditingAll ? (
-                <div style={{display: 'flex', alignItems: 'center', gap: '5px'}}>
+                <div className="edit-field-row">
                   <input
                     type="text"
                     value={editStampData.naklad}
@@ -761,14 +672,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       if (e.ctrlKey && e.key === 'Enter') {
                       }
                     }}
-                    style={{
-                      flex: 1,
-                      padding: '2px 4px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '3px',
-                      fontSize: 'inherit',
-                      background: '#fff'
-                    }}
+                    className="ktf-edit-input-short"
                   />
                   <button
                     onClick={() => saveTechnicalField('naklad', editStampData.naklad)}
@@ -787,20 +691,13 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             <span className="stamp-spec-value">
               {isEditingAll ? (
                 <div>
-                  {item.schemaTF && <img src={item.schemaTF} alt="Schéma TF" className="tf-img" style={{maxWidth:'220px',maxHeight:'120px',width:'auto',height:'auto'}} onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }} />}
-                  <div style={{ display: 'flex', gap: '5px', alignItems: 'center', marginTop: '5px' }}>
+                  {item.schemaTF && <img src={item.schemaTF} alt="Schéma TF" className="tf-img" onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }} />}
+                  <div className="edit-field-row">
                     <input
                       type="text"
                       value={editStampData.schemaTF}
                       onChange={(e) => setEditStampData({...editStampData, schemaTF: e.target.value})}
-                      style={{
-                        width: '200px',
-                        padding: '3px 5px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '3px',
-                        fontSize: '11px',
-                        background: '#fff'
-                      }}
+                      className="ktf-edit-input-short"
                       placeholder="https://example.com/schema.jpg"
                     />
                     <button
@@ -838,7 +735,15 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
           />
           <button
             onClick={() => saveTechnicalField('obrazek', editStampData.obrazek)}
-            className="ktf-btn-confirm"
+            style={{
+              padding: '2px 6px',
+              backgroundColor: '#10b981',
+              color: 'white',
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer',
+              fontSize: '11px'
+            }}
           >
             ✓
           </button>
@@ -848,47 +753,61 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
         <div>
           {isEditingAll ? (
             <div className="study-inline-note" style={{ marginTop: 18, marginBottom: 18 }}>
-              <div className="ktf-edit-row-flex">
-                <div className="ktf-edit-field-vertical">
-                  <label className="ktf-edit-label">Text studie:</label>
-                  <div className="ktf-edit-field-row">
-                    <input
-                      type="text"
-                      value={editStampData.Studie || ''}
-                      onChange={(e) => setEditStampData({...editStampData, Studie: e.target.value})}
-                      className="ktf-edit-input"
-                      placeholder="Rozlišeno dle studie: text, část pro link"
-                    />
-                    <button
-                      onClick={() => {
-                        saveStudyField('Studie', editStampData.Studie || '');
-                      }}
-                      className="ktf-btn-confirm"
-                    >
-                      ✓
-                    </button>
-                  </div>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                <div style={{ width: '300px' }}>
+                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500', fontSize: '12px' }}>
+                    Text studie:
+                  </label>
+                  <input
+                    type="text"
+                    value={editStampData.Studie || ''}
+                    onChange={(e) => setEditStampData({...editStampData, Studie: e.target.value})}
+                    style={{
+                      width: '100%',
+                      padding: '4px 6px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '13px',
+                      background: '#fff'
+                    }}
+                    placeholder="Rozlišeno dle studie: text, část pro link"
+                  />
                 </div>
-                <div className="ktf-edit-field-vertical">
-                  <label className="ktf-edit-label">URL pro část za čárkou:</label>
-                  <div className="ktf-edit-field-row">
-                    <input
-                      type="text"
-                      value={editStampData.studieUrl || ''}
-                      onChange={(e) => setEditStampData({...editStampData, studieUrl: e.target.value})}
-                      className="ktf-edit-input"
-                      placeholder="https://example.com/studie"
-                    />
-                    <button
-                      onClick={() => {
-                        saveStudyField('studieUrl', editStampData.studieUrl || '');
-                      }}
-                      className="ktf-btn-confirm"
-                    >
-                      ✓
-                    </button>
-                  </div>
+                <button
+                  onClick={() => {
+                    saveStudyField('Studie', editStampData.Studie || '');
+                  }}
+                  className="ktf-btn-confirm"
+                >
+                  ✓
+                </button>
+                <div style={{ width: '300px' }}>
+                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500', fontSize: '12px' }}>
+                    URL pro část za čárkou:
+                  </label>
+                  <input
+                    type="text"
+                    value={editStampData.studieUrl || ''}
+                    onChange={(e) => setEditStampData({...editStampData, studieUrl: e.target.value})}
+                    style={{
+                      width: '100%',
+                      padding: '4px 6px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '4px',
+                      fontSize: '13px',
+                      background: '#fff'
+                    }}
+                    placeholder="https://example.com/studie"
+                  />
                 </div>
+                <button
+                  onClick={() => {
+                    saveStudyField('studieUrl', editStampData.studieUrl || '');
+                  }}
+                  className="ktf-btn-confirm"
+                >
+                  ✓
+                </button>
               </div>
             </div>
           ) : (
@@ -995,33 +914,18 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       <div key={def.idVady || `var-${i}`} className="variant" style={{ position: 'relative' }}>
                         <div className="variant-popis">
                           {isEditingAll ? (
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                            <div className="edit-variant-row">
                               <input
                                 type="text"
                                 placeholder="Varianta"
                                 defaultValue={def.variantaVady || ''}
-                                style={{
-                                  width: '60px',
-                                  padding: '4px',
-                                  border: '1px solid #d1d5db',
-                                  borderRadius: '3px',
-                                  fontSize: '12px'
-                                }}
+                                className="edit-variant-input"
                               />
                               <span>–</span>
                               <textarea
                                 placeholder="Umístění"
                                 defaultValue={def.umisteniVady || ''}
-                                style={{
-                                  width: '120px',
-                                  minHeight: '20px',
-                                  padding: '4px',
-                                  border: '1px solid #d1d5db',
-                                  borderRadius: '3px',
-                                  fontSize: '12px',
-                                  resize: 'both',
-                                  fontFamily: 'inherit'
-                                }}
+                                className="edit-variant-textarea"
                               />
                             </div>
                           ) : (
@@ -1060,7 +964,15 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                                     obrazekVady: imageInput?.value || ''
                                   });
                                 }}
-                                className="ktf-btn-confirm"
+                                style={{
+                                  padding: '2px 6px',
+                                  backgroundColor: '#10b981',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '3px',
+                                  cursor: 'pointer',
+                                  fontSize: '11px'
+                                }}
                               >
                                 ✓
                               </button>
@@ -1091,9 +1003,9 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                                 onClick={(e) => {
                                   // Najdeme všechny tři input/textarea prvky v této variantě
                                   const container = e.target.closest('.variant');
-                                  const variantInput = container.querySelector('input[placeholder="Varianta"]');
-                                  const umisteniInput = container.querySelector('textarea[placeholder="Umístění"]');
-                                  const popisTextarea = container.querySelector('textarea:not([placeholder="Umístění"])');
+                                  const variantInput = container.querySelector('input[placeholder=\"Varianta\"]');
+                                  const umisteniInput = container.querySelector('textarea[placeholder=\"Umístění\"]');
+                                  const popisTextarea = container.querySelector('textarea:not([placeholder=\"Umístění\"])');
                                   // Uložíme všechny tři hodnoty najednou
                                   saveDefectEdit(def._id, { 
                                     ...def, 
