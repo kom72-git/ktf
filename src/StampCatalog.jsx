@@ -852,16 +852,28 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             const sortedDefs = uniqueDefs.slice().sort(naturalVariantSort);
             // --- úprava číslování obrázků ---
             const NO_IMAGE = '/img/no-image.png';
-            // Vytvoříme pole všech zobrazených obrázků napříč všemi skupinami v pořadí zobrazení
-            // (jednoduché pořadí 1, 2, 3... podle všech karet)
-            // Najdeme všechny defs ve všech skupinách v pořadí vykreslení
-            const allDefsInOrder = Object.keys(grouped).sort().flatMap(groupKey => {
+            // Sestavíme globální pole všech variant v pořadí vykreslení napříč všemi skupinami
+            const allVariants = Object.keys(grouped).sort().flatMap(groupKey => {
               const defsInGroup = grouped[groupKey];
-              return defsInGroup.slice().sort(naturalVariantSort);
+              return defsInGroup.slice().sort((a, b) => {
+                const cmp = naturalVariantSort(a, b);
+                if (cmp !== 0) return cmp;
+                function extractBracketOrder(def) {
+                  if (!def.popisVady) return null;
+                  const m = def.popisVady.match(/^\s*\[([^\]]+)\]/);
+                  return m ? m[1] : null;
+                }
+                const orderA = extractBracketOrder(a);
+                const orderB = extractBracketOrder(b);
+                if (orderA === null && orderB !== null) return 1;
+                if (orderA !== null && orderB === null) return -1;
+                if (orderA === null && orderB === null) return 0;
+                return orderA.localeCompare(orderB, undefined, { numeric: true });
+              });
             });
             // Mapování: def -> pořadí (index+1)
             function getSimpleImageNumber(def) {
-              return allDefsInOrder.indexOf(def) + 1;
+              return allVariants.indexOf(def) + 1;
             }
             const subvariantLabels = (() => {
               // Pouze skutečné podvarianty: délka větší než 1 nebo obsahují tečku
@@ -897,7 +909,25 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                 )}
                 <div className="variants">
                   {/* Všechny výskyty variant včetně duplicit, v přirozeném pořadí */}
-                  {defs.slice().sort(naturalVariantSort).map((def, i) => {
+                  {defs.slice().sort((a, b) => {
+                    // Nejprve původní naturalVariantSort
+                    const cmp = naturalVariantSort(a, b);
+                    if (cmp !== 0) return cmp;
+                    // Pokud je varianta stejná, řadíme podle popisu v hranatých závorkách
+                    function extractBracketOrder(def) {
+                      if (!def.popisVady) return null;
+                      const m = def.popisVady.match(/^\s*\[([^\]]+)\]/);
+                      return m ? m[1] : null;
+                    }
+                    const orderA = extractBracketOrder(a);
+                    const orderB = extractBracketOrder(b);
+                    // Nejprve upřednostnit ty, které mají závorku
+                    if (orderA === null && orderB !== null) return 1;
+                    if (orderA !== null && orderB === null) return -1;
+                    if (orderA === null && orderB === null) return 0;
+                    // Porovnáme jako string, pokud je více hodnot, řadí se lexikálně
+                    return orderA.localeCompare(orderB, undefined, { numeric: true });
+                  }).map((def, i) => {
                     const flatIndex = itemDefects.findIndex(d => d === def);
                     return (
                       <div key={def.idVady || `var-${i}`} className="variant" style={{ position: 'relative' }}>
