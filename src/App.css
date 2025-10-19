@@ -1,3 +1,29 @@
+/* Zarovnání popisku nad inputem (např. hlavní obrázek) */
+/* Univerzální zarovnání popisku nad inputem */
+.label-top-input {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.label-top-input label {
+  font-weight: 500;
+  display: block;
+}
+/* Zarovnání editačních polí pro studii */
+.ktf-edit-study-row {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.ktf-edit-study-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 340px;
+  max-width: 520px;
+  flex: 1 1 0%;
+}
 @media (max-width: 412px) {
   .stamp-spec-row {
     display: flex !important;
@@ -13,8 +39,7 @@
     text-align: left !important;
   }
 }
-/* Krátké pole pro editaci technických údajů (refaktorované z inline stylu) */
-.ktf-edit-input-short {
+ .ktf-edit-input-tech {
   flex: 1;
   padding: 2px 4px;
   border: 1px solid #d1d5db;
@@ -22,7 +47,8 @@
   font-size: inherit;
   background: #fff;
 }
-/* Pro refaktoring inline stylů v StampCatalog.jsx */
+/* Speciální input pro studijní pole - delší */
+
 .edit-field-row {
   display: flex;
   align-items: center;
@@ -49,12 +75,6 @@
   border-radius: 4px;
   z-index: 1000;
   font-size: 14px;
-}
-/* Třída pro řádek editace katalogového čísla */
-.edit-catalog-row {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
 }
 /* Třída pro řádek editace varianty/podvarianty */
 .edit-variant-row {
@@ -100,11 +120,14 @@
   gap: 12px;
   margin-bottom: 16px;
 }
-/* Umožní, aby oba editační bloky (studie) byly vedle sebe */
 .study-inline-note {
   display: flex;
-  gap: 24px;
+  gap: 0;
   align-items: flex-start;
+  font-size: 1.05rem;
+  font-weight: 400;
+  margin-top: 18px;
+  margin-bottom: 18px;
 }
 /* Zelené potvrzovací tlačítko (✓) */
 .ktf-btn-confirm {
@@ -254,10 +277,6 @@
   margin-right: 8px !important;
   vertical-align: baseline !important;
 }
-/* Opravený blok study-inline-note */
- .study-inline-note {
-  font-size: 1.05rem;
-  font-weight: 400;
 .ktf-edit-row-flex {
   display: flex;
   gap: 32px;
@@ -270,12 +289,7 @@
   gap: 8px;
   width: 320px;
 }
-.ktf-edit-label {
-  font-weight: 500;
-  font-size: 12px;
-  margin-bottom: 0;
-  min-width: 90px;
-}
+
 .ktf-edit-input {
   flex: 1 1 0%;
   min-width: 340px;
@@ -285,6 +299,15 @@
   font-size: 13px;
   background: #fff;
 }
+
+/* Delší input pro studijní pole */
+.ktf-edit-input-long {
+  min-width: 340px;
+  max-width: 520px;
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 15px;
+  box-sizing: border-box;
 }
 /* Opravený blok variant-popis */
 .variant-popis {
