@@ -1,9 +1,0 @@
-nohup: ignoring input
-
-> ktf-server@1.0.0 start
-> node index.js
-
-[dotenv@17.2.3] injecting env (2) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
-Server běží na portu 3001
-MongoDB připojeno
-Killed
