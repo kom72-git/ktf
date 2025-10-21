@@ -927,7 +927,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   }).map((def, i) => {
                     const flatIndex = itemDefects.findIndex(d => d === def);
                     return (
-                      <div key={def.idVady || `var-${i}`} className="variant" style={{ position: 'relative' }}>
+                      <div key={def.idVady || `var-${i}`} className="variant" >
                         <div className="variant-popis">
                           {isEditingAll ? (
                             <div className="edit-variant-row">
@@ -956,8 +956,8 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                         </div>
                         {/* Editace URL obrázku vady */}
                         {isEditingAll && (
-                          <div style={{ marginTop: '8px' }}>
-                            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                          <div >
+                            <div className="edit-field-row">
                               <input
                                 type="text"
                                 defaultValue={def.obrazekVady || ''}
@@ -998,7 +998,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                         <div className="variant-label">Obr. {getSimpleImageNumber(def)}</div>
                         {/* Editace nebo zobrazení popisu vady */}
                         {isEditingAll ? (
-                          <div style={{ marginTop: '8px' }}>
+                          <div >
                             <textarea
                               defaultValue={def.popisVady || ''}
                               style={{
