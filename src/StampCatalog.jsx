@@ -1102,7 +1102,6 @@ export default function StampCatalog(props) {
   };
   const [stamps, setStamps] = useState([]);
   const [defects, setDefects] = useState([]);
-  const [dbConnected, setDbConnected] = useState(true);
   const [query, setQuery] = useState("");
   const [year, setYear] = useState("all");
   const [emission, setEmission] = useState("all");
@@ -1120,29 +1119,25 @@ export default function StampCatalog(props) {
         ? "" // Pro Vercel používáme relativní cesty, backend bude na stejné doméně
         : "http://localhost:3001"); // Lokální vývoj
         fetch(`${API_BASE}/api/stamps`)
-          .then(res => {
-            console.log('Stamps response:', res);
-            const header = res.headers.get('X-DB-CONNECTED');
-            if (header === '0') setDbConnected(false);
-            return res.json();
-          })
-          .then(data => {
-            console.log("Načtené známky:", data);
-            setStamps(data);
-          })
-          .catch(err => console.error("Chyba při načítání známek:", err));
-        fetch(`${API_BASE}/api/defects`)
-          .then(res => {
-            console.log('Defects response:', res);
-            const header = res.headers.get('X-DB-CONNECTED');
-            if (header === '0') setDbConnected(false);
-            return res.json();
-          })
-          .then(data => {
-            console.log("Načtené vady:", data);
-            setDefects(data);
-          })
-          .catch(err => console.error("Chyba při načítání vad:", err));
+      .then(res => {
+        console.log('Stamps response:', res);
+        return res.json();
+      })
+      .then(data => {
+        console.log("Načtené známky:", data);
+        setStamps(data);
+      })
+      .catch(err => console.error("Chyba při načítání známek:", err));
+    fetch(`${API_BASE}/api/defects`)
+      .then(res => {
+        console.log('Defects response:', res);
+        return res.json();
+      })
+      .then(data => {
+        console.log("Načtené vady:", data);
+        setDefects(data);
+      })
+      .catch(err => console.error("Chyba při načítání vad:", err));
   }, []);
 
   useEffect(() => {
@@ -1233,11 +1228,6 @@ export default function StampCatalog(props) {
         <p className="subtitle">Seznam studií rozlišení tiskových forem, desek a polí při tisku československých známek v letech 1945-92.</p>
       </header>
       <main className="main">
-        {!dbConnected && (
-          <div style={{ background: '#fff3cd', color: '#664d03', padding: '10px', border: '1px solid #ffecb5', borderRadius: '4px', margin: '12px' }}>
-            <strong>Poznámka:</strong> Backend není připojen k databázi — data mohou být prázdná. Zkontroluj prosím `MONGODB_URI` v lokálním `.env` nebo stav MongoDB.
-          </div>
-        )}
         {/* ...existující kód bez testovacího výpisu... */}
         {detailId ? (
           <DetailPage id={detailId} onBack={() => setDetailId(null)} defects={defects} isAdmin={isAdmin} />

@@ -1,27 +1,10 @@
 import dotenv from "dotenv";
-import path from "path";
-
-// Load environment: prefer `server/.env` (when running from server/),
-// otherwise fall back to repository root `./.env` (useful for devcontainers).
-const serverEnv = path.resolve(process.cwd(), '.env');
-const rootEnv = path.resolve(process.cwd(), '..', '.env');
-if (fsExistsSync(serverEnv)) {
-  dotenv.config({ path: serverEnv });
-} else {
-  dotenv.config({ path: rootEnv });
-}
-
-function fsExistsSync(p) {
-  try {
-    return require('fs').existsSync(p);
-  } catch (e) {
-    return false;
-  }
-}
+dotenv.config();
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import Stamp from "./Stamp.js";
+
 
 const app = express();
 const PORT = process.env.PORT || 3001;
