@@ -603,9 +603,15 @@
   align-items: center;
   vertical-align: middle !important;
   margin-right: 0.6em !important;
-  height: 1.2em;
+  height: 16px;
+  width: 16px;
   position: relative;
-  top: -2px;
+}
+.variant-group-info-icon img {
+  width: 16px;
+  height: 16px;
+  display: inline;
+  vertical-align: middle;
 }
 /* Detail známky */
 .stamp-detail-block {

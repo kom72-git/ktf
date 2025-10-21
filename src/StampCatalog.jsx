@@ -899,10 +899,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                 {subvariantLabels.length > 0 && (
                   <div className="variant-group-info">
                     <span className="variant-group-info-icon" title="Obsahuje podvarianty">
-                      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{display:'inline',verticalAlign:'middle'}}>
-                        <circle cx="10" cy="10" r="10" fill="#2563eb"/>
-                        <text x="10" y="14" textAnchor="middle" fontSize="10" fontWeight="bold" fill="#fff" fontFamily="Arial,Helvetica,sans-serif">i</text>
-                      </svg>
+                      <img src="/img/ico_podvarianty.png" alt="info" className="variant-group-info-icon" />
                     </span>
                     <span className="variant-group-info-text">Obsahuje podvarianty: {subvariantLabels.join(", ")}</span>
                   </div>
@@ -1220,8 +1217,8 @@ export default function StampCatalog(props) {
   }
 
   return (
-    <div className="page-bg">
-      <header className="header">
+  <div className="page-bg">
+  <header className="header">
         <h1 className="main-title">
           <img src="/img/inicialy-K.png" alt="K" className="main-title-img" />atalog <span className="main-title-nowrap"><img src="/img/inicialy-T.png" alt="T" className="main-title-img" />iskových</span> <span className="main-title-nowrap"><img src="/img/inicialy-F.png" alt="F" className="main-title-img" />orem</span> českosloven&shy;ských známek
         </h1>
@@ -1405,3 +1402,4 @@ export default function StampCatalog(props) {
     </div>
   );
 }
+
