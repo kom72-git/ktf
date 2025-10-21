@@ -1,3 +1,10 @@
+/* Zmenšený a odtučněný hlavní nadpis pro část 'československých známek' */
+.main-title-small {
+  font-size: 0.8em;
+  font-weight: normal;
+  letter-spacing: 0.5px;
+  opacity: 0.85;
+}
 /* ========================== 1. Hlavní layout a stránka ========================== */
 /* ========================== 2. Hlavní navigace, vyhledávání ========================== */
 /* ========================== 3. Seznam známek (katalog) ========================== */

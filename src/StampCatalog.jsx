@@ -318,16 +318,54 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
     grouped[groupKey].push(def);
   });
 
+  // Přirozené řazení variant
+  function naturalVariantSort(a, b) {
+    const va = a.variantaVady;
+    const vb = b.variantaVady;
+    const parse = v => {
+      const m = v.match(/^([A-Z])(\d+)?(?:\.(\d+))?/i);
+      if (!m) return [v, 0, null];
+      return [m[1], m[2] ? parseInt(m[2], 10) : 0, m[3] ? parseInt(m[3], 10) : null];
+    };
+    const [la, na, sa] = parse(va);
+    const [lb, nb, sb] = parse(vb);
+    if (la !== lb) return la.localeCompare(lb);
+    if (na !== nb) return na - nb;
+    if (sa === null && sb !== null) return -1;
+    if (sa !== null && sb === null) return 1;
+    if (sa !== null && sb !== null) return sa - sb;
+    return 0;
+  }
+
+  // Sestavíme globální pole všech variant v pořadí vykreslení napříč všemi skupinami
+  const allVariants = Object.keys(grouped).sort().flatMap(groupKey => {
+    const defsInGroup = grouped[groupKey];
+    return defsInGroup.slice().sort((a, b) => {
+      const cmp = naturalVariantSort(a, b);
+      if (cmp !== 0) return cmp;
+      function extractBracketOrder(def) {
+        if (!def.popisVady) return null;
+        const m = def.popisVady.match(/^\s*\[([^\]]+)\]/);
+        return m ? m[1] : null;
+      }
+      const orderA = extractBracketOrder(a);
+      const orderB = extractBracketOrder(b);
+      if (orderA === null && orderB !== null) return 1;
+      if (orderA !== null && orderB === null) return -1;
+      if (orderA === null && orderB === null) return 0;
+      return orderA.localeCompare(orderB, undefined, { numeric: true });
+    });
+  });
   // Fancybox galerie pro skupinu
   const openFancybox = (flatIndex = 0) => {
-    if (!itemDefects || itemDefects.length === 0) return;
-    const slides = itemDefects.map(def => ({
+    if (!allVariants || allVariants.length === 0) return;
+    const slides = allVariants.map(def => ({
       src: def.obrazekVady,
       caption:
-  `<div class='fancybox-caption-center'>`
-  + `<span class='fancybox-caption-variant'>${def.variantaVady || ''}${def.variantaVady && def.umisteniVady ? ' – ' : ''}${def.umisteniVady || ''}</span>`
-  + (def.popisVady ? `<br><span class='fancybox-caption-desc'>${def.popisVady}</span>` : '')
-  + `</div>`
+        `<div class='fancybox-caption-center'>`
+        + `<span class='fancybox-caption-variant'>${def.variantaVady || ''}${def.variantaVady && def.umisteniVady ? ' – ' : ''}${def.umisteniVady || ''}</span>`
+        + (def.popisVady ? `<br><span class='fancybox-caption-desc'>${def.popisVady}</span>` : '')
+        + `</div>`
     }));
     Fancybox.show(slides, {
       startIndex: flatIndex,
@@ -925,7 +963,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                     // Porovnáme jako string, pokud je více hodnot, řadí se lexikálně
                     return orderA.localeCompare(orderB, undefined, { numeric: true });
                   }).map((def, i) => {
-                    const flatIndex = itemDefects.findIndex(d => d === def);
+                    const flatIndex = allVariants.indexOf(def);
                     return (
                       <div key={def.idVady || `var-${i}`} className="variant" >
                         <div className="variant-popis">
@@ -1220,7 +1258,7 @@ export default function StampCatalog(props) {
   <div className="page-bg">
   <header className="header">
         <h1 className="main-title">
-          <img src="/img/inicialy-K.png" alt="K" className="main-title-img" />atalog <span className="main-title-nowrap"><img src="/img/inicialy-T.png" alt="T" className="main-title-img" />iskových</span> <span className="main-title-nowrap"><img src="/img/inicialy-F.png" alt="F" className="main-title-img" />orem</span> českosloven&shy;ských známek
+          <img src="/img/inicialy-K.png" alt="K" className="main-title-img" />atalog <span className="main-title-nowrap"><img src="/img/inicialy-T.png" alt="T" className="main-title-img" />iskových</span> <span className="main-title-nowrap"><img src="/img/inicialy-F.png" alt="F" className="main-title-img" />orem</span> <span className="main-title-small">československých známek</span>
         </h1>
         <p className="subtitle">Seznam studií rozlišení tiskových forem, desek a polí při tisku československých známek v letech 1945-92.</p>
       </header>
