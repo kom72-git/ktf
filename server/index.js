@@ -40,6 +40,30 @@ app.get("/", (req, res) => {
 
 // Endpoint pro všechny známky
 app.get("/api/stamps", async (req, res) => {
+// Endpoint pro přidání nové známky
+app.post("/api/stamps", async (req, res) => {
+  try {
+    const newStamp = { ...req.body };
+    // Pokud není idZnamky, vygeneruj ho (např. podle katalogCislo nebo timestamp)
+    if (!newStamp.idZnamky) {
+      // Zkus použít katalogCislo, jinak timestamp
+      newStamp.idZnamky = newStamp.katalogCislo || ("stamp_" + Date.now());
+    }
+    // Odstraň _id pokud je přítomen
+    delete newStamp._id;
+    const result = await mongoose.connection.db.collection("stamps").insertOne(newStamp);
+    if (result.insertedId) {
+      // Najdi a vrať nově vloženou známku
+      const inserted = await mongoose.connection.db.collection("stamps").findOne({ _id: result.insertedId });
+      res.status(201).json(inserted);
+    } else {
+      res.status(400).json({ error: "Známku se nepodařilo vložit" });
+    }
+  } catch (err) {
+    console.error("Chyba při vkládání známky:", err);
+    res.status(500).json({ error: "Chyba při vkládání známky", details: err.message });
+  }
+});
   try {
     const stamps = await mongoose.connection.db.collection("stamps").find({}).toArray();
     res.json(stamps);

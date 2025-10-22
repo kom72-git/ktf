@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import AdminPanel from "./AdminPanel";
 import { Search, Image } from "lucide-react";
 import "./App.css";
 import { Fancybox } from "@fancyapps/ui";
@@ -58,6 +59,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
           rozmer: data.rozmer || '',
           naklad: data.naklad || '',
           obrazek: data.obrazek || '',
+          obrazekStudie: data.obrazekStudie || '',
           schemaTF: data.schemaTF || '',
           Studie: data.Studie || '',
           studieUrl: data.studieUrl || ''
@@ -388,7 +390,20 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
         {isAdmin && (
           <>
             <button 
-              onClick={() => setIsEditingAll(!isEditingAll)}
+              onClick={() => {
+                if (!isEditingAll) {
+                  // Scroll na začátek detailu při zapnutí editace
+                  setTimeout(() => {
+                    const detailBlock = document.querySelector('.stamp-detail-block');
+                    if (detailBlock) {
+                      detailBlock.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    } else {
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }, 0);
+                }
+                setIsEditingAll(!isEditingAll);
+              }}
               className={isEditingAll ? "admin-edit-btn danger" : "admin-edit-btn success"}
             >
               {isEditingAll ? '❌ Zrušit editaci' : '✏️ Editovat'}
@@ -463,25 +478,46 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
       
       {/* Editační formulář a vykreslení základních údajů známky */}
 
-      {/* Editační pole pro hlavní obrázek - přesunuto nad celý blok s obrázkem */}
+      {/* Editační pole pro hlavní obrázek a obrázek studie vedle sebe, zarovnáno jako u studie */}
       {isEditingAll && (
-  <div className="label-top-input">
-          <label htmlFor="edit-img-url">Hlavní obrázek:</label>
-          <div className="edit-field-row">
-            <input
-              id="edit-img-url"
-              type="text"
-              value={editStampData.obrazek}
-              onChange={(e) => setEditStampData({...editStampData, obrazek: e.target.value})}
-              className="ktf-edit-input-tech"
-              placeholder="https://example.com/obrazek.jpg"
-            />
-            <button
-              onClick={() => saveTechnicalField('obrazek', editStampData.obrazek)}
-              className="ktf-btn-confirm"
-            >
-              ✓
-            </button>
+        <div className="ktf-edit-study-row">
+          <div className="ktf-edit-study-col label-top-input">
+            <label htmlFor="edit-img-url">Hlavní obrázek:</label>
+            <div className="edit-field-row">
+              <input
+                id="edit-img-url"
+                type="text"
+                value={editStampData.obrazek || ''}
+                onChange={(e) => setEditStampData({...editStampData, obrazek: e.target.value})}
+                className="ktf-edit-input-tech ktf-edit-input-long"
+                placeholder="img/rok/obrazek.jpg"
+              />
+              <button
+                onClick={() => saveTechnicalField('obrazek', editStampData.obrazek || '')}
+                className="ktf-btn-confirm"
+              >
+                ✓
+              </button>
+            </div>
+          </div>
+          <div className="ktf-edit-study-col label-top-input">
+            <label htmlFor="edit-img-studie">Obrázek studie:</label>
+            <div className="edit-field-row">
+              <input
+                id="edit-img-studie"
+                type="text"
+                value={editStampData.obrazekStudie || ''}
+                onChange={(e) => setEditStampData({...editStampData, obrazekStudie: e.target.value})}
+                className="ktf-edit-input-tech ktf-edit-input-long"
+                placeholder="img/rok/studie.jpg"
+              />
+              <button
+                onClick={() => saveTechnicalField('obrazekStudie', editStampData.obrazekStudie || '')}
+                className="ktf-btn-confirm"
+              >
+                ✓
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1102,26 +1138,17 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
 }
 
 export default function StampCatalog(props) {
-  // Admin state
+  // Admin state přesunuto do AdminPanel
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  
+  // Modal pro přidání nové známky je v AdminPanel
+  const [showAddModal, setShowAddModal] = useState(false);
   useEffect(() => {
-    // Check if admin session exists
     const adminSession = localStorage.getItem('ktf_admin_session');
-    if (adminSession === 'active') {
-      setIsAdmin(true);
-    }
+    if (adminSession === 'active') setIsAdmin(true);
   }, []);
-
   const handleAdminLogin = (password) => {
     const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || '590745pp2/admin';
-    console.log('Admin login debug:', {
-      password,
-      adminPassword,
-      envVar: import.meta.env.VITE_ADMIN_PASSWORD,
-      allEnvVars: import.meta.env
-    });
     if (password === adminPassword) {
       localStorage.setItem('ktf_admin_session', 'active');
       setIsAdmin(true);
@@ -1130,7 +1157,6 @@ export default function StampCatalog(props) {
       alert('Nesprávné heslo');
     }
   };
-
   const handleAdminLogout = () => {
     localStorage.removeItem('ktf_admin_session');
     setIsAdmin(false);
@@ -1268,6 +1294,14 @@ export default function StampCatalog(props) {
           <DetailPage id={detailId} onBack={() => setDetailId(null)} defects={defects} isAdmin={isAdmin} />
         ) : (
           <>
+            {/* Tlačítko pro přidání nové známky pro admina */}
+            {isAdmin && (
+              <div style={{textAlign: 'right', marginBottom: '12px'}}>
+                <button className="ktf-btn-confirm" onClick={() => setShowAddModal(true)}>
+                  + Přidat známku
+                </button>
+              </div>
+            )}
             <section className="search-row">
               <input
                 type="text"
@@ -1362,81 +1396,44 @@ export default function StampCatalog(props) {
             </>
           )}
         </div>
-        
-        {/* Admin Login Popup */}
-        {showAdminLogin && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999
-          }}>
-            <div style={{
-              background: 'white',
-              padding: '20px',
-              borderRadius: '8px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-            }}>
-              <h3 style={{marginTop: 0}}>Admin přístup</h3>
-              <input
-                type="password"
-                placeholder="Heslo"
-                autoFocus
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    handleAdminLogin(e.target.value);
-                  }
-                }}
-                style={{
-                  width: '200px',
-                  padding: '8px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  marginRight: '8px'
-                }}
-              />
-              <button
-                onClick={(e) => {
-                  const popup = e.target.closest('div[style*="position: fixed"]');
-                  const input = popup.querySelector('input[type="password"]');
-                  handleAdminLogin(input?.value || '');
-                }}
-                style={{
-                  background: '#3b82f6',
-                  color: 'white',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  cursor: 'pointer'
-                }}
-              >
-                OK
-              </button>
-              <br/><br/>
-              <button
-                onClick={() => setShowAdminLogin(false)}
-                style={{
-                  background: '#6b7280',
-                  color: 'white',
-                  border: 'none',
-                  padding: '6px 12px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '12px'
-                }}
-              >
-                Zrušit
-              </button>
-            </div>
-          </div>
-        )}
       </footer>
+      {/* AdminPanel je nyní vykresleno mimo footer, aby modal byl překryvný */}
+      <AdminPanel
+        isAdmin={isAdmin}
+        onLogout={handleAdminLogout}
+        onLogin={handleAdminLogin}
+        showAdminLogin={showAdminLogin}
+        setShowAdminLogin={setShowAdminLogin}
+        handleAdminLogin={handleAdminLogin}
+        showAddModal={showAddModal}
+        setShowAddModal={setShowAddModal}
+        onAddStamp={async (stampData) => {
+          // Odeslání na backend
+          const API_BASE =
+            import.meta.env.VITE_API_BASE ||
+            (window.location.hostname.endsWith("app.github.dev")
+              ? `https://${window.location.hostname}`
+              : window.location.hostname.endsWith("vercel.app")
+              ? ""
+              : "http://localhost:3001");
+          try {
+            const response = await fetch(`${API_BASE}/api/stamps`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(stampData)
+            });
+            if (response.ok) {
+              const newStamp = await response.json();
+              setStamps(prev => [newStamp, ...prev]);
+              setShowAddModal(false);
+            } else {
+              alert('Chyba při přidávání známky');
+            }
+          } catch (err) {
+            alert('Chyba při komunikaci se serverem');
+          }
+        }}
+      />
     </div>
   );
 }
