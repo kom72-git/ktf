@@ -33,25 +33,61 @@ export default function AdminPanel({ isAdmin, onLogout, onLogin, showAdminLogin,
 
   // Otevření modalu na základě eventu z DetailPage
   useEffect(() => {
-    function handleOpenModal(e) {
+    async function handleOpenModal(e) {
       const idZnamky = e.detail?.idZnamky || '';
+      let obrazekVady = '';
+      try {
+        const API_BASE =
+          import.meta.env.VITE_API_BASE ||
+          (window.location.hostname.endsWith("app.github.dev")
+            ? `https://${window.location.hostname}`
+            : window.location.hostname.endsWith("vercel.app")
+            ? ""
+            : "http://localhost:3001");
+        const response = await fetch(`${API_BASE}/api/stamps/${idZnamky}`);
+        if (response.ok) {
+          const stamp = await response.json();
+          if (stamp && stamp.rok && stamp.katalogCislo) {
+            const katalogCisloNoSpace = String(stamp.katalogCislo).replace(/\s+/g, '');
+            obrazekVady = `img/${stamp.rok}/${katalogCisloNoSpace}`;
+          }
+        }
+      } catch (err) {}
       setNewVariantData({
         idZnamky,
         variantaVady: '',
         umisteniVady: '',
-        obrazekVady: '',
+        obrazekVady,
         popisVady: ''
       });
       setShowAddVariantModal(true);
     }
     window.addEventListener('openAddVariantModal', handleOpenModal);
     // Globální funkce pro přímé volání
-    window.setShowAddVariantModal = (idZnamky) => {
+    window.setShowAddVariantModal = async (idZnamky) => {
+      let obrazekVady = '';
+      try {
+        const API_BASE =
+          import.meta.env.VITE_API_BASE ||
+          (window.location.hostname.endsWith("app.github.dev")
+            ? `https://${window.location.hostname}`
+            : window.location.hostname.endsWith("vercel.app")
+            ? ""
+            : "http://localhost:3001");
+        const response = await fetch(`${API_BASE}/api/stamps/${idZnamky}`);
+        if (response.ok) {
+          const stamp = await response.json();
+          if (stamp && stamp.rok && stamp.katalogCislo) {
+            const katalogCisloNoSpace = String(stamp.katalogCislo).replace(/\s+/g, '');
+            obrazekVady = `img/${stamp.rok}/${katalogCisloNoSpace}`;
+          }
+        }
+      } catch (err) {}
       setNewVariantData({
         idZnamky,
         variantaVady: '',
         umisteniVady: '',
-        obrazekVady: '',
+        obrazekVady,
         popisVady: ''
       });
       setShowAddVariantModal(true);
