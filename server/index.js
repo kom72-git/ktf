@@ -42,13 +42,37 @@ app.get("/", (req, res) => {
 app.get("/api/stamps", async (req, res) => {
 // Endpoint pro přidání nové známky
 app.post("/api/stamps", async (req, res) => {
+  // Debug: vypiš všechny známky v DB
+  const allStamps = await mongoose.connection.db.collection("stamps").find({}).toArray();
+  console.log('[API] allStamps:', allStamps);
   try {
-    const newStamp = { ...req.body };
-    // Pokud není idZnamky, vygeneruj ho (např. podle katalogCislo nebo timestamp)
-    if (!newStamp.idZnamky) {
-      // Zkus použít katalogCislo, jinak timestamp
-      newStamp.idZnamky = newStamp.katalogCislo || ("stamp_" + Date.now());
-    }
+  console.log('[API] Přijatý request body:', req.body);
+  const newStamp = { ...req.body };
+  // Vždy ignoruj idZnamky z frontendu i katalogCislo
+  delete newStamp.idZnamky;
+  delete newStamp.katalogCislo;
+      // Vždy generuj idZnamky pouze ve formátu cz-YYYY-NN podle roku
+      const rok = req.body.rok;
+      if (!rok || isNaN(Number(rok)) || String(rok).length !== 4) {
+        return res.status(400).json({ error: "Rok je povinný, musí být číslo a ve formátu YYYY!" });
+      }
+      const prefix = `cz-${rok}-`;
+      // Najdi všechna idZnamky pro daný rok ve formátu cz-YYYY-NN
+      // Najdi známky podle pole rok
+      const stampsForYear = await mongoose.connection.db.collection("stamps").find({ rok: String(rok) }).toArray();
+  console.log('[API] stampsForYear:', stampsForYear);
+      // Zjisti všechna použitá čísla NN
+      const usedNN = stampsForYear.map(stamp => {
+        const match = stamp.idZnamky.match(/^cz-\d{4}-(\d{2})$/);
+        return match ? parseInt(match[1], 10) : null;
+      }).filter(nn => nn !== null);
+      // Najdi první volné číslo NN (od 1 výš)
+      let nextNN = 1;
+      while (usedNN.includes(nextNN)) {
+        nextNN++;
+      }
+      const nextNNstr = String(nextNN).padStart(2, '0');
+      newStamp.idZnamky = `${prefix}${nextNNstr}`;
     // Odstraň _id pokud je přítomen
     delete newStamp._id;
     const result = await mongoose.connection.db.collection("stamps").insertOne(newStamp);
@@ -134,7 +158,29 @@ app.get("/api/defects", async (req, res) => {
   }
 });
 
-// Endpoint pro editaci vady podle ID
+// Endpoint pro přidání nové vady/varianty
+app.post("/api/defects", async (req, res) => {
+  try {
+    const newDefect = { ...req.body };
+    // Pokud není idVady, vygeneruj ho (např. podle idZnamky + timestamp)
+    if (!newDefect.idVady) {
+      newDefect.idVady = `${newDefect.idZnamky || 'def'}_${Date.now()}`;
+    }
+    // Odstraň _id pokud je přítomen
+    delete newDefect._id;
+    const result = await mongoose.connection.db.collection("defects").insertOne(newDefect);
+    if (result.insertedId) {
+      // Najdi a vrať nově vloženou vadu
+      const inserted = await mongoose.connection.db.collection("defects").findOne({ _id: result.insertedId });
+      res.status(201).json(inserted);
+    } else {
+      res.status(400).json({ error: "Vadu se nepodařilo vložit" });
+    }
+  } catch (err) {
+    console.error("Chyba při vkládání vady:", err);
+    res.status(500).json({ error: "Chyba při vkládání vady", details: err.message });
+  }
+});
 app.put("/api/defects/:id", async (req, res) => {
   try {
     const { id } = req.params;

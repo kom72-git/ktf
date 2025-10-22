@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-
+import React, { useState, useEffect } from "react";
 export default function AdminPanel({ isAdmin, onLogout, onLogin, showAdminLogin, setShowAdminLogin, handleAdminLogin, showAddModal, setShowAddModal, onAddStamp }) {
   const [newStampData, setNewStampData] = useState({
     emise: '',
@@ -20,8 +19,86 @@ export default function AdminPanel({ isAdmin, onLogout, onLogin, showAdminLogin,
     Studie: '',
     studieUrl: ''
   });
-  return (
-    <>
+
+  // Modal pro přidání varianty
+  const [showAddVariantModal, setShowAddVariantModal] = useState(false);
+  const [newVariantData, setNewVariantData] = useState({
+    idZnamky: '',
+    variantaVady: '',
+    umisteniVady: '',
+    obrazekVady: '',
+    popisVady: ''
+  });
+  const [isSubmittingVariant, setIsSubmittingVariant] = useState(false);
+
+  // Otevření modalu na základě eventu z DetailPage
+  useEffect(() => {
+    function handleOpenModal(e) {
+      const idZnamky = e.detail?.idZnamky || '';
+      setNewVariantData({
+        idZnamky,
+        variantaVady: '',
+        umisteniVady: '',
+        obrazekVady: '',
+        popisVady: ''
+      });
+      setShowAddVariantModal(true);
+    }
+    window.addEventListener('openAddVariantModal', handleOpenModal);
+    // Globální funkce pro přímé volání
+    window.setShowAddVariantModal = (idZnamky) => {
+      setNewVariantData({
+        idZnamky,
+        variantaVady: '',
+        umisteniVady: '',
+        obrazekVady: '',
+        popisVady: ''
+      });
+      setShowAddVariantModal(true);
+    };
+    return () => {
+      window.removeEventListener('openAddVariantModal', handleOpenModal);
+      delete window.setShowAddVariantModal;
+    };
+  }, []);
+
+  // Funkce pro přidání nové varianty
+  const handleAddVariant = async () => {
+    setIsSubmittingVariant(true);
+    try {
+      const API_BASE =
+        import.meta.env.VITE_API_BASE ||
+        (window.location.hostname.endsWith("app.github.dev")
+          ? `https://${window.location.hostname}`
+          : window.location.hostname.endsWith("vercel.app")
+          ? ""
+          : "http://localhost:3001");
+      const response = await fetch(`${API_BASE}/api/defects`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newVariantData)
+      });
+      if (response.ok) {
+        setShowAddVariantModal(false);
+        setNewVariantData({
+          idZnamky: '',
+          variantaVady: '',
+          umisteniVady: '',
+          obrazekVady: '',
+          popisVady: ''
+        });
+        window.location.reload();
+      } else {
+        alert('Chyba při přidávání varianty');
+      }
+    } catch (err) {
+      alert('Chyba při komunikaci se serverem');
+    }
+    setIsSubmittingVariant(false);
+  };
+
+    return (
+      <>
       {/* Admin Login Popup */}
       {showAdminLogin && (
         <div style={{
@@ -95,79 +172,79 @@ export default function AdminPanel({ isAdmin, onLogout, onLogin, showAdminLogin,
           </div>
         </div>
       )}
-      {/* MODAL pro přidání nové známky */}
-      {showAddModal && (
+  {/* MODAL pro přidání nové známky */}
+  {showAddModal && (
         <div className="ktf-modal-bg">
           <div className="ktf-modal">
             <h2>Přidat novou známku</h2>
             <form onSubmit={e => { e.preventDefault(); if (onAddStamp) onAddStamp(newStampData); }}>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Emise:</label>
-                <input type="text" value={newStampData.emise} onChange={e => setNewStampData({...newStampData, emise: e.target.value})} required />
+              <div className="label-top-input">
+                <label>Rok vydání</label>
+                <input type="number" value={newStampData.rok} onChange={e => setNewStampData({ ...newStampData, rok: e.target.value })} required />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Rok:</label>
-                <input type="number" value={newStampData.rok} onChange={e => setNewStampData({...newStampData, rok: e.target.value})} required />
+              <div className="label-top-input">
+                <label>Emise</label>
+                <input type="text" value={newStampData.emise} onChange={e => setNewStampData({ ...newStampData, emise: e.target.value })} />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Katalogové číslo:</label>
-                <input type="text" value={newStampData.katalogCislo} onChange={e => setNewStampData({...newStampData, katalogCislo: e.target.value})} required />
+              <div className="label-top-input">
+                <label>Katalogové číslo</label>
+                <input type="text" value={newStampData.katalogCislo} onChange={e => setNewStampData({ ...newStampData, katalogCislo: e.target.value })} />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Hlavní obrázek:</label>
-                <input type="text" value={newStampData.obrazek} onChange={e => setNewStampData({...newStampData, obrazek: e.target.value})} placeholder="img/rok/obrazek.jpg" />
+              <div className="label-top-input">
+                <label>Obrázek</label>
+                <input type="text" value={newStampData.obrazek} onChange={e => setNewStampData({ ...newStampData, obrazek: e.target.value })} placeholder="img/rok/obrazek.jpg" />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Obrázek studie:</label>
-                <input type="text" value={newStampData.obrazekStudie} onChange={e => setNewStampData({...newStampData, obrazekStudie: e.target.value})} placeholder="img/rok/studie.jpg" />
+              <div className="label-top-input">
+                <label>Obrázek studie</label>
+                <input type="text" value={newStampData.obrazekStudie} onChange={e => setNewStampData({ ...newStampData, obrazekStudie: e.target.value })} placeholder="img/rok/studie.jpg" />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Datum vydání:</label>
-                <input type="text" value={newStampData.datumVydani} onChange={e => setNewStampData({...newStampData, datumVydani: e.target.value})} />
+              <div className="label-top-input">
+                <label>Datum vydání</label>
+                <input type="text" value={newStampData.datumVydani} onChange={e => setNewStampData({ ...newStampData, datumVydani: e.target.value })} />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Návrh:</label>
-                <input type="text" value={newStampData.navrh} onChange={e => setNewStampData({...newStampData, navrh: e.target.value})} />
+              <div className="label-top-input">
+                <label>Návrh</label>
+                <input type="text" value={newStampData.navrh} onChange={e => setNewStampData({ ...newStampData, navrh: e.target.value })} />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Rytec:</label>
-                <input type="text" value={newStampData.rytec} onChange={e => setNewStampData({...newStampData, rytec: e.target.value})} />
+              <div className="label-top-input">
+                <label>Rytec</label>
+                <input type="text" value={newStampData.rytec} onChange={e => setNewStampData({ ...newStampData, rytec: e.target.value })} />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Druh tisku:</label>
-                <input type="text" value={newStampData.druhTisku} onChange={e => setNewStampData({...newStampData, druhTisku: e.target.value})} />
+              <div className="label-top-input">
+                <label>Druh tisku</label>
+                <input type="text" value={newStampData.druhTisku} onChange={e => setNewStampData({ ...newStampData, druhTisku: e.target.value })} />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Tisková forma:</label>
-                <input type="text" value={newStampData.tiskovaForma} onChange={e => setNewStampData({...newStampData, tiskovaForma: e.target.value})} />
+              <div className="label-top-input">
+                <label>Tisková forma</label>
+                <input type="text" value={newStampData.tiskovaForma} onChange={e => setNewStampData({ ...newStampData, tiskovaForma: e.target.value })} />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Zoubkování:</label>
-                <input type="text" value={newStampData.zoubkovani} onChange={e => setNewStampData({...newStampData, zoubkovani: e.target.value})} />
+              <div className="label-top-input">
+                <label>Zoubkování</label>
+                <input type="text" value={newStampData.zoubkovani} onChange={e => setNewStampData({ ...newStampData, zoubkovani: e.target.value })} />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Papír:</label>
-                <input type="text" value={newStampData.papir} onChange={e => setNewStampData({...newStampData, papir: e.target.value})} />
+              <div className="label-top-input">
+                <label>Papír</label>
+                <input type="text" value={newStampData.papir} onChange={e => setNewStampData({ ...newStampData, papir: e.target.value })} />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Rozměr:</label>
-                <input type="text" value={newStampData.rozmer} onChange={e => setNewStampData({...newStampData, rozmer: e.target.value})} />
+              <div className="label-top-input">
+                <label>Rozměr</label>
+                <input type="text" value={newStampData.rozmer} onChange={e => setNewStampData({ ...newStampData, rozmer: e.target.value })} />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Náklad:</label>
-                <input type="text" value={newStampData.naklad} onChange={e => setNewStampData({...newStampData, naklad: e.target.value})} />
+              <div className="label-top-input">
+                <label>Náklad</label>
+                <input type="text" value={newStampData.naklad} onChange={e => setNewStampData({ ...newStampData, naklad: e.target.value })} />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Schéma TF:</label>
-                <input type="text" value={newStampData.schemaTF} onChange={e => setNewStampData({...newStampData, schemaTF: e.target.value})} placeholder="https://example.com/schema.jpg" />
+              <div className="label-top-input">
+                <label>Schéma TF</label>
+                <input type="text" value={newStampData.schemaTF} onChange={e => setNewStampData({ ...newStampData, schemaTF: e.target.value })} />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>Studie:</label>
-                <input type="text" value={newStampData.Studie} onChange={e => setNewStampData({...newStampData, Studie: e.target.value})} />
+              <div className="label-top-input">
+                <label>Studie</label>
+                <input type="text" value={newStampData.Studie} onChange={e => setNewStampData({ ...newStampData, Studie: e.target.value })} />
               </div>
-              <div className="label-top-input" style={{marginBottom: '12px'}}>
-                <label>URL studie:</label>
-                <input type="text" value={newStampData.studieUrl} onChange={e => setNewStampData({...newStampData, studieUrl: e.target.value})} placeholder="https://example.com/studie" />
+              <div className="label-top-input">
+                <label>Studie URL</label>
+                <input type="text" value={newStampData.studieUrl} onChange={e => setNewStampData({ ...newStampData, studieUrl: e.target.value })} />
               </div>
               <div style={{marginTop: '16px', display: 'flex', gap: '12px'}}>
                 <button type="submit" className="ktf-btn-confirm">Přidat</button>
@@ -177,6 +254,44 @@ export default function AdminPanel({ isAdmin, onLogout, onLogin, showAdminLogin,
           </div>
         </div>
       )}
-    </>
-  );
+  {/* MODAL pro přidání varianty/deskové vady */}
+  {showAddVariantModal && (
+        <div className="ktf-modal-bg" onClick={() => setShowAddVariantModal(false)}>
+          <div className="ktf-modal" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ marginBottom: 8 }}>Přidat variantu/deskovou vadu</h3>
+            <form onSubmit={e => { e.preventDefault(); handleAddVariant(); }}>
+              <div className="label-top-input">
+                <label>ID známky</label>
+                <input type="text" value={newVariantData.idZnamky} disabled className="ktf-edit-input-tech" />
+              </div>
+              <div className="label-top-input">
+                <label>Varianta</label>
+                <input type="text" value={newVariantData.variantaVady} onChange={e => setNewVariantData(v => ({ ...v, variantaVady: e.target.value }))} className="ktf-edit-input-tech" required />
+              </div>
+              <div className="label-top-input">
+                <label>Umístění</label>
+                <input type="text" value={newVariantData.umisteniVady} onChange={e => setNewVariantData(v => ({ ...v, umisteniVady: e.target.value }))} className="ktf-edit-input-tech" />
+              </div>
+              <div className="label-top-input">
+                <label>Obrázek vady</label>
+                <input type="text" value={newVariantData.obrazekVady} onChange={e => setNewVariantData(v => ({ ...v, obrazekVady: e.target.value }))} className="ktf-edit-input-tech" placeholder="img/rok/vada.jpg" />
+              </div>
+              <div className="label-top-input">
+                <label>Popis vady</label>
+                <textarea value={newVariantData.popisVady} onChange={e => setNewVariantData(v => ({ ...v, popisVady: e.target.value }))} className="ktf-edit-input-tech" rows={3} />
+              </div>
+              <div style={{ display: 'flex', gap: 12, marginTop: 18 }}>
+                <button type="submit" className="ktf-btn-confirm" disabled={isSubmittingVariant}>
+                  {isSubmittingVariant ? 'Ukládám…' : 'Přidat variantu'}
+                </button>
+                <button type="button" className="back-btn" onClick={() => setShowAddVariantModal(false)}>
+                  Zrušit
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      </>
+    );
 }

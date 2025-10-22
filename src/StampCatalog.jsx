@@ -392,7 +392,6 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             <button 
               onClick={() => {
                 if (!isEditingAll) {
-                  // Scroll na začátek detailu při zapnutí editace
                   setTimeout(() => {
                     const detailBlock = document.querySelector('.stamp-detail-block');
                     if (detailBlock) {
@@ -407,6 +406,20 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
               className={isEditingAll ? "admin-edit-btn danger" : "admin-edit-btn success"}
             >
               {isEditingAll ? '❌ Zrušit editaci' : '✏️ Editovat'}
+            </button>
+            {/* Tlačítko pro otevření modalu v admin panelu */}
+            <button
+              className="ktf-btn-confirm"
+              style={{ marginLeft: '8px' }}
+              onClick={() => {
+                if (window.setShowAddVariantModal) {
+                  window.setShowAddVariantModal(id);
+                } else {
+                  window.dispatchEvent(new CustomEvent('openAddVariantModal', { detail: { idZnamky: id } }));
+                }
+              }}
+            >
+              + Přidat variantu
             </button>
           </>
         )}
