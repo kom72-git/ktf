@@ -538,7 +538,10 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
         <div className="stamp-detail-img-col">
           <div className="stamp-detail-img-bg stamp-detail-img-bg-none stamp-detail-img-bg-pointer" onClick={() => {
             Fancybox.show([{
-              src: item.obrazekStudie || item.obrazek,
+              src: (() => {
+                const fixPath = p => p ? (p.startsWith('/') ? p : '/' + p) : '';
+                return fixPath(item.obrazekStudie) || fixPath(item.obrazek) || '/img/no-image.png';
+              })(),
               caption: `<div class='fancybox-caption-center'><span class='fancybox-caption-variant'>${item.emise} (${item.rok})</span><br><span class='fancybox-caption-desc'>Katalogové číslo: ${item.katalogCislo}</span></div>`
             }], {
               Toolbar: [ 'zoom', 'close' ],
