@@ -1,5 +1,0 @@
-Archived on: 2025-10-21
-Moved folders:
- - react-app
- - react-app_backup_20251001
-Reason: old/backup frontend copies; preserved for now before permanent deletion.
