@@ -552,7 +552,10 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             });
           }}>
             <img
-              src={item.obrazekStudie || item.obrazek}
+              src={(() => {
+                const fixPath = p => p ? (p.startsWith('/') ? p : '/' + p) : '';
+                return fixPath(item.obrazekStudie) || fixPath(item.obrazek) || '/img/no-image.png';
+              })()}
               alt={item.emise}
               className="stamp-detail-img stamp-detail-img-main"
               onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
@@ -1039,7 +1042,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                           )}
                         </div>
                         <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(flatIndex)}>
-                          <img src={def.obrazekVady} alt={def.idVady} onError={e => { e.target.onerror = null; e.target.src = NO_IMAGE; }} />
+                          <img src={def.obrazekVady ? (def.obrazekVady.startsWith('/') ? def.obrazekVady : '/' + def.obrazekVady) : NO_IMAGE} alt={def.idVady} onError={e => { e.target.onerror = null; e.target.src = NO_IMAGE; }} />
                         </div>
                         {/* Editace URL obrázku vady */}
                         {isEditingAll && (
