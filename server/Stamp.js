@@ -29,7 +29,8 @@ const StampSchema = new mongoose.Schema({
   rozmer: String,
   naklad: String,
   schemaTF: String,
-  Studie: String
+  Studie: String,
+  popisObrazkuStudie: String // nový popisek pod obrázkem studie
 });
 
 export default mongoose.model("Stamp", StampSchema);

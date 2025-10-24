@@ -100,35 +100,6 @@ input:focus, select:focus {
   object-fit: contain;
 }
 
-/* Lightbox */
-.lightbox {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.8);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  z-index: 50;
-}
-
-.lightbox-content {
-  background: white;
-  border-radius: 0.75rem;
-  padding: 1rem;
-  max-width: 64rem;
-  max-height: 80vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.lightbox img {
-  max-height: 80vh;
-  max-width: 100%;
-  object-fit: contain;
-}
-
 /* Text colors */
 .text-gray-600 { color: #4b5563; }
 .text-gray-500 { color: #6b7280; }

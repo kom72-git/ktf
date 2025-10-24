@@ -1,3 +1,49 @@
+.study-img-caption, .study-img-caption * {
+  cursor: default !important;
+}
+.ktf-btn-confirm.saved {
+  background: #16a34a;
+  color: #fff;
+  border-color: #16a34a;
+  transition: background 0.2s, border-color 0.2s;
+}
+.study-img-caption-text {
+  cursor: default !important;
+}
+/* Zvýraznění po úspěšném uložení */
+.ktf-saved-highlight {
+  background: #d1fae5;
+  transition: background 0.3s;
+}
+.center-row {
+  justify-content: center;
+  width: 100%;
+}
+/* Popisek pod obrázkem studie v detailu známky */
+.study-img-caption {
+  margin-top: 8px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.study-img-caption-text {
+  font-size: 0.95em;
+  color: #444;
+  font-style: italic;
+  opacity: 0.85;
+}
+.study-img-caption-input {
+  font-size: 0.95em;
+  color: #444;
+  font-style: italic;
+  opacity: 0.85;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+  margin: 0 auto;
+  display: inline-block;
+}
 .ktf-modal {
   /* ...existující styl ... */
   max-height: 90vh;
@@ -40,6 +86,7 @@
   flex-direction: column;
   gap: 18px;
 }
+/* ========================== 1. Hlavní layout a stránka ========================== */
 /* Zmenšený a odtučněný hlavní nadpis pro část 'československých známek' */
 .main-title-small {
   font-size: 0.8em;
@@ -47,18 +94,12 @@
   letter-spacing: 0.5px;
   opacity: 0.85;
 }
-/* ========================== 1. Hlavní layout a stránka ========================== */
+
 /* ========================== 2. Hlavní navigace, vyhledávání ========================== */
 /* ========================== 3. Seznam známek (katalog) ========================== */
 /* ========================== 4. Detail známky ========================== */
 /* ========================== 5. Varianty a podvarianty ========================== */
 /* ========================== 6. Editační pole a admin sekce ========================== */
-/* ========================== 7. Notifikace, hlášky ========================== */
-/* ========================== 8. Fancybox/lightbox ========================== */
-/* ========================== 9. Studie, poznámky ========================== */
-/* ========================== 10. Patička ========================== */
-
-
 /* Univerzální zarovnání popisku nad inputem */
 .label-top-input {
   display: flex;
@@ -120,6 +161,11 @@
   border-radius: 4px;
   z-index: 1000;
   font-size: 14px;
+}
+/* Textarea s resize handlem v pravém dolním rohu */
+textarea.resize-corner {
+  resize: both;
+  overflow: auto;
 }
 /* Třída pro řádek editace varianty/podvarianty */
 .edit-variant-row {
@@ -189,6 +235,30 @@
 .ktf-btn-confirm:hover, .ktf-btn-confirm:focus {
   background: #059669;
 }
+/* Delší input pro studijní pole */
+.ktf-edit-input-long {
+  min-width: 340px;
+  max-width: 520px;
+  width: 100%;
+  padding: 4px 6px;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+/* Nápověda vedle tlačítka "Uloží vše" v editaci varianty */
+.edit-variant-help {
+  font-size: 12px;
+  color: #10b981;
+  margin-left: 8px;
+  font-style: italic;
+  vertical-align: middle;
+}
+
+/* ========================== 7. Notifikace, hlášky ========================== */
+/* ========================== 8. Fancybox/lightbox ========================== */
+/* ========================== 9. Studie, poznámky ========================== */
+/* ========================== 10. Patička ========================== */
+
+
 /* Fancybox popisky - extrahováno z inline stylů */
 .fancybox-caption-center {
   text-align: center;
@@ -345,15 +415,6 @@
   background: #fff;
 }
 
-/* Delší input pro studijní pole */
-.ktf-edit-input-long {
-  min-width: 340px;
-  max-width: 520px;
-  width: 100%;
-  padding: 4px 6px;
-  font-size: 15px;
-  box-sizing: border-box;
-}
 /* Opravený blok variant-popis */
 .variant-popis {
   font-size: 1.05em;
@@ -463,83 +524,6 @@
   color: #aaa;
   font-size: 12px;
 }
-/* Lightbox */
-.lightbox-desc-col {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.lightbox-desc-main {
-  font-weight: 500;
-  font-size: 18px;
-  margin-bottom: 6px;
-}
-.lightbox-desc-extra {
-  color: #ccc;
-  font-size: 14px;
-  margin-bottom: 0;
-  max-width: 420px;
-  text-align: center;
-}
-.lightbox-slide-outer {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.lightbox-slide-main {
-  font-weight: 700;
-  font-size: 22px;
-  color: #fff;
-  margin-bottom: 12px;
-  text-shadow: 0 2px 8px #000;
-  text-align: center;
-  max-width: 500px;
-}
-.lightbox-slide-imgwrap {
-.lightbox-slide-img {
-  max-width: 100%;
-  max-height: 70vh;
-  display: block;
-  margin: 0 auto;
-  object-fit: contain;
-  min-width: 0;
-  width: 100%;
-  max-width: 100%;
-  max-height: 220px !important;
-  margin: 0 auto !important;
-  border-radius: 8px;
-}
-.lightbox-slide-title {
-  color: #fff !important;
-  background: none !important;
-  border: none !important;
-  font-size: 15px !important;
-  font-weight: 500 !important;
-  padding: 0 !important;
-  margin-top: 10px !important;
-  margin-bottom: 18px !important;
-  text-align: center !important;
-  text-shadow: 0 2px 12px #000, 0 0 2px #000 !important;
-  z-index: 9999 !important;
-}
-.lightbox-slide-detail {
-
-  color: #fff !important;
-  background: none !important;
-  border: none !important;
-  font-size: 20px !important;
-  font-weight: 600 !important;
-  padding: 0 !important;
-  margin-bottom: 10px !important;
-  text-align: center !important;
-  max-width: 500px !important;
-  text-shadow: 0 2px 12px #000, 0 0 2px #000 !important;
-  z-index: 9999 !important;
-}
 /* Poznámka ke studii */
 .study-note {
   font-size: 1.0rem;
@@ -569,7 +553,6 @@
   font-size: 1.05em;
   font-weight: 500;
   margin-bottom: 18px;
-}
 }
 .variant-popis-hlavni {
   font-size: 1.0rem;
@@ -854,24 +837,6 @@
   display: block;
 }
 
-/* Textarea s resize handlem v pravém dolním rohu */
-textarea.resize-corner {
-  resize: both;
-  overflow: auto;
-}
-
-/* Notifikace "Uloženo" - přesunuto z inline stylů */
-.ktf-notification {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  background: #10b981;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 4px;
-  z-index: 1000;
-  font-size: 14px;
-}
 
 /* ========================== 11. @media ========================== */
 @media (max-width: 1200px) {

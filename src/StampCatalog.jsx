@@ -31,6 +31,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
   const [isEditingAll, setIsEditingAll] = useState(false);
   const [editingDefect, setEditingDefect] = useState(null);
   const [editStampData, setEditStampData] = useState({});
+  const [savedCaption, setSavedCaption] = useState(false);
   useEffect(() => {
     const API_BASE =
       import.meta.env.VITE_API_BASE ||
@@ -536,13 +537,12 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
       )}
       <div className="stamp-detail-layout">
         <div className="stamp-detail-img-col">
-          <div className="stamp-detail-img-bg stamp-detail-img-bg-none stamp-detail-img-bg-pointer" onClick={() => {
+          <div className="stamp-detail-img-bg stamp-detail-img-bg-none stamp-detail-img-bg-pointer" onClick={e => {
+            // Zabránit otevření Fancyboxu při kliknutí na popisek pod obrázkem
+            if (e.target.classList.contains('study-img-caption') || e.target.closest('.study-img-caption')) return;
             Fancybox.show([{
-              src: (() => {
-                const fixPath = p => p ? (p.startsWith('/') ? p : '/' + p) : '';
-                return fixPath(item.obrazekStudie) || fixPath(item.obrazek) || '/img/no-image.png';
-              })(),
-              caption: `<div class='fancybox-caption-center'><span class='fancybox-caption-variant'>${item.emise} (${item.rok})</span><br><span class='fancybox-caption-desc'>Katalogové číslo: ${item.katalogCislo}</span></div>`
+              src: (item.obrazekStudie && item.obrazekStudie[0] !== '/' ? '/' + item.obrazekStudie : item.obrazekStudie) || (item.obrazek && item.obrazek[0] !== '/' ? '/' + item.obrazek : item.obrazek),
+              caption: ''
             }], {
               Toolbar: [ 'zoom', 'close' ],
               dragToClose: true,
@@ -554,15 +554,37 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
               defaultType: 'image'
             });
           }}>
-            <img
-              src={(() => {
-                const fixPath = p => p ? (p.startsWith('/') ? p : '/' + p) : '';
-                return fixPath(item.obrazekStudie) || fixPath(item.obrazek) || '/img/no-image.png';
-              })()}
-              alt={item.emise}
-              className="stamp-detail-img stamp-detail-img-main"
-              onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
-            />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
+              <img
+                src={(item.obrazekStudie && item.obrazekStudie[0] !== '/' ? '/' + item.obrazekStudie : item.obrazekStudie) || (item.obrazek && item.obrazek[0] !== '/' ? '/' + item.obrazek : item.obrazek)}
+                alt={item.emise}
+                className="stamp-detail-img stamp-detail-img-main"
+                onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
+              />
+              {/* Popisek pod obrázkem studie */}
+              <div className={`study-img-caption${savedCaption ? ' ktf-saved-highlight' : ''}`}>
+                {isEditingAll ? (
+                  <div className="edit-field-row center-row">
+                    <input
+                      type="text"
+                      defaultValue={editStampData.popisObrazkuStudie || item.popisObrazkuStudie || ''}
+                      onChange={e => setEditStampData({...editStampData, popisObrazkuStudie: e.target.value})}
+                      className="ktf-edit-input-long study-img-caption-input"
+                    />
+                    <button
+                      onClick={async () => {
+                        await saveTechnicalField('popisObrazkuStudie', editStampData.popisObrazkuStudie || '');
+                        setSavedCaption(true);
+                        setTimeout(() => setSavedCaption(false), 700);
+                      }}
+                      className={`ktf-btn-confirm${savedCaption ? ' saved' : ''}`}
+                    >✓</button>
+                  </div>
+                ) : (
+                  <span className="study-img-caption-text" style={{pointerEvents: 'none'}}>{item.popisObrazkuStudie || ''}</span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
   <div className="stamp-spec stamp-detail-spec-col">
@@ -1045,11 +1067,11 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                           )}
                         </div>
                         <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(flatIndex)}>
-                          <img src={def.obrazekVady ? (def.obrazekVady.startsWith('/') ? def.obrazekVady : '/' + def.obrazekVady) : NO_IMAGE} alt={def.idVady} onError={e => { e.target.onerror = null; e.target.src = NO_IMAGE; }} />
+                          <img src={def.obrazekVady} alt={def.idVady} onError={e => { e.target.onerror = null; e.target.src = NO_IMAGE; }} />
                         </div>
                         {/* Editace URL obrázku vady */}
                         {isEditingAll && (
-                          <div >
+                          <div>
                             <div className="edit-field-row">
                               <input
                                 type="text"
@@ -1064,27 +1086,6 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                                 }}
                                 placeholder="https://example.com/obrazek.jpg"
                               />
-                              <button
-                                onClick={(e) => {
-                                  const container = e.target.closest('.variant');
-                                  const imageInput = container.querySelector('input[placeholder*="obrazek.jpg"]');
-                                  saveDefectEdit(def._id, { 
-                                    ...def, 
-                                    obrazekVady: imageInput?.value || ''
-                                  });
-                                }}
-                                style={{
-                                  padding: '2px 6px',
-                                  backgroundColor: '#10b981',
-                                  color: 'white',
-                                  border: 'none',
-                                  borderRadius: '3px',
-                                  cursor: 'pointer',
-                                  fontSize: '11px'
-                                }}
-                              >
-                                ✓
-                              </button>
                             </div>
                           </div>
                         )}
@@ -1107,26 +1108,29 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                               placeholder="Popis vady... (Ctrl+Enter pro uložení)"
                               autoFocus
                             />
-                            <div style={{ marginTop: '4px', display: 'flex', gap: '4px' }}>
+                            <div style={{ marginTop: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
                               <button
                                 onClick={(e) => {
-                                  // Najdeme všechny tři input/textarea prvky v této variantě
+                                  // Najdeme všechny input/textarea prvky v této variantě
                                   const container = e.target.closest('.variant');
-                                  const variantInput = container.querySelector('input[placeholder=\"Varianta\"]');
-                                  const umisteniInput = container.querySelector('textarea[placeholder=\"Umístění\"]');
-                                  const popisTextarea = container.querySelector('textarea:not([placeholder=\"Umístění\"])');
-                                  // Uložíme všechny tři hodnoty najednou
+                                  const variantInput = container.querySelector('input[placeholder="Varianta"]');
+                                  const umisteniInput = container.querySelector('textarea[placeholder="Umístění"]');
+                                  const popisTextarea = container.querySelector('textarea:not([placeholder="Umístění"])');
+                                  const imageInput = container.querySelector('input[placeholder="https://example.com/obrazek.jpg"]');
+                                  // Uložíme všechny hodnoty najednou
                                   saveDefectEdit(def._id, { 
                                     ...def, 
                                     variantaVady: variantInput?.value || '',
                                     umisteniVady: umisteniInput?.value || '',
-                                    popisVady: popisTextarea?.value || ''
+                                    popisVady: popisTextarea?.value || '',
+                                    obrazekVady: imageInput?.value || ''
                                   });
                                 }}
                                 className="ktf-btn-confirm"
                               >
                                 ✓
                               </button>
+                              <span className="edit-variant-help">Uloží vše</span>
                             </div>
                           </div>
                         ) : (
@@ -1281,6 +1285,21 @@ export default function StampCatalog(props) {
         }
         return true;
       });
+    // Pokud je vybrán konkrétní rok, řadíme podle katalogového čísla (primárně číslo, pak prefix)
+    if (year !== "all") {
+      arr = [...arr].sort((a, b) => {
+        // Stejná logika jako ve filteredCatalogs
+        const numA = (String(a.katalogCislo).match(/\d+/) || [""])[0];
+        const numB = (String(b.katalogCislo).match(/\d+/) || [""])[0];
+        if (numA !== numB) {
+          return Number(numA) - Number(numB);
+        }
+        // Pokud čísla stejná, porovnej prefixy (vše před číslem, bez mezer)
+        const prefixA = String(a.katalogCislo).replace(numA, "").replace(/\s+/g, "");
+        const prefixB = String(b.katalogCislo).replace(numB, "").replace(/\s+/g, "");
+        return prefixA.localeCompare(prefixB);
+      });
+    }
     // Pokud nejsou použity žádné filtry, zobrazíme pouze 20 nejnovějších
     if (
       year === "all" &&
