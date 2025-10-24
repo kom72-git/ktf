@@ -1161,17 +1161,47 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
 }
 
 export default function StampCatalog(props) {
-  // Admin state přesunuto do AdminPanel
+
+  // Deklarace všech useState na úplný začátek
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
-  // Modal pro přidání nové známky je v AdminPanel
   const [showAddModal, setShowAddModal] = useState(false);
+  const [stamps, setStamps] = useState([]);
+  const [defects, setDefects] = useState([]);
+  const [query, setQuery] = useState("");
+  const [year, setYear] = useState("all");
+  const [emission, setEmission] = useState("all");
+  const [catalog, setCatalog] = useState("all");
+  const [internalDetailId, setInternalDetailId] = useState(null);
+  const detailId = props && props.detailId ? props.detailId : internalDetailId;
+  const setDetailId = props && props.setDetailId ? props.setDetailId : setInternalDetailId;
+
+  // Pomocná funkce na převod názvu emise na slug (bez diakritiky, malá písmena, pomlčky)
+  function emissionToSlug(emise) {
+    return emise
+      .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+      .replace(/[^\w\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .toLowerCase();
+  }
+  // Pomocná funkce na převod slug zpět na název emise (najde v seznamu emisí)
+  function slugToEmission(slug) {
+    const allEmissions = stamps.map(s => s.emise);
+    return allEmissions.find(em => emissionToSlug(em) === slug) || null;
+  }
+
+  // Při načtení komponenty nastavíme filtr emise podle initialEmissionSlug (pokud existuje)
   useEffect(() => {
-    const adminSession = localStorage.getItem('ktf_admin_session');
-    if (adminSession === 'active') setIsAdmin(true);
-  }, []);
+    if (props.initialEmissionSlug) {
+      const emise = slugToEmission(props.initialEmissionSlug);
+      if (emise) setEmission(emise);
+    }
+  }, [props.initialEmissionSlug, stamps]);
+
+  // Funkce pro admin login/logout
   const handleAdminLogin = (password) => {
-  const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
     if (password === adminPassword) {
       localStorage.setItem('ktf_admin_session', 'active');
       setIsAdmin(true);
@@ -1184,15 +1214,33 @@ export default function StampCatalog(props) {
     localStorage.removeItem('ktf_admin_session');
     setIsAdmin(false);
   };
-  const [stamps, setStamps] = useState([]);
-  const [defects, setDefects] = useState([]);
-  const [query, setQuery] = useState("");
-  const [year, setYear] = useState("all");
-  const [emission, setEmission] = useState("all");
-  const [catalog, setCatalog] = useState("all");
-  const [internalDetailId, setInternalDetailId] = useState(null);
-  const detailId = props && props.detailId ? props.detailId : internalDetailId;
-  const setDetailId = props && props.setDetailId ? props.setDetailId : setInternalDetailId;
+
+  // Synchronizace filtru emise s URL (pushState/popstate)
+  useEffect(() => {
+    // Změna URL na /emise/[slug] místo ?emise=...
+    let url = window.location.pathname;
+    if (emission !== "all") {
+      url = `/emise/${emissionToSlug(emission)}`;
+    }
+    if (window.location.pathname !== url) {
+      window.history.pushState({}, '', url);
+    }
+    const onPopState = () => {
+      // Pokud je URL ve tvaru /emise/[slug], najdi emisi podle slug
+      const match = window.location.pathname.match(/^\/emise\/([^/]+)$/);
+      if (match) {
+        const slug = match[1];
+        const emise = slugToEmission(slug);
+        setEmission(emise || "all");
+      } else {
+        setEmission("all");
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [emission]);
+
+  // ...zbytek kódu beze změny...
 
   useEffect(() => {
     const API_BASE =
@@ -1228,10 +1276,12 @@ export default function StampCatalog(props) {
     if (detailId) {
       const item = stamps.find(d => d.idZnamky === detailId);
       document.title = item ? `${item.emise} (${item.rok}) | Katalog TF` : 'Katalog TF';
+    } else if (emission !== "all") {
+      document.title = `${emission} | Katalog TF`;
     } else {
       document.title = 'Katalog TF';
     }
-  }, [detailId, stamps]);
+  }, [detailId, stamps, emission]);
 
   const years = useMemo(() => {
     const s = new Set(stamps.map((d) => d.rok));
@@ -1373,42 +1423,106 @@ export default function StampCatalog(props) {
                 : <>Obsahuje: <strong>{filtered.length}</strong> {sklonujPolozka(filtered.length)}</>}
             </div>
             <div className="stamp-list-layout">
-              {filtered.map((item) => (
-                <div key={item.idZnamky} className="stamp-card stamp-card-pointer"
-                  onClick={() => {
-                    if (props && props.setDetailId) {
-                      props.setDetailId(item.idZnamky);
+              {(() => {
+                // Pokud není použit filtr emise, zobrazíme boxy pro každou emisi (první známka z každé emise)
+                if (emission === "all") {
+                  // Map: emise -> pole známek
+                  const emissionMap = new Map();
+                  filtered.forEach(item => {
+                    if (!emissionMap.has(item.emise)) {
+                      emissionMap.set(item.emise, [item]);
                     } else {
-                      setDetailId(item.idZnamky);
+                      emissionMap.get(item.emise).push(item);
                     }
-                  }}>
-                  <div className="stamp-img-bg">
-                    {item.obrazek ? (
-                      <img
-                        src={item.obrazek}
-                        alt={item.emise}
-                        onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
-                      />
-                    ) : (
-                      <div className="stamp-img-missing">obrázek chybí</div>
-                    )}
-                  </div>
-                  <div className="stamp-title">
-                    <span className="emission">{item.emise}</span>
-                    <span className="year"> ({item.rok})</span>
-                  </div>
-                  <div className="stamp-bottom">
-                    <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
-                    <a href="#" className="details-link" onClick={e => { e.preventDefault(); 
-                      if (props && props.setDetailId) {
-                        props.setDetailId(item.idZnamky);
-                      } else {
-                        setDetailId(item.idZnamky);
-                      }
-                    }}>Detaily</a>
-                  </div>
-                </div>
-              ))}
+                  });
+                  return Array.from(emissionMap.entries()).map(([emise, items]) => {
+                    const item = items[0]; // první známka v emisi
+                    const isSingle = items.length === 1;
+                    return (
+                      <div key={emise} className="stamp-card stamp-card-pointer"
+                        onClick={() => {
+                          if (isSingle) {
+                            // Pokud je v emisi jen jedna známka, proklik do detailu s pushState
+                            if (props && props.setDetailId) {
+                              props.setDetailId(item.idZnamky);
+                            } else {
+                              setDetailId(item.idZnamky);
+                            }
+                          } else {
+                            // Nastavit filtr emise (pushState řeší useEffect)
+                            setEmission(emise);
+                          }
+                        }}>
+                        <div className="stamp-img-bg">
+                          {item.obrazek ? (
+                            <img
+                              src={item.obrazek}
+                              alt={item.emise}
+                              onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
+                            />
+                          ) : (
+                            <div className="stamp-img-missing">obrázek chybí</div>
+                          )}
+                        </div>
+                        <div className="stamp-title">
+                          <span className="emission">{item.emise}</span>
+                          <span className="year"> ({item.rok})</span>
+                        </div>
+                        <div className="stamp-bottom">
+                          <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
+                          {isSingle && (
+                            <a href="#" className="details-link" onClick={e => { e.preventDefault(); 
+                              if (props && props.setDetailId) {
+                                props.setDetailId(item.idZnamky);
+                              } else {
+                                setDetailId(item.idZnamky);
+                              }
+                            }}>Detaily</a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  });
+                } else {
+                  // Pokud je použit filtr emise, zobrazíme jednotlivé známky této emise (původní chování)
+                  return filtered.map((item) => (
+                    <div key={item.idZnamky} className="stamp-card stamp-card-pointer"
+                      onClick={() => {
+                        if (props && props.setDetailId) {
+                          props.setDetailId(item.idZnamky);
+                        } else {
+                          setDetailId(item.idZnamky);
+                        }
+                      }}>
+                      <div className="stamp-img-bg">
+                        {item.obrazek ? (
+                          <img
+                            src={item.obrazek}
+                            alt={item.emise}
+                            onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
+                          />
+                        ) : (
+                          <div className="stamp-img-missing">obrázek chybí</div>
+                        )}
+                      </div>
+                      <div className="stamp-title">
+                        <span className="emission">{item.emise}</span>
+                        <span className="year"> ({item.rok})</span>
+                      </div>
+                      <div className="stamp-bottom">
+                        <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
+                        <a href="#" className="details-link" onClick={e => { e.preventDefault(); 
+                          if (props && props.setDetailId) {
+                            props.setDetailId(item.idZnamky);
+                          } else {
+                            setDetailId(item.idZnamky);
+                          }
+                        }}>Detaily</a>
+                      </div>
+                    </div>
+                  ));
+                }
+              })()}
             </div>
           </>
         )}

@@ -7,6 +7,7 @@ export default function Router() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<CatalogWrapper />} />
+        <Route path="/emise/:slug" element={<CatalogWrapper />} />
         <Route path="/detail/:id" element={<DetailWrapper />} />
       </Routes>
     </BrowserRouter>
@@ -15,7 +16,8 @@ export default function Router() {
 
 function CatalogWrapper() {
   const navigate = useNavigate();
-  return <StampCatalog detailId={null} setDetailId={id => navigate(id ? `/detail/${id}` : "/")} />;
+  const { slug } = useParams();
+  return <StampCatalog detailId={null} setDetailId={id => navigate(id ? `/detail/${id}` : "/")} initialEmissionSlug={slug} />;
 }
 
 function DetailWrapper() {
