@@ -7,6 +7,7 @@ export default function Router() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<CatalogWrapper />} />
+        <Route path="/emise/:slug-:year" element={<CatalogWrapper />} />
         <Route path="/emise/:slug" element={<CatalogWrapper />} />
         <Route path="/detail/:id" element={<DetailWrapper />} />
       </Routes>
@@ -16,8 +17,18 @@ export default function Router() {
 
 function CatalogWrapper() {
   const navigate = useNavigate();
-  const { slug } = useParams();
-  return <StampCatalog detailId={null} setDetailId={id => navigate(id ? `/detail/${id}` : "/")} initialEmissionSlug={slug} />;
+  const { slug, year } = useParams();
+  // Klíč vynutí remount při změně adresy (slug a year)
+  const key = `${slug || 'all'}-${year || 'all'}`;
+  return (
+    <StampCatalog
+      key={key}
+      detailId={null}
+      setDetailId={id => navigate(id ? `/detail/${id}` : "/")}
+      initialEmissionSlug={slug}
+      initialYear={year}
+    />
+  );
 }
 
 function DetailWrapper() {

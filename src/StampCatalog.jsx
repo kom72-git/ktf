@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import AdminPanel from "./AdminPanel";
 import { Search, Image } from "lucide-react";
 import "./App.css";
@@ -1161,6 +1162,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
 }
 
 export default function StampCatalog(props) {
+  const navigate = typeof useNavigate === 'function' ? useNavigate() : null;
 
   // Deklarace všech useState na úplný začátek
   const [isAdmin, setIsAdmin] = useState(false);
@@ -1169,8 +1171,22 @@ export default function StampCatalog(props) {
   const [stamps, setStamps] = useState([]);
   const [defects, setDefects] = useState([]);
   const [query, setQuery] = useState("");
-  const [year, setYear] = useState("all");
-  const [emission, setEmission] = useState("all");
+  // Emise a rok vždy odvozujeme pouze z props (tedy z URL)
+  // Všechny filtry a zobrazení budou vycházet pouze z těchto hodnot
+  let emission = "all";
+  let year = "all";
+  if (props.initialEmissionSlug) {
+    const match = props.initialEmissionSlug.match(/^(.*)-(\d{4})$/);
+    if (match) {
+      const slug = match[1];
+      const rok = match[2];
+      emission = slugToEmission(slug) || "all";
+      year = rok || "all";
+    } else {
+      emission = slugToEmission(props.initialEmissionSlug) || "all";
+      year = props.initialYear || "all";
+    }
+  }
   const [catalog, setCatalog] = useState("all");
   const [internalDetailId, setInternalDetailId] = useState(null);
   const detailId = props && props.detailId ? props.detailId : internalDetailId;
@@ -1187,17 +1203,13 @@ export default function StampCatalog(props) {
   }
   // Pomocná funkce na převod slug zpět na název emise (najde v seznamu emisí)
   function slugToEmission(slug) {
+    if (!slug) return null;
     const allEmissions = stamps.map(s => s.emise);
-    return allEmissions.find(em => emissionToSlug(em) === slug) || null;
+    // Porovnávej slugy bez diakritiky, malá písmena, pomlčky
+    return allEmissions.find(em => emissionToSlug(em) === slug.toLowerCase()) || null;
   }
 
-  // Při načtení komponenty nastavíme filtr emise podle initialEmissionSlug (pokud existuje)
-  useEffect(() => {
-    if (props.initialEmissionSlug) {
-      const emise = slugToEmission(props.initialEmissionSlug);
-      if (emise) setEmission(emise);
-    }
-  }, [props.initialEmissionSlug, stamps]);
+  // (Synchronizace stavu emise a roku už není potřeba, vše je odvozeno z props)
 
   // Funkce pro admin login/logout
   const handleAdminLogin = (password) => {
@@ -1215,30 +1227,7 @@ export default function StampCatalog(props) {
     setIsAdmin(false);
   };
 
-  // Synchronizace filtru emise s URL (pushState/popstate)
-  useEffect(() => {
-    // Změna URL na /emise/[slug] místo ?emise=...
-    let url = window.location.pathname;
-    if (emission !== "all") {
-      url = `/emise/${emissionToSlug(emission)}`;
-    }
-    if (window.location.pathname !== url) {
-      window.history.pushState({}, '', url);
-    }
-    const onPopState = () => {
-      // Pokud je URL ve tvaru /emise/[slug], najdi emisi podle slug
-      const match = window.location.pathname.match(/^\/emise\/([^/]+)$/);
-      if (match) {
-        const slug = match[1];
-        const emise = slugToEmission(slug);
-        setEmission(emise || "all");
-      } else {
-        setEmission("all");
-      }
-    };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, [emission]);
+  // (Synchronizace s URL už není potřeba, vše je řízeno routerem)
 
   // ...zbytek kódu beze změny...
 
@@ -1397,13 +1386,35 @@ export default function StampCatalog(props) {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Vyhledat…"
               />
-              <select value={year} onChange={(e) => setYear(e.target.value)}>
+              <select value={year} onChange={(e) => {
+                const newYear = e.target.value;
+                if (emission !== "all" && newYear !== "all") {
+                  const slug = emissionToSlug(emission);
+                  navigate(`/emise/${slug}-${newYear}`);
+                } else if (emission !== "all") {
+                  const slug = emissionToSlug(emission);
+                  navigate(`/emise/${slug}`);
+                } else {
+                  navigate(`/`);
+                }
+              }}>
                 <option value="all">Rok</option>
                 {years.filter(y => y !== "all").map((y) => (
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
-              <select value={emission} onChange={(e) => setEmission(e.target.value)}>
+              <select value={emission} onChange={(e) => {
+                const newEmission = e.target.value;
+                if (newEmission !== "all" && year !== "all") {
+                  const slug = emissionToSlug(newEmission);
+                  navigate(`/emise/${slug}-${year}`);
+                } else if (newEmission !== "all") {
+                  const slug = emissionToSlug(newEmission);
+                  navigate(`/emise/${slug}`);
+                } else {
+                  navigate(`/`);
+                }
+              }}>
                 <option value="all">Emise</option>
                 {filteredEmissions.filter(em => em !== "all").map((em) => (
                   <option key={em} value={em}>{em}</option>
@@ -1424,33 +1435,88 @@ export default function StampCatalog(props) {
             </div>
             <div className="stamp-list-layout">
               {(() => {
-                // Pokud není použit filtr emise, zobrazíme boxy pro každou emisi (první známka z každé emise)
+                // Pokud není použit filtr emise, zobrazíme boxy pro každou emisi+rok
                 if (emission === "all") {
-                  // Map: emise -> pole známek
+                  // Debug: props, stav
+                  console.log('DEBUG emission:', emission, 'year:', year, 'props:', props);
+                  // Map: emise|rok -> pole známek (použijeme vždy všechny stamps)
                   const emissionMap = new Map();
-                  filtered.forEach(item => {
-                    if (!emissionMap.has(item.emise)) {
-                      emissionMap.set(item.emise, [item]);
+                  // Nejprve seřadíme stamps podle _id sestupně (nejnovější první)
+                  const sortedStamps = [...stamps].sort((a, b) => b._id.localeCompare(a._id));
+                  sortedStamps.forEach(item => {
+                    const key = `${item.emise}|${item.rok}`;
+                    if (!emissionMap.has(key)) {
+                      emissionMap.set(key, [item]);
                     } else {
-                      emissionMap.get(item.emise).push(item);
+                      emissionMap.get(key).push(item);
                     }
                   });
-                  return Array.from(emissionMap.entries()).map(([emise, items]) => {
-                    const item = items[0]; // první známka v emisi
-                    const isSingle = items.length === 1;
-                    return (
-                      <div key={emise} className="stamp-card stamp-card-pointer"
-                        onClick={() => {
-                          if (isSingle) {
-                            // Pokud je v emisi jen jedna známka, proklik do detailu s pushState
-                            if (props && props.setDetailId) {
-                              props.setDetailId(item.idZnamky);
+                  // Debug: výpis klíčů a obsahu boxů
+                  console.log('Seskupené boxy (emise|rok):', Array.from(emissionMap.entries()).map(([key, items]) => ({ key, katalogCisla: items.map(i => i.katalogCislo), roky: items.map(i => i.rok), emise: items.map(i => i.emise) })));
+                  // Boxy seřadíme podle _id první známky v boxu (nejnovější první)
+                  return Array.from(emissionMap.entries())
+                    .sort((a, b) => b[1][0]._id.localeCompare(a[1][0]._id))
+                    .map(([key, items]) => {
+                      const item = items[0]; // první známka v emisi+rok
+                      const isSingle = items.length === 1;
+                      const [emise, rok] = key.split('|');
+                      const slug = emissionToSlug(emise);
+                      return (
+                        <div key={key} className="stamp-card stamp-card-pointer"
+                          onClick={() => {
+                            if (isSingle) {
+                              // Pokud je v boxu jen jedna známka, jdi rovnou na detail
+                              if (props && props.setDetailId) {
+                                props.setDetailId(item.idZnamky);
+                              } else if (navigate) {
+                                navigate(`/detail/${item.idZnamky}`);
+                              } else {
+                                window.location.href = `/detail/${item.idZnamky}`;
+                              }
                             } else {
-                              setDetailId(item.idZnamky);
+                              // Jinak na výpis emise/rok
+                              if (navigate) {
+                                navigate(`/emise/${slug}-${rok}`);
+                              } else {
+                                window.location.href = `/emise/${slug}-${rok}`;
+                              }
                             }
+                          }}>
+                          <div className="stamp-img-bg">
+                            {item.obrazek ? (
+                              <img
+                                src={item.obrazek}
+                                alt={item.emise}
+                                onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
+                              />
+                            ) : (
+                              <div className="stamp-img-missing">obrázek chybí</div>
+                            )}
+                          </div>
+                          <div className="stamp-title">
+                            <span className="emission">{emise}</span>
+                            <span className="year"> ({rok})</span>
+                          </div>
+                          <div className="stamp-bottom">
+                            <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
+                            {isSingle && (
+                              <span className="details-link" style={{marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer'}}>detaily</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    });
+                } else if (emission !== "all" && year !== "all") {
+                  // Zobrazit pouze známky pro danou emisi a rok
+                  return filtered
+                    .filter(item => item.emise === emission && String(item.rok) === String(year))
+                    .map((item) => (
+                      <div key={item.idZnamky} className="stamp-card stamp-card-pointer"
+                        onClick={() => {
+                          if (props && props.setDetailId) {
+                            props.setDetailId(item.idZnamky);
                           } else {
-                            // Nastavit filtr emise (pushState řeší useEffect)
-                            setEmission(emise);
+                            setDetailId(item.idZnamky);
                           }
                         }}>
                         <div className="stamp-img-bg">
@@ -1470,57 +1536,56 @@ export default function StampCatalog(props) {
                         </div>
                         <div className="stamp-bottom">
                           <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
-                          {isSingle && (
-                            <a href="#" className="details-link" onClick={e => { e.preventDefault(); 
-                              if (props && props.setDetailId) {
-                                props.setDetailId(item.idZnamky);
-                              } else {
-                                setDetailId(item.idZnamky);
-                              }
-                            }}>Detaily</a>
-                          )}
+                          <a href="#" className="details-link" onClick={e => { e.preventDefault();
+                            if (props && props.setDetailId) {
+                              props.setDetailId(item.idZnamky);
+                            } else {
+                              setDetailId(item.idZnamky);
+                            }
+                          }}>Detaily</a>
                         </div>
                       </div>
-                    );
-                  });
-                } else {
-                  // Pokud je použit filtr emise, zobrazíme jednotlivé známky této emise (původní chování)
-                  return filtered.map((item) => (
-                    <div key={item.idZnamky} className="stamp-card stamp-card-pointer"
-                      onClick={() => {
-                        if (props && props.setDetailId) {
-                          props.setDetailId(item.idZnamky);
-                        } else {
-                          setDetailId(item.idZnamky);
-                        }
-                      }}>
-                      <div className="stamp-img-bg">
-                        {item.obrazek ? (
-                          <img
-                            src={item.obrazek}
-                            alt={item.emise}
-                            onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
-                          />
-                        ) : (
-                          <div className="stamp-img-missing">obrázek chybí</div>
-                        )}
-                      </div>
-                      <div className="stamp-title">
-                        <span className="emission">{item.emise}</span>
-                        <span className="year"> ({item.rok})</span>
-                      </div>
-                      <div className="stamp-bottom">
-                        <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
-                        <a href="#" className="details-link" onClick={e => { e.preventDefault(); 
+                    ));
+                } else if (emission !== "all" && year === "all") {
+                  // Zobrazit všechny známky pro danou emisi (všechny roky)
+                  return filtered
+                    .filter(item => item.emise === emission)
+                    .map((item) => (
+                      <div key={item.idZnamky} className="stamp-card stamp-card-pointer"
+                        onClick={() => {
                           if (props && props.setDetailId) {
                             props.setDetailId(item.idZnamky);
                           } else {
                             setDetailId(item.idZnamky);
                           }
-                        }}>Detaily</a>
+                        }}>
+                        <div className="stamp-img-bg">
+                          {item.obrazek ? (
+                            <img
+                              src={item.obrazek}
+                              alt={item.emise}
+                              onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
+                            />
+                          ) : (
+                            <div className="stamp-img-missing">obrázek chybí</div>
+                          )}
+                        </div>
+                        <div className="stamp-title">
+                          <span className="emission">{item.emise}</span>
+                          <span className="year"> ({item.rok})</span>
+                        </div>
+                        <div className="stamp-bottom">
+                          <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
+                          <a href="#" className="details-link" onClick={e => { e.preventDefault();
+                            if (props && props.setDetailId) {
+                              props.setDetailId(item.idZnamky);
+                            } else {
+                              setDetailId(item.idZnamky);
+                            }
+                          }}>Detaily</a>
+                        </div>
                       </div>
-                    </div>
-                  ));
+                    ));
                 }
               })()}
             </div>
