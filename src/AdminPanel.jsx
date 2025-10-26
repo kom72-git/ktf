@@ -235,6 +235,10 @@ export default function AdminPanel({ isAdmin, onLogout, onLogin, showAdminLogin,
                 <input type="text" value={newStampData.obrazekStudie} onChange={e => setNewStampData({ ...newStampData, obrazekStudie: e.target.value })} placeholder="img/rok/studie.jpg" />
               </div>
               <div className="label-top-input">
+                <label>Popisek pod obrázkem studie</label>
+                <input type="text" value={newStampData.studieUrl} onChange={e => setNewStampData({ ...newStampData, studieUrl: e.target.value })} placeholder="Popisek pod obrázkem studie" />
+              </div>
+              <div className="label-top-input">
                 <label>Datum vydání</label>
                 <input type="text" value={newStampData.datumVydani} onChange={e => setNewStampData({ ...newStampData, datumVydani: e.target.value })} />
               </div>
@@ -277,10 +281,6 @@ export default function AdminPanel({ isAdmin, onLogout, onLogin, showAdminLogin,
               <div className="label-top-input">
                 <label>Studie</label>
                 <input type="text" value={newStampData.Studie} onChange={e => setNewStampData({ ...newStampData, Studie: e.target.value })} />
-              </div>
-              <div className="label-top-input">
-                <label>Studie URL</label>
-                <input type="text" value={newStampData.studieUrl} onChange={e => setNewStampData({ ...newStampData, studieUrl: e.target.value })} />
               </div>
               <div style={{marginTop: '16px', display: 'flex', gap: '12px'}}>
                 <button type="submit" className="ktf-btn-confirm">Přidat</button>

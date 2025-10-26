@@ -14,6 +14,7 @@ export function katalogSort(a, b) {
   return prefixA.localeCompare(prefixB);
 }
 import React, { useState, useMemo, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import AdminPanel from "./AdminPanel";
 import { Search, Image } from "lucide-react";
@@ -79,7 +80,8 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
           obrazekStudie: data.obrazekStudie || '',
           schemaTF: data.schemaTF || '',
           Studie: data.Studie || '',
-          studieUrl: data.studieUrl || ''
+          studieUrl: data.studieUrl || '',
+          popisObrazkuStudie: data.popisObrazkuStudie || ''
         });
       })
       .catch(err => {
@@ -422,7 +424,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
               }}
               className={isEditingAll ? "admin-edit-btn danger" : "admin-edit-btn success"}
             >
-              {isEditingAll ? '❌ Zrušit editaci' : '✏️ Editovat'}
+              {isEditingAll ? '❌ Zrušit editaci' : 'Editovat'}
             </button>
             {/* Tlačítko pro otevření modalu v admin panelu */}
             <button
@@ -548,6 +550,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                 ✓
               </button>
             </div>
+            {/* Pole pro popisek pod obrázkem studie bylo odstraněno, zůstává pouze pod obrázkem */}
           </div>
         </div>
       )}
@@ -1179,6 +1182,14 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
 export default function StampCatalog(props) {
   // Stav pro rozbalené boxy (klíč: emise|rok)
   const [expandedBoxes, setExpandedBoxes] = useState([]);
+  const location = typeof useLocation === 'function' ? useLocation() : {};
+
+  // Automatické rozbalení boxu po příchodu z hlavní stránky
+  useEffect(() => {
+    if (location && location.state && location.state.openBoxKey) {
+      setExpandedBoxes([location.state.openBoxKey]);
+    }
+  }, [location && location.state && location.state.openBoxKey]);
 
   function handleToggleBox(key) {
     setExpandedBoxes(expanded =>
@@ -1190,7 +1201,10 @@ export default function StampCatalog(props) {
   const navigate = typeof useNavigate === 'function' ? useNavigate() : null;
 
   // Deklarace všech useState na úplný začátek
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    // Zachovej admin session i po reloadu/přechodu
+    return localStorage.getItem('ktf_admin_session') === 'active';
+  });
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [stamps, setStamps] = useState([]);
@@ -1367,7 +1381,7 @@ export default function StampCatalog(props) {
   return (
   <div className="page-bg">
   <header className="header">
-        <h1 className="main-title">
+        <h1 className="main-title" style={{cursor: 'pointer'}} onClick={() => navigate && navigate('/') }>
           <img src="/img/inicialy-K.png" alt="K" className="main-title-img" />atalog <span className="main-title-nowrap"><img src="/img/inicialy-T.png" alt="T" className="main-title-img" />iskových</span> <span className="main-title-nowrap"><img src="/img/inicialy-F.png" alt="F" className="main-title-img" />orem</span> <span className="main-title-small">československých známek</span>
         </h1>
         <p className="subtitle">Seznam studií rozlišení tiskových forem, desek a polí při tisku československých známek v letech 1945-92.</p>
@@ -1515,7 +1529,8 @@ export default function StampCatalog(props) {
                                 }
                               } else {
                                 if (navigate) {
-                                  navigate(`/emise/${slug}-${rok}`);
+                                  // Předat klíč boxu do state
+                                  navigate(`/emise/${slug}-${rok}`, { state: { openBoxKey: key } });
                                 } else {
                                   window.location.href = `/emise/${slug}-${rok}`;
                                 }
@@ -1599,19 +1614,25 @@ export default function StampCatalog(props) {
       </main>
       <footer className="footer">
         <div className="footer-inner">
-          © {new Date().getFullYear()} kom72 &nbsp;|&nbsp; <a href="https://github.com/kom72/ktf" target="_blank" rel="noopener noreferrer">GitHub</a>
+          © {new Date().getFullYear()} kom72
           {!isAdmin ? (
             <>
-              &nbsp;|&nbsp; 
+              &nbsp;|&nbsp;
               <a href="#" onClick={(e) => { e.preventDefault(); setShowAdminLogin(true); }} style={{color: 'inherit', textDecoration: 'none'}}>
                 admin
               </a>
+              &nbsp;|&nbsp;
+              <a href="#" style={{color: 'inherit', textDecoration: 'none', opacity: 0.7, cursor: 'not-allowed'}} title="Připravujeme">Kontakt</a>
+              &nbsp;|&nbsp;
+              <a href="#" style={{color: 'inherit', textDecoration: 'none', opacity: 0.7, cursor: 'not-allowed'}} title="Připravujeme">Nápověda</a>
             </>
           ) : (
             <>
-              &nbsp;|&nbsp; 
+              &nbsp;|&nbsp;
               <span style={{color: '#10b981'}}>Admin mode</span>
-              &nbsp;|&nbsp; 
+              &nbsp;|&nbsp;
+              <a href="https://github.com/kom72/ktf" target="_blank" rel="noopener noreferrer">GitHub</a>
+              &nbsp;|&nbsp;
               <a href="#" onClick={(e) => { e.preventDefault(); handleAdminLogout(); }} style={{color: '#ef4444', textDecoration: 'none'}}>
                 Odhlásit
               </a>
