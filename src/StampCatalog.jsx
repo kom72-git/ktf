@@ -1457,49 +1457,10 @@ export default function StampCatalog(props) {
             <div className="stamp-list-layout">
               {(() => {
                 // Pokud je aktivní pouze filtr roku (adresa /rok/XXXX), zobrazíme přímo známky z daného roku
-                if (props.onlyYear) {
-                  return filtered.map((item) => (
-                    <div key={item.idZnamky} className="stamp-card stamp-card-pointer"
-                      onClick={() => {
-                        if (props && props.setDetailId) {
-                          props.setDetailId(item.idZnamky);
-                        } else {
-                          setDetailId(item.idZnamky);
-                        }
-                      }}>
-                      <div className="stamp-img-bg">
-                        {item.obrazek ? (
-                          <img
-                            src={item.obrazek}
-                            alt={item.emise}
-                            onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
-                          />
-                        ) : (
-                          <div className="stamp-img-missing">obrázek chybí</div>
-                        )}
-                      </div>
-                      <div className="stamp-title">
-                        <span className="emission">{item.emise}</span>
-                        <span className="year"> ({item.rok})</span>
-                      </div>
-                      <div className="stamp-bottom">
-                        <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
-                        <span className="details-link" style={{marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer'}}>detaily</span>
-                      </div>
-                    </div>
-                  ));
-                }
-                // Pokud není použit filtr emise, zobrazíme boxy pro každou emisi+rok
-                if (emission === "all" && !props.onlyYear) {
-                  // Pokud je vybrán katalog, zobrazíme pouze box s danou známkou
-                  let stampsToShow = filtered;
-                  if (catalog !== "all" && filtered.length === 1) {
-                    // Najdi známku a zobraz pouze její box (emise+rok)
-                    stampsToShow = filtered;
-                  } else {
-                    // Jinak zobraz všechny známky (původní logika)
-                    stampsToShow = stamps;
-                  }
+                // VŽDY seskupovat do boxů podle (emise, rok), i při použití filtrů
+                {
+                  // Vezmi vždy aktuální filtered pole (po všech filtrech)
+                  const stampsToShow = filtered;
                   // Seskupení boxů podle (emise, rok)
                   const emissionMap = new Map();
                   // Nejprve seřadíme stamps podle _id sestupně (nejnovější první)
@@ -1523,6 +1484,23 @@ export default function StampCatalog(props) {
                       const expanded = expandedBoxes.includes(key);
                       if (!expanded) {
                         // SLOUČENÝ BOX
+                        // Výpis katalogových čísel všech známek v boxu
+                        const katalogCisla = sortedItems.map(z => z.katalogCislo).filter(Boolean);
+                        // Rozparsovat prefixy a čísla
+                        const parsed = katalogCisla.map(kat => {
+                          const m = kat.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*(\d+)/i);
+                          return m ? { prefix: (m[1] || '').trim(), cislo: m[2] } : { prefix: '', cislo: kat };
+                        });
+                        const allSamePrefix = parsed.every(p => p.prefix === parsed[0].prefix);
+                        let katalogText = '';
+                        if (allSamePrefix && parsed[0].prefix) {
+                          // Všechny mají stejný prefix – vždy čárkovaný seznam
+                          const cisla = parsed.map(p => p.cislo);
+                          katalogText = parsed[0].prefix + ' ' + cisla.join(', ');
+                        } else {
+                          // Různé prefixy nebo bez prefixu
+                          katalogText = katalogCisla.join(', ');
+                        }
                         return (
                           <div key={key} className="stamp-card stamp-card-pointer"
                             style={{position: 'relative'}}
@@ -1564,7 +1542,7 @@ export default function StampCatalog(props) {
                               <span className="year"> ({rok})</span>
                             </div>
                             <div className="stamp-bottom">
-                              <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
+                              <div>Katalog: <span className="catalog">{katalogText}</span></div>
                               {isSingle && (
                                 <span className="details-link" style={{marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer'}}>detaily</span>
                               )}
@@ -1613,88 +1591,6 @@ export default function StampCatalog(props) {
                         ));
                       }
                     });
-                } else if (emission !== "all" && year !== "all") {
-                  // Zobrazit pouze známky pro danou emisi a rok, seřazené podle katalogSort
-                  return filtered
-                    .filter(item => item.emise === emission && String(item.rok) === String(year))
-                    .sort(katalogSort)
-                    .map((item) => (
-                      <div key={item.idZnamky} className="stamp-card stamp-card-pointer"
-                        onClick={() => {
-                          if (props && props.setDetailId) {
-                            props.setDetailId(item.idZnamky);
-                          } else {
-                            setDetailId(item.idZnamky);
-                          }
-                        }}>
-                        <div className="stamp-img-bg">
-                          {item.obrazek ? (
-                            <img
-                              src={item.obrazek}
-                              alt={item.emise}
-                              onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
-                            />
-                          ) : (
-                            <div className="stamp-img-missing">obrázek chybí</div>
-                          )}
-                        </div>
-                        <div className="stamp-title">
-                          <span className="emission">{item.emise}</span>
-                          <span className="year"> ({item.rok})</span>
-                        </div>
-                        <div className="stamp-bottom">
-                          <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
-                          <a href="#" className="details-link" onClick={e => { e.preventDefault();
-                            if (props && props.setDetailId) {
-                              props.setDetailId(item.idZnamky);
-                            } else {
-                              setDetailId(item.idZnamky);
-                            }
-                          }}>Detaily</a>
-                        </div>
-                      </div>
-                    ));
-                } else if (emission !== "all" && year === "all") {
-                  // Zobrazit všechny známky pro danou emisi (všechny roky), seřazené podle katalogSort
-                  return filtered
-                    .filter(item => item.emise === emission)
-                    .sort(katalogSort)
-                    .map((item) => (
-                      <div key={item.idZnamky} className="stamp-card stamp-card-pointer"
-                        onClick={() => {
-                          if (props && props.setDetailId) {
-                            props.setDetailId(item.idZnamky);
-                          } else {
-                            setDetailId(item.idZnamky);
-                          }
-                        }}>
-                        <div className="stamp-img-bg">
-                          {item.obrazek ? (
-                            <img
-                              src={item.obrazek}
-                              alt={item.emise}
-                              onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
-                            />
-                          ) : (
-                            <div className="stamp-img-missing">obrázek chybí</div>
-                          )}
-                        </div>
-                        <div className="stamp-title">
-                          <span className="emission">{item.emise}</span>
-                          <span className="year"> ({item.rok})</span>
-                        </div>
-                        <div className="stamp-bottom">
-                          <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
-                          <a href="#" className="details-link" onClick={e => { e.preventDefault();
-                            if (props && props.setDetailId) {
-                              props.setDetailId(item.idZnamky);
-                            } else {
-                              setDetailId(item.idZnamky);
-                            }
-                          }}>Detaily</a>
-                        </div>
-                      </div>
-                    ));
                 }
               })()}
             </div>
