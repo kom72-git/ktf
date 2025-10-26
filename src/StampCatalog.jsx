@@ -1,3 +1,18 @@
+// Globální funkce pro řazení podle katalogového čísla: nejprve číslo, pak prefix
+export function katalogSort(a, b) {
+  const getKat = (x) => typeof x === 'string' ? x : (x.katalogCislo || '');
+  const katA = getKat(a);
+  const katB = getKat(b);
+  const numA = (katA.match(/\d+/) || [""])[0];
+  const numB = (katB.match(/\d+/) || [""])[0];
+  if (numA !== numB) {
+    return Number(numA) - Number(numB);
+  }
+  // Pokud čísla stejná, porovnej prefixy (vše před číslem, bez mezer)
+  const prefixA = katA.replace(numA, "").replace(/\s+/g, "");
+  const prefixB = katB.replace(numB, "").replace(/\s+/g, "");
+  return prefixA.localeCompare(prefixB);
+}
 import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AdminPanel from "./AdminPanel";
@@ -1171,11 +1186,15 @@ export default function StampCatalog(props) {
   const [stamps, setStamps] = useState([]);
   const [defects, setDefects] = useState([]);
   const [query, setQuery] = useState("");
+  // ...existing code...
   // Emise a rok vždy odvozujeme pouze z props (tedy z URL)
   // Všechny filtry a zobrazení budou vycházet pouze z těchto hodnot
   let emission = "all";
   let year = "all";
-  if (props.initialEmissionSlug) {
+  if (props.onlyYear) {
+    year = props.initialYear || "all";
+    emission = "all";
+  } else if (props.initialEmissionSlug) {
     const match = props.initialEmissionSlug.match(/^(.*)-(\d{4})$/);
     if (match) {
       const slug = match[1];
@@ -1292,18 +1311,7 @@ export default function StampCatalog(props) {
       filtered = filtered.filter((d) => d.rok === Number(year));
     }
     const s = new Set(filtered.map((d) => d.katalogCislo));
-    // Nejprve podle číselné části, pak podle prefixu
-    function katalogSort(a, b) {
-      const numA = (a.match(/\d+/) || [""])[0];
-      const numB = (b.match(/\d+/) || [""])[0];
-      if (numA !== numB) {
-        return Number(numA) - Number(numB);
-      }
-      // Pokud čísla stejná, porovnej prefixy
-      const prefixA = a.replace(numA, "");
-      const prefixB = b.replace(numB, "");
-      return prefixA.localeCompare(prefixB);
-    }
+    // Nejprve podle čísla, pak podle prefixu
     return ["all", ...Array.from(s).sort(katalogSort)];
   }, [year, stamps]);
 
@@ -1326,18 +1334,7 @@ export default function StampCatalog(props) {
       });
     // Pokud je vybrán konkrétní rok, řadíme podle katalogového čísla (primárně číslo, pak prefix)
     if (year !== "all") {
-      arr = [...arr].sort((a, b) => {
-        // Stejná logika jako ve filteredCatalogs
-        const numA = (String(a.katalogCislo).match(/\d+/) || [""])[0];
-        const numB = (String(b.katalogCislo).match(/\d+/) || [""])[0];
-        if (numA !== numB) {
-          return Number(numA) - Number(numB);
-        }
-        // Pokud čísla stejná, porovnej prefixy (vše před číslem, bez mezer)
-        const prefixA = String(a.katalogCislo).replace(numA, "").replace(/\s+/g, "");
-        const prefixB = String(b.katalogCislo).replace(numB, "").replace(/\s+/g, "");
-        return prefixA.localeCompare(prefixB);
-      });
+      arr = [...arr].sort(katalogSort);
     }
     // Pokud nejsou použity žádné filtry, zobrazíme pouze 20 nejnovějších
     if (
@@ -1386,6 +1383,7 @@ export default function StampCatalog(props) {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Vyhledat…"
               />
+                  {/* debug výpis odstraněn */}
               <select value={year} onChange={(e) => {
                 const newYear = e.target.value;
                 if (emission !== "all" && newYear !== "all") {
@@ -1394,6 +1392,8 @@ export default function StampCatalog(props) {
                 } else if (emission !== "all") {
                   const slug = emissionToSlug(emission);
                   navigate(`/emise/${slug}`);
+                } else if (newYear !== "all") {
+                  navigate(`/rok/${newYear}`);
                 } else {
                   navigate(`/`);
                 }
@@ -1420,13 +1420,24 @@ export default function StampCatalog(props) {
                   <option key={em} value={em}>{em}</option>
                 ))}
               </select>
-              <select value={catalog} onChange={(e) => setCatalog(e.target.value)}>
+              <select value={catalog} onChange={(e) => {
+                setCatalog(e.target.value);
+                // Neprováděj žádnou navigaci, pouze filtruj v paměti
+              }}>
                 <option value="all">Katalogové číslo</option>
                 {filteredCatalogs.filter(c => c !== "all").map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
-              <button onClick={() => { setQuery(""); setYear("all"); setEmission("all"); setCatalog("all"); }}>Vyčistit</button>
+              <button onClick={() => {
+                setQuery("");
+                setCatalog("all");
+                if (navigate) {
+                  navigate(`/`);
+                } else {
+                  window.location.href = `/`;
+                }
+              }}>Vyčistit</button>
             </section>
             <div className="count-info">
               {year === "all" && emission === "all" && catalog === "all" && !query
@@ -1435,14 +1446,54 @@ export default function StampCatalog(props) {
             </div>
             <div className="stamp-list-layout">
               {(() => {
+                // Pokud je aktivní pouze filtr roku (adresa /rok/XXXX), zobrazíme přímo známky z daného roku
+                if (props.onlyYear) {
+                  return filtered.map((item) => (
+                    <div key={item.idZnamky} className="stamp-card stamp-card-pointer"
+                      onClick={() => {
+                        if (props && props.setDetailId) {
+                          props.setDetailId(item.idZnamky);
+                        } else {
+                          setDetailId(item.idZnamky);
+                        }
+                      }}>
+                      <div className="stamp-img-bg">
+                        {item.obrazek ? (
+                          <img
+                            src={item.obrazek}
+                            alt={item.emise}
+                            onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
+                          />
+                        ) : (
+                          <div className="stamp-img-missing">obrázek chybí</div>
+                        )}
+                      </div>
+                      <div className="stamp-title">
+                        <span className="emission">{item.emise}</span>
+                        <span className="year"> ({item.rok})</span>
+                      </div>
+                      <div className="stamp-bottom">
+                        <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
+                        <span className="details-link" style={{marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer'}}>detaily</span>
+                      </div>
+                    </div>
+                  ));
+                }
                 // Pokud není použit filtr emise, zobrazíme boxy pro každou emisi+rok
-                if (emission === "all") {
-                  // Debug: props, stav
-                  console.log('DEBUG emission:', emission, 'year:', year, 'props:', props);
-                  // Map: emise|rok -> pole známek (použijeme vždy všechny stamps)
+                if (emission === "all" && !props.onlyYear) {
+                  // Pokud je vybrán katalog, zobrazíme pouze box s danou známkou
+                  let stampsToShow = filtered;
+                  if (catalog !== "all" && filtered.length === 1) {
+                    // Najdi známku a zobraz pouze její box (emise+rok)
+                    stampsToShow = filtered;
+                  } else {
+                    // Jinak zobraz všechny známky (původní logika)
+                    stampsToShow = stamps;
+                  }
+                  // Seskupení boxů podle (emise, rok)
                   const emissionMap = new Map();
                   // Nejprve seřadíme stamps podle _id sestupně (nejnovější první)
-                  const sortedStamps = [...stamps].sort((a, b) => b._id.localeCompare(a._id));
+                  const sortedStamps = [...stampsToShow].sort((a, b) => b._id.localeCompare(a._id));
                   sortedStamps.forEach(item => {
                     const key = `${item.emise}|${item.rok}`;
                     if (!emissionMap.has(key)) {
@@ -1451,21 +1502,21 @@ export default function StampCatalog(props) {
                       emissionMap.get(key).push(item);
                     }
                   });
-                  // Debug: výpis klíčů a obsahu boxů
-                  console.log('Seskupené boxy (emise|rok):', Array.from(emissionMap.entries()).map(([key, items]) => ({ key, katalogCisla: items.map(i => i.katalogCislo), roky: items.map(i => i.rok), emise: items.map(i => i.emise) })));
-                  // Boxy seřadíme podle _id první známky v boxu (nejnovější první)
                   return Array.from(emissionMap.entries())
                     .sort((a, b) => b[1][0]._id.localeCompare(a[1][0]._id))
                     .map(([key, items]) => {
-                      const item = items[0]; // první známka v emisi+rok
-                      const isSingle = items.length === 1;
+                      // Řazení známek v boxu podle katalogového čísla vzestupně
+                      // Stejná funkce jako ve filteredCatalogs (nejprve číslo, pak prefix)
+                      const sortedItems = [...items].sort(katalogSort);
+                      // debug výpis odstraněn
+                      const item = sortedItems[0]; // první známka v emisi+rok
+                      const isSingle = sortedItems.length === 1;
                       const [emise, rok] = key.split('|');
                       const slug = emissionToSlug(emise);
                       return (
                         <div key={key} className="stamp-card stamp-card-pointer"
                           onClick={() => {
                             if (isSingle) {
-                              // Pokud je v boxu jen jedna známka, jdi rovnou na detail
                               if (props && props.setDetailId) {
                                 props.setDetailId(item.idZnamky);
                               } else if (navigate) {
@@ -1474,7 +1525,6 @@ export default function StampCatalog(props) {
                                 window.location.href = `/detail/${item.idZnamky}`;
                               }
                             } else {
-                              // Jinak na výpis emise/rok
                               if (navigate) {
                                 navigate(`/emise/${slug}-${rok}`);
                               } else {
@@ -1507,9 +1557,10 @@ export default function StampCatalog(props) {
                       );
                     });
                 } else if (emission !== "all" && year !== "all") {
-                  // Zobrazit pouze známky pro danou emisi a rok
+                  // Zobrazit pouze známky pro danou emisi a rok, seřazené podle katalogSort
                   return filtered
                     .filter(item => item.emise === emission && String(item.rok) === String(year))
+                    .sort(katalogSort)
                     .map((item) => (
                       <div key={item.idZnamky} className="stamp-card stamp-card-pointer"
                         onClick={() => {
@@ -1547,9 +1598,10 @@ export default function StampCatalog(props) {
                       </div>
                     ));
                 } else if (emission !== "all" && year === "all") {
-                  // Zobrazit všechny známky pro danou emisi (všechny roky)
+                  // Zobrazit všechny známky pro danou emisi (všechny roky), seřazené podle katalogSort
                   return filtered
                     .filter(item => item.emise === emission)
+                    .sort(katalogSort)
                     .map((item) => (
                       <div key={item.idZnamky} className="stamp-card stamp-card-pointer"
                         onClick={() => {
