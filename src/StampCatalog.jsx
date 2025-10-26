@@ -1177,6 +1177,16 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
 }
 
 export default function StampCatalog(props) {
+  // Stav pro rozbalené boxy (klíč: emise|rok)
+  const [expandedBoxes, setExpandedBoxes] = useState([]);
+
+  function handleToggleBox(key) {
+    setExpandedBoxes(expanded =>
+      expanded.includes(key)
+        ? expanded.filter(k => k !== key)
+        : [...expanded, key]
+    );
+  }
   const navigate = typeof useNavigate === 'function' ? useNavigate() : null;
 
   // Deklarace všech useState na úplný začátek
@@ -1504,19 +1514,69 @@ export default function StampCatalog(props) {
                   });
                   return Array.from(emissionMap.entries())
                     .sort((a, b) => b[1][0]._id.localeCompare(a[1][0]._id))
-                    .map(([key, items]) => {
-                      // Řazení známek v boxu podle katalogového čísla vzestupně
-                      // Stejná funkce jako ve filteredCatalogs (nejprve číslo, pak prefix)
+                    .flatMap(([key, items]) => {
                       const sortedItems = [...items].sort(katalogSort);
-                      // debug výpis odstraněn
-                      const item = sortedItems[0]; // první známka v emisi+rok
+                      const item = sortedItems[0];
                       const isSingle = sortedItems.length === 1;
                       const [emise, rok] = key.split('|');
                       const slug = emissionToSlug(emise);
-                      return (
-                        <div key={key} className="stamp-card stamp-card-pointer"
-                          onClick={() => {
-                            if (isSingle) {
+                      const expanded = expandedBoxes.includes(key);
+                      if (!expanded) {
+                        // SLOUČENÝ BOX
+                        return (
+                          <div key={key} className="stamp-card stamp-card-pointer"
+                            style={{position: 'relative'}}
+                            onClick={() => {
+                              if (isSingle) {
+                                if (props && props.setDetailId) {
+                                  props.setDetailId(item.idZnamky);
+                                } else if (navigate) {
+                                  navigate(`/detail/${item.idZnamky}`);
+                                } else {
+                                  window.location.href = `/detail/${item.idZnamky}`;
+                                }
+                              } else {
+                                if (navigate) {
+                                  navigate(`/emise/${slug}-${rok}`);
+                                } else {
+                                  window.location.href = `/emise/${slug}-${rok}`;
+                                }
+                              }
+                            }}>
+                            {!isSingle && (
+                              <button className="stamp-box-toggle" title="Rozbalit box" style={{right: 2, top: 2, position: 'absolute'}}
+                                onClick={e => { e.stopPropagation(); handleToggleBox(key); }}
+                              >+</button>
+                            )}
+                            <div className="stamp-img-bg">
+                              {item.obrazek ? (
+                                <img
+                                  src={item.obrazek}
+                                  alt={item.emise}
+                                  onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
+                                />
+                              ) : (
+                                <div className="stamp-img-missing">obrázek chybí</div>
+                              )}
+                            </div>
+                            <div className="stamp-title">
+                              <span className="emission">{emise}</span>
+                              <span className="year"> ({rok})</span>
+                            </div>
+                            <div className="stamp-bottom">
+                              <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
+                              {isSingle && (
+                                <span className="details-link" style={{marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer'}}>detaily</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      } else {
+                        // ROZBALENÉ BOXy – zvýraznění pouze zde
+                        return sortedItems.map((item, idx) => (
+                          <div key={key + '-' + idx} className="stamp-card stamp-card-grouped stamp-card-pointer"
+                            style={{position: 'relative'}}
+                            onClick={() => {
                               if (props && props.setDetailId) {
                                 props.setDetailId(item.idZnamky);
                               } else if (navigate) {
@@ -1524,37 +1584,34 @@ export default function StampCatalog(props) {
                               } else {
                                 window.location.href = `/detail/${item.idZnamky}`;
                               }
-                            } else {
-                              if (navigate) {
-                                navigate(`/emise/${slug}-${rok}`);
-                              } else {
-                                window.location.href = `/emise/${slug}-${rok}`;
-                              }
-                            }
-                          }}>
-                          <div className="stamp-img-bg">
-                            {item.obrazek ? (
-                              <img
-                                src={item.obrazek}
-                                alt={item.emise}
-                                onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
-                              />
-                            ) : (
-                              <div className="stamp-img-missing">obrázek chybí</div>
+                            }}>
+                            {idx === 0 && (
+                              <button className="stamp-box-toggle" title="Sloučit boxy" style={{right: 2, top: 2, position: 'absolute'}}
+                                onClick={e => { e.stopPropagation(); handleToggleBox(key); }}
+                              >−</button>
                             )}
-                          </div>
-                          <div className="stamp-title">
-                            <span className="emission">{emise}</span>
-                            <span className="year"> ({rok})</span>
-                          </div>
-                          <div className="stamp-bottom">
-                            <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
-                            {isSingle && (
+                            <div className="stamp-img-bg">
+                              {item.obrazek ? (
+                                <img
+                                  src={item.obrazek}
+                                  alt={item.emise}
+                                  onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
+                                />
+                              ) : (
+                                <div className="stamp-img-missing">obrázek chybí</div>
+                              )}
+                            </div>
+                            <div className="stamp-title">
+                              <span className="emission">{emise}</span>
+                              <span className="year"> ({rok})</span>
+                            </div>
+                            <div className="stamp-bottom">
+                              <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
                               <span className="details-link" style={{marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer'}}>detaily</span>
-                            )}
+                            </div>
                           </div>
-                        </div>
-                      );
+                        ));
+                      }
                     });
                 } else if (emission !== "all" && year !== "all") {
                   // Zobrazit pouze známky pro danou emisi a rok, seřazené podle katalogSort
