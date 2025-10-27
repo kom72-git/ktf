@@ -160,13 +160,13 @@ app.post("/api/defects", async (req, res) => {
   try {
     console.log('[API] Přijatý request body (defect):', req.body);
     const newDefect = { ...req.body };
-    // Pokud je idZnamky, najdi známku a předvyplň obrazekVady (malé písmeno)
-    if (newDefect.idZnamky) {
-      const stamp = await mongoose.connection.db.collection("stamps").findOne({ idZnamky: newDefect.idZnamky });
-      if (stamp && stamp.rok && stamp.katalogCislo) {
-        newDefect.obrazekVady = `img/${stamp.rok}/${stamp.katalogCislo}`;
-      }
-    }
+    // Pokud je idZnamky, NEPŘEPISUJ obrazekVady! (původní logika zakomentována)
+    // if (newDefect.idZnamky) {
+    //   const stamp = await mongoose.connection.db.collection("stamps").findOne({ idZnamky: newDefect.idZnamky });
+    //   if (stamp && stamp.rok && stamp.katalogCislo) {
+    //     newDefect.obrazekVady = `img/${stamp.rok}/${stamp.katalogCislo}`;
+    //   }
+    // }
     // Automaticky generuj idVady ve formátu cz-YYYY-NN(XX)
     if (newDefect.idZnamky) {
       // Najdi všechny vady pro danou známku

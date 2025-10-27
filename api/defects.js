@@ -31,9 +31,34 @@ export default async function handler(req, res) {
   
   try {
     await connectToDatabase();
-    const defects = await mongoose.connection.db.collection("defects").find({}).toArray();
-    return res.status(200).json(defects);
+    if (req.method === 'GET') {
+      const defects = await mongoose.connection.db.collection("defects").find({}).toArray();
+      return res.status(200).json(defects);
+    }
+    if (req.method === 'POST') {
+      // Přidání nové vady
+      const { idZnamky, variantaVady, umisteniVady, obrazekVady, popisVady } = req.body;
+      if (!idZnamky || !variantaVady) {
+        return res.status(400).json({ error: "Chybí povinné pole idZnamky nebo variantaVady" });
+      }
+      // Vytvoření nového záznamu
+      const defect = {
+        idZnamky,
+        variantaVady,
+        umisteniVady: umisteniVady || '',
+        obrazekVady: obrazekVady || '',
+        popisVady: popisVady || ''
+      };
+      const result = await mongoose.connection.db.collection("defects").insertOne(defect);
+      if (result.insertedId) {
+        const newDefect = await mongoose.connection.db.collection("defects").findOne({ _id: result.insertedId });
+        return res.status(201).json(newDefect);
+      } else {
+        return res.status(500).json({ error: "Nepodařilo se uložit vadu" });
+      }
+    }
+    return res.status(405).json({ error: "Metoda není podporována" });
   } catch (err) {
-    return res.status(500).json({ error: "Chyba serveru" });
+    return res.status(500).json({ error: "Chyba serveru", details: err.message });
   }
 }

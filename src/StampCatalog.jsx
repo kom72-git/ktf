@@ -381,7 +381,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
   const openFancybox = (flatIndex = 0) => {
     if (!allVariants || allVariants.length === 0) return;
     const slides = allVariants.map(def => ({
-      src: def.obrazekVady,
+      src: def.obrazekVady && def.obrazekVady[0] !== '/' && !def.obrazekVady.startsWith('http') ? '/' + def.obrazekVady : def.obrazekVady,
       caption:
         `<div class='fancybox-caption-center'>`
         + `<span class='fancybox-caption-variant'>${def.variantaVady || ''}${def.variantaVady && def.umisteniVady ? ' – ' : ''}${def.umisteniVady || ''}</span>`
@@ -419,8 +419,31 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
                   }, 0);
+                  setIsEditingAll(true);
+                } else {
+                  // Obnovit editStampData podle aktuálního item
+                  setEditStampData({
+                    emise: item.emise || '',
+                    rok: item.rok || '',
+                    katalogCislo: item.katalogCislo || '',
+                    datumVydani: item.datumVydani || '',
+                    navrh: item.navrh || '',
+                    rytec: item.rytec || '',
+                    druhTisku: item.druhTisku || '',
+                    tiskovaForma: item.tiskovaForma || '',
+                    zoubkovani: item.zoubkovani || '',
+                    papir: item.papir || '',
+                    rozmer: item.rozmer || '',
+                    naklad: item.naklad || '',
+                    obrazek: item.obrazek || '',
+                    obrazekStudie: item.obrazekStudie || '',
+                    schemaTF: item.schemaTF || '',
+                    Studie: item.Studie || '',
+                    studieUrl: item.studieUrl || '',
+                    popisObrazkuStudie: item.popisObrazkuStudie || ''
+                  });
+                  setIsEditingAll(false);
                 }
-                setIsEditingAll(!isEditingAll);
               }}
               className={isEditingAll ? "admin-edit-btn danger" : "admin-edit-btn success"}
             >
@@ -455,7 +478,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             />
             <button
               onClick={() => saveTechnicalField('emise', editStampData.emise)}
-              className="ktf-btn-confirm"
+              className="ktf-btn-check"
             >
               ✓
             </button>
@@ -469,7 +492,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             />
             <button
               onClick={() => saveTechnicalField('rok', editStampData.rok)}
-              className="ktf-btn-confirm"
+              className="ktf-btn-check"
             >
               ✓
             </button>
@@ -494,7 +517,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
               />
               <button
                 onClick={() => saveTechnicalField('katalogCislo', editStampData.katalogCislo)}
-                className="ktf-btn-confirm"
+                className="ktf-btn-check"
               >
                 ✓
               </button>
@@ -512,57 +535,78 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
 
       {/* Editační pole pro hlavní obrázek a obrázek studie vedle sebe, zarovnáno jako u studie */}
       {isEditingAll && (
-        <div className="ktf-edit-study-row">
-          <div className="ktf-edit-study-col label-top-input">
-            <label htmlFor="edit-img-url">Hlavní obrázek:</label>
-            <div className="edit-field-row">
-              <input
-                id="edit-img-url"
-                type="text"
-                value={editStampData.obrazek || ''}
-                onChange={(e) => setEditStampData({...editStampData, obrazek: e.target.value})}
-                className="ktf-edit-input-tech ktf-edit-input-long"
-                placeholder="img/rok/obrazek.jpg"
-              />
-              <button
-                onClick={() => saveTechnicalField('obrazek', editStampData.obrazek || '')}
-                className="ktf-btn-confirm"
-              >
-                ✓
-              </button>
+        <>
+          <div className="ktf-edit-study-row">
+            <div className="ktf-edit-study-col label-top-input">
+              <label htmlFor="edit-img-url">Hlavní obrázek:</label>
+              <div className="edit-field-row">
+                <input
+                  id="edit-img-url"
+                  type="text"
+                  value={editStampData.obrazek || ''}
+                  onChange={(e) => setEditStampData({...editStampData, obrazek: e.target.value})}
+                  className="ktf-edit-input-tech ktf-edit-input-long"
+                  placeholder="img/rok/obrazek.jpg"
+                />
+                <button
+                  onClick={() => {
+                    console.log('[DEBUG] Ukládám obrázek:', editStampData.obrazek);
+                    saveTechnicalField('obrazek', editStampData.obrazek || '');
+                  }}
+                  className="ktf-btn-check"
+                >
+                  ✓
+                </button>
+              </div>
+            </div>
+            <div className="ktf-edit-study-col label-top-input">
+              <label htmlFor="edit-img-studie">Obrázek studie:</label>
+              <div className="edit-field-row">
+                <input
+                  id="edit-img-studie"
+                  type="text"
+                  value={editStampData.obrazekStudie || ''}
+                  onChange={(e) => setEditStampData({...editStampData, obrazekStudie: e.target.value})}
+                  className="ktf-edit-input-tech ktf-edit-input-long"
+                  placeholder="img/rok/studie.jpg"
+                />
+                <button
+                  onClick={() => {
+                    console.log('[DEBUG] Ukládám obrázek studie:', editStampData.obrazekStudie);
+                    saveTechnicalField('obrazekStudie', editStampData.obrazekStudie || '');
+                  }}
+                  className="ktf-btn-check"
+                >
+                  ✓
+                </button>
+              </div>
+              {/* Pole pro popisek pod obrázkem studie bylo odstraněno, zůstává pouze pod obrázkem */}
             </div>
           </div>
-          <div className="ktf-edit-study-col label-top-input">
-            <label htmlFor="edit-img-studie">Obrázek studie:</label>
-            <div className="edit-field-row">
-              <input
-                id="edit-img-studie"
-                type="text"
-                value={editStampData.obrazekStudie || ''}
-                onChange={(e) => setEditStampData({...editStampData, obrazekStudie: e.target.value})}
-                className="ktf-edit-input-tech ktf-edit-input-long"
-                placeholder="img/rok/studie.jpg"
-              />
-              <button
-                onClick={() => saveTechnicalField('obrazekStudie', editStampData.obrazekStudie || '')}
-                className="ktf-btn-confirm"
-              >
-                ✓
-              </button>
-            </div>
-            {/* Pole pro popisek pod obrázkem studie bylo odstraněno, zůstává pouze pod obrázkem */}
+          <div style={{marginTop: '2em', padding: '1em', background: '#f3f3f3', border: '1px solid #ccc', fontFamily: 'monospace'}}>
+            <strong>DEBUG obrázek:</strong> {editStampData.obrazek}<br />
+            <strong>DEBUG obrázek studie:</strong> {editStampData.obrazekStudie}
           </div>
-        </div>
+        </>
       )}
       <div className="stamp-detail-layout">
         <div className="stamp-detail-img-col">
           <div className="stamp-detail-img-bg stamp-detail-img-bg-none stamp-detail-img-bg-pointer" onClick={e => {
             // Zabránit otevření Fancyboxu při kliknutí na popisek pod obrázkem
             if (e.target.classList.contains('study-img-caption') || e.target.closest('.study-img-caption')) return;
-            Fancybox.show([{
-              src: (item.obrazekStudie && item.obrazekStudie[0] !== '/' ? '/' + item.obrazekStudie : item.obrazekStudie) || (item.obrazek && item.obrazek[0] !== '/' ? '/' + item.obrazek : item.obrazek),
-              caption: ''
-            }], {
+            // Normalizace cesty pro obrázekStudie i hlavní obrázek
+            let src = '';
+            if (item.obrazekStudie) {
+              src = item.obrazekStudie[0] !== '/' && !item.obrazekStudie.startsWith('http') ? '/' + item.obrazekStudie : item.obrazekStudie;
+            } else if (item.obrazek) {
+              src = item.obrazek[0] !== '/' && !item.obrazek.startsWith('http') ? '/' + item.obrazek : item.obrazek;
+            }
+            Fancybox.show([
+              {
+                src,
+                caption: ''
+              }
+            ], {
               Toolbar: [ 'zoom', 'close' ],
               dragToClose: true,
               animated: true,
@@ -596,7 +640,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                         setSavedCaption(true);
                         setTimeout(() => setSavedCaption(false), 700);
                       }}
-                      className={`ktf-btn-confirm${savedCaption ? ' saved' : ''}`}
+                      className={`ktf-btn-check${savedCaption ? ' saved' : ''}`}
                     >✓</button>
                   </div>
                 ) : (
@@ -621,7 +665,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('datumVydani', editStampData.datumVydani)}
-                    className="ktf-btn-confirm"
+                    className="ktf-btn-check"
                   >
                     ✓
                   </button>
@@ -648,7 +692,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('navrh', editStampData.navrh)}
-                    className="ktf-btn-confirm"
+                    className="ktf-btn-check"
                   >
                     ✓
                   </button>
@@ -675,7 +719,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('rytec', editStampData.rytec)}
-                    className="ktf-btn-confirm"
+                    className="ktf-btn-check"
                   >
                     ✓
                   </button>
@@ -702,7 +746,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('druhTisku', editStampData.druhTisku)}
-                    className="ktf-btn-confirm"
+                    className="ktf-btn-check"
                   >
                     ✓
                   </button>
@@ -729,7 +773,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('tiskovaForma', editStampData.tiskovaForma)}
-                    className="ktf-btn-confirm"
+                    className="ktf-btn-check"
                   >
                     ✓
                   </button>
@@ -756,7 +800,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('zoubkovani', editStampData.zoubkovani)}
-                    className="ktf-btn-confirm"
+                    className="ktf-btn-check"
                   >
                     ✓
                   </button>
@@ -783,7 +827,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('papir', editStampData.papir)}
-                    className="ktf-btn-confirm"
+                    className="ktf-btn-check"
                   >
                     ✓
                   </button>
@@ -810,7 +854,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('rozmer', editStampData.rozmer)}
-                    className="ktf-btn-confirm"
+                    className="ktf-btn-check"
                   >
                     ✓
                   </button>
@@ -837,7 +881,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   />
                   <button
                     onClick={() => saveTechnicalField('naklad', editStampData.naklad)}
-                    className="ktf-btn-confirm"
+                    className="ktf-btn-check"
                   >
                     ✓
                   </button>
@@ -862,8 +906,12 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       placeholder="https://example.com/schema.jpg"
                     />
                     <button
-                      onClick={() => saveTechnicalField('schemaTF', editStampData.schemaTF)}
-                      className="ktf-btn-confirm"
+                      onClick={() => {
+                        let val = editStampData.schemaTF || '';
+                        if (val && val[0] !== '/' && !val.startsWith('http')) val = '/' + val;
+                        saveTechnicalField('schemaTF', val);
+                      }}
+                      className="ktf-btn-check"
                     >
                       ✓
                     </button>
@@ -876,7 +924,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
           </div>
         </div>
       </div>
-      {itemDefects.length > 0 && (
+      {(isEditingAll || itemDefects.length > 0 || item.Studie) && (
         <div>
           {isEditingAll ? (
             <div className="study-inline-note">
@@ -896,7 +944,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       onClick={() => {
                         saveStudyField('Studie', editStampData.Studie || '');
                       }}
-                      className="ktf-btn-confirm"
+                      className="ktf-btn-check"
                     >
                       ✓
                     </button>
@@ -917,7 +965,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       onClick={() => {
                         saveStudyField('studieUrl', editStampData.studieUrl || '');
                       }}
-                      className="ktf-btn-confirm"
+                      className="ktf-btn-check"
                     >
                       ✓
                     </button>
@@ -1086,7 +1134,11 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                           )}
                         </div>
                         <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(flatIndex)}>
-                          <img src={def.obrazekVady} alt={def.idVady} onError={e => { e.target.onerror = null; e.target.src = NO_IMAGE; }} />
+                          <img
+                            src={def.obrazekVady && def.obrazekVady[0] !== '/' && !def.obrazekVady.startsWith('http') ? '/' + def.obrazekVady : def.obrazekVady}
+                            alt={def.idVady}
+                            onError={e => { e.target.onerror = null; e.target.src = NO_IMAGE; }}
+                          />
                         </div>
                         {/* Editace URL obrázku vady */}
                         {isEditingAll && (
@@ -1104,6 +1156,13 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                                   background: '#fff'
                                 }}
                                 placeholder="https://example.com/obrazek.jpg"
+                                onBlur={e => {
+                                  let val = e.target.value;
+                                  if (val && val[0] !== '/' && !val.startsWith('http')) val = '/' + val;
+                                  if (val !== def.obrazekVady) {
+                                    saveDefectEdit(def._id, { ...def, obrazekVady: val });
+                                  }
+                                }}
                               />
                             </div>
                           </div>
@@ -1145,7 +1204,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                                     obrazekVady: imageInput?.value || ''
                                   });
                                 }}
-                                className="ktf-btn-confirm"
+                                className="ktf-btn-check"
                               >
                                 ✓
                               </button>

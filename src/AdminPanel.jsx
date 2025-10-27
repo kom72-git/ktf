@@ -33,6 +33,10 @@ export default function AdminPanel({ isAdmin, onLogout, onLogin, showAdminLogin,
 
   // Otevření modalu na základě eventu z DetailPage
   useEffect(() => {
+  // POZOR: Předvyplňování pole obrazekVady probíhá pouze na frontendu při otevření modalu.
+  // Backend nikdy nesmí tuto hodnotu přepisovat – uloží se přesně to, co uživatel zadá.
+  // Pokud uživatel pole změní, uloží se jeho hodnota. Pokud ponechá předvyplněné, uloží se předvyplněná.
+  // Pokud by bylo potřeba změnit logiku předvyplnění, upravujte pouze zde na frontendu.
     async function handleOpenModal(e) {
       const idZnamky = e.detail?.idZnamky || '';
       let obrazekVady = '';
