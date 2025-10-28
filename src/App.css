@@ -71,6 +71,12 @@
   color: #444;
   font-style: italic;
   opacity: 0.85;
+  max-width: 320px;
+  text-align: center;
+  word-break: break-word;
+  white-space: pre-line;
+  display: block;
+  margin: 0 auto;
 }
 .study-img-caption-input {
   font-size: 0.95em;
@@ -315,6 +321,24 @@ textarea.resize-corner {
   padding: 4px 6px;
   font-size: 15px;
   box-sizing: border-box;
+}
+
+/* textarea pro popis studie v editaci detailu */
+.ktf-edit-textarea-long {
+  min-width: 340px;
+  max-width: 100%;
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 15px;
+  box-sizing: border-box;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-family: inherit;
+  background: #fff;
+  resize: vertical;
+  margin: 0;
+  margin-bottom: 0;
+  margin-top: 0;
 }
 /* Nápověda vedle tlačítka "Uloží vše" v editaci varianty */
 .edit-variant-help {
@@ -603,6 +627,13 @@ textarea.resize-corner {
   margin: 10px 0 14px 0;
   white-space: pre-line;
   display: block;
+  padding-bottom: 20px;
+}
+.ktf-edit-study-popis-row {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 16px;
 }
 /* Jednotné popisky a technická specifikace v detailu */
 .stamp-spec {
@@ -684,7 +715,7 @@ textarea.resize-corner {
   background: #fff;
   border-radius: 18px;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 2.5rem 1.5rem;
+  padding: 2.5rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   display: flex;
   flex-direction: column;

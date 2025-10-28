@@ -583,10 +583,6 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
               {/* Pole pro popisek pod obrázkem studie bylo odstraněno, zůstává pouze pod obrázkem */}
             </div>
           </div>
-          <div style={{marginTop: '2em', padding: '1em', background: '#f3f3f3', border: '1px solid #ccc', fontFamily: 'monospace'}}>
-            <strong>DEBUG obrázek:</strong> {editStampData.obrazek}<br />
-            <strong>DEBUG obrázek studie:</strong> {editStampData.obrazekStudie}
-          </div>
         </>
       )}
       <div className="stamp-detail-layout">
@@ -628,11 +624,12 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
               <div className={`study-img-caption${savedCaption ? ' ktf-saved-highlight' : ''}`}>
                 {isEditingAll ? (
                   <div className="edit-field-row center-row">
-                    <input
-                      type="text"
+                    <textarea
+                      rows={3}
                       defaultValue={editStampData.popisObrazkuStudie || item.popisObrazkuStudie || ''}
                       onChange={e => setEditStampData({...editStampData, popisObrazkuStudie: e.target.value})}
                       className="ktf-edit-input-long study-img-caption-input"
+                      style={{resize: 'vertical'}}
                     />
                     <button
                       onClick={async () => {
@@ -927,52 +924,72 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
       {(isEditingAll || itemDefects.length > 0 || item.Studie) && (
         <div>
           {isEditingAll ? (
-            <div className="study-inline-note">
-              <div className="ktf-edit-study-row">
-                <div className="ktf-edit-study-col label-top-input">
-                  <label htmlFor="edit-study-text">Text studie:</label>
-                  <div className="edit-field-row">
-                    <input
-                      id="edit-study-text"
-                      type="text"
-                      value={editStampData.Studie || ''}
-                      onChange={(e) => setEditStampData({...editStampData, Studie: e.target.value})}
-                      className="ktf-edit-input-tech ktf-edit-input-long"
-                      placeholder="Rozlišeno dle studie: text, část pro link"
-                    />
-                    <button
-                      onClick={() => {
-                        saveStudyField('Studie', editStampData.Studie || '');
-                      }}
-                      className="ktf-btn-check"
-                    >
-                      ✓
-                    </button>
+            <>
+              <div className="study-inline-note">
+                <div className="ktf-edit-study-row">
+                  <div className="ktf-edit-study-col label-top-input">
+                    <label htmlFor="edit-study-text">Text studie:</label>
+                    <div className="edit-field-row">
+                      <input
+                        id="edit-study-text"
+                        type="text"
+                        value={editStampData.Studie || ''}
+                        onChange={(e) => setEditStampData({...editStampData, Studie: e.target.value})}
+                        className="ktf-edit-input-tech ktf-edit-input-long"
+                        placeholder="Rozlišeno dle studie: text, část pro link"
+                      />
+                      <button
+                        onClick={() => {
+                          saveStudyField('Studie', editStampData.Studie || '');
+                        }}
+                        className="ktf-btn-check"
+                      >
+                        ✓
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="ktf-edit-study-col label-top-input">
-                  <label htmlFor="edit-study-url">URL pro část za čárkou:</label>
-                  <div className="edit-field-row">
-                    <input
-                      id="edit-study-url"
-                      type="text"
-                      value={editStampData.studieUrl || ''}
-                      onChange={(e) => setEditStampData({...editStampData, studieUrl: e.target.value})}
-                      className="ktf-edit-input-tech ktf-edit-input-long"
-                      placeholder="https://example.com/studie"
-                    />
-                    <button
-                      onClick={() => {
-                        saveStudyField('studieUrl', editStampData.studieUrl || '');
-                      }}
-                      className="ktf-btn-check"
-                    >
-                      ✓
-                    </button>
+                  <div className="ktf-edit-study-col label-top-input">
+                    <label htmlFor="edit-study-url">URL pro část za čárkou:</label>
+                    <div className="edit-field-row">
+                      <input
+                        id="edit-study-url"
+                        type="text"
+                        value={editStampData.studieUrl || ''}
+                        onChange={(e) => setEditStampData({...editStampData, studieUrl: e.target.value})}
+                        className="ktf-edit-input-tech ktf-edit-input-long"
+                        placeholder="https://example.com/studie"
+                      />
+                      <button
+                        onClick={() => {
+                          saveStudyField('studieUrl', editStampData.studieUrl || '');
+                        }}
+                        className="ktf-btn-check"
+                      >
+                        ✓
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+              {/* --- POPIS STUDIE --- */}
+              <div className="ktf-edit-study-popis-row" style={{width: '100%'}}>
+                <div className="edit-field-row" style={{width: '100%'}}>
+                  <textarea
+                    value={typeof editStampData.popisStudie === 'string' ? editStampData.popisStudie : (item.popisStudie || '')}
+                    onChange={e => setEditStampData({ ...editStampData, popisStudie: e.target.value })}
+                    className="ktf-edit-textarea-long"
+                    placeholder="Popis konkrétní studie..."
+                    rows={10}
+                    style={{ minHeight: 200, resize: 'vertical', fontFamily: 'inherit', width: '100%' }}
+                  />
+                  <button
+                    onClick={() => saveTechnicalField('popisStudie', editStampData.popisStudie || '')}
+                    className="ktf-btn-check"
+                    style={{ alignSelf: 'flex-start', marginLeft: 8 }}
+                  >✓</button>
+                </div>
+              </div>
+            </>
           ) : (
             <>
               {item.Studie && item.studieUrl ? (() => {
@@ -1000,6 +1017,10 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   <span className="study-inline-label">Rozlišeno dle studie:</span> {item.Studie}
                 </div>
               )}
+              {/* --- POPIS STUDIE --- */}
+              <div style={{marginTop: 16}}>
+                <span className="study-note" style={{marginBottom: 0, marginTop: 0, minHeight: 0}}>{item.popisStudie || <span style={{color:'#bbb'}}>–</span>}</span>
+              </div>
             </>
           )}
           {/* Seskupení variant podle hlavní varianty (A, B, ...) */}
