@@ -1,0 +1,9 @@
+{
+  "git.autorefresh": true,
+  "git.autoRepositoryDetection": true,
+  "files.watcherExclude": {
+    "**/.git/objects/**": false,
+    "**/.git/subtree-cache/**": false,
+    "**/node_modules/*/**": true
+  }
+}
