@@ -26,21 +26,20 @@ import "./fancybox-responsive.css";
 // Helper funkce pro formátování popisů vad - text v [] bude tučný
 function formatDefectDescription(text) {
   if (!text) return text;
-  
   // Regex pro nalezení textu v hranatých závorkách na začátku
   const regex = /^(\[[^\]]+\])(.*)/;
   const match = text.match(regex);
-  
   if (match) {
+    // Zbytek textu může obsahovat HTML tagy, proto použijeme dangerouslySetInnerHTML
     return (
       <>
         <strong>{match[1]}</strong>
-        {match[2]}
+        <span dangerouslySetInnerHTML={{__html: match[2]}} />
       </>
     );
   }
-  
-  return text;
+  // Jinak celý text může obsahovat HTML tagy
+  return <span dangerouslySetInnerHTML={{__html: text}} />;
 }
 
 function DetailPage({ id, onBack, defects, isAdmin = false }) {
@@ -327,11 +326,15 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
   // Vady pro tuto známku
   const itemDefects = defects.filter(d => d.idZnamky === item.idZnamky);
 
-  // Seskupení variant podle hlavního písmene (Varianta A, B, ...)
-  // Podvarianty (A1, B2.1, ...) se vypisují pod tímto nadpisem, každá jen jednou
+  // Rozdělení na běžné a plus varianty
   const grouped = {};
+  const plusVariants = [];
   itemDefects.forEach(def => {
     if (!def.variantaVady) return;
+    if (def.variantaVady.includes(',')) {
+      plusVariants.push(def);
+      return;
+    }
     // Hlavní varianta je první písmeno (A, B, ...)
     const main = def.variantaVady.match(/^[A-Z]/i);
     const groupKey = main ? main[0] : '?';
@@ -639,9 +642,10 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       }}
                       className={`ktf-btn-check${savedCaption ? ' saved' : ''}`}
                     >✓</button>
+                    <span style={{color:'#b88', fontSize:'11px', marginLeft:8}}>Podporuje HTML tagy, např. &lt;b&gt;tučně&lt;/b&gt;</span>
                   </div>
                 ) : (
-                  <span className="study-img-caption-text" style={{pointerEvents: 'none'}}>{item.popisObrazkuStudie || ''}</span>
+                  <span className="study-img-caption-text" style={{pointerEvents: 'none'}} dangerouslySetInnerHTML={{__html: item.popisObrazkuStudie || ''}} />
                 )}
               </div>
             </div>
@@ -1235,9 +1239,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                         ) : (
                           <>
                             {def.popisVady && (
-                              <div className="variant-popis-detail">
-                                {formatDefectDescription(def.popisVady)}
-                              </div>
+                              <div className="variant-popis-detail">{formatDefectDescription(def.popisVady)}</div>
                             )}
                             {isEditingAll && !def.popisVady && (
                               <div style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic', marginTop: '4px' }}>
@@ -1253,6 +1255,136 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
               </div>
             );
           })}
+          {/* Speciální skupina pro varianty s + */}
+          {plusVariants.length > 0 && (
+            <div>
+              <div className="variant-subtitle">
+                {plusVariants[0]?.variantaVady && plusVariants[0].variantaVady.includes(',')
+                  ? `Společné ${plusVariants[0].variantaVady}`
+                  : `Varianta ${plusVariants[0]?.variantaVady}`}
+              </div>
+              <div className="variants">
+                {plusVariants.map((def, i) => (
+                  <div key={def.idVady || `plusvar-${i}`} className="variant">
+                    <div className="variant-popis">
+                      {isEditingAll ? (
+                        <div className="edit-variant-row">
+                          <input
+                            type="text"
+                            placeholder="Varianta"
+                            defaultValue={def.variantaVady || ''}
+                            className="edit-variant-input"
+                          />
+                          <span>–</span>
+                          <textarea
+                            placeholder="Umístění"
+                            defaultValue={def.umisteniVady || ''}
+                            className="edit-variant-textarea"
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <span className="variant-popis-hlavni">{def.variantaVady}</span>
+                          {def.umisteniVady && <><span className="variant-dash">–</span><span className="variant-popis-hlavni">{def.umisteniVady}</span></>}
+                        </>
+                      )}
+                    </div>
+                    <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(i)}>
+                      <img
+                        src={def.obrazekVady && def.obrazekVady[0] !== '/' && !def.obrazekVady.startsWith('http') ? '/' + def.obrazekVady : def.obrazekVady}
+                        alt={def.idVady}
+                        onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
+                      />
+                    </div>
+                    {/* Editace URL obrázku vady */}
+                    {isEditingAll && (
+                      <div>
+                        <div className="edit-field-row">
+                          <input
+                            type="text"
+                            defaultValue={def.obrazekVady || ''}
+                            style={{
+                              width: '200px',
+                              padding: '3px 5px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '3px',
+                              fontSize: '11px',
+                              background: '#fff'
+                            }}
+                            placeholder="https://example.com/obrazek.jpg"
+                            onBlur={e => {
+                              let val = e.target.value;
+                              if (val && val[0] !== '/' && !val.startsWith('http')) val = '/' + val;
+                              if (val !== def.obrazekVady) {
+                                saveDefectEdit(def._id, { ...def, obrazekVady: val });
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <div className="variant-label">Obr. {i + 1}</div>
+                    {/* Editace nebo zobrazení popisu vady */}
+                    {isEditingAll ? (
+                      <div >
+                        <textarea
+                          defaultValue={def.popisVady || ''}
+                          style={{
+                            width: '100%',
+                            padding: '6px',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            minHeight: '60px',
+                            resize: 'both',
+                            fontFamily: 'inherit'
+                          }}
+                          placeholder="Popis vady... (Ctrl+Enter pro uložení)"
+                          autoFocus
+                        />
+                        <div style={{ marginTop: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <button
+                            onClick={(e) => {
+                              // Najdeme všechny input/textarea prvky v této variantě
+                              const container = e.target.closest('.variant');
+                              const variantInput = container.querySelector('input[placeholder=\"Varianta\"]');
+                              const umisteniInput = container.querySelector('textarea[placeholder=\"Umístění\"]');
+                              const popisTextarea = container.querySelector('textarea:not([placeholder=\"Umístění\"])');
+                              const imageInput = container.querySelector('input[placeholder=\"https://example.com/obrazek.jpg\"]');
+                              // Uložíme všechny hodnoty najednou
+                              saveDefectEdit(def._id, { 
+                                ...def, 
+                                variantaVady: variantInput?.value || '',
+                                umisteniVady: umisteniInput?.value || '',
+                                popisVady: popisTextarea?.value || '',
+                                obrazekVady: imageInput?.value || ''
+                              });
+                            }}
+                            className="ktf-btn-check"
+                          >
+                            ✓
+                          </button>
+                          <span className="edit-variant-help">Uloží vše</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {def.popisVady && (
+                          <div className="variant-popis-detail" dangerouslySetInnerHTML={{__html: def.popisVady}} />
+                        )}
+                        {isEditingAll && !def.popisVady && (
+                          <div style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic', marginTop: '4px' }}>
+                            Klikni na editační ikonu pro přidání popisu<br/>
+                            <span style={{color:'#b88', fontSize:'11px'}}>Podporuje HTML tagy, např. &lt;b&gt;tučně&lt;/b&gt;</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
