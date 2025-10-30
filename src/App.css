@@ -666,6 +666,14 @@ textarea.resize-corner {
   color: #222;
   font-weight: 400;
 }
+
+.variant-popis-apostrof {
+  color: #2a2a2a;
+  background: #f0f0f0;
+  padding: 0 2px;
+  border-radius: 2px;
+  font-weight: 500;
+}
 .variant-label {
   color: #888;
   font-size: 1rem;

@@ -29,17 +29,22 @@ function formatDefectDescription(text) {
   // Regex pro nalezení textu v hranatých závorkách na začátku
   const regex = /^(\[[^\]]+\])(.*)/;
   const match = text.match(regex);
+  // Funkce pro zvýraznění textu v apostrofech
+  function highlightApostrophes(str) {
+    // Najde text mezi apostrofy a obalí ho do <span class="variant-popis-apostrof">
+    return str.replace(/'([^']+)'/g, '<span class="variant-popis-apostrof">$1</span>');
+  }
   if (match) {
-    // Zbytek textu může obsahovat HTML tagy, proto použijeme dangerouslySetInnerHTML
+    // Zbytek textu může obsahovat HTML tagy i apostrofy
     return (
       <>
         <strong>{match[1]}</strong>
-        <span dangerouslySetInnerHTML={{__html: match[2]}} />
+        <span dangerouslySetInnerHTML={{__html: highlightApostrophes(match[2])}} />
       </>
     );
   }
-  // Jinak celý text může obsahovat HTML tagy
-  return <span dangerouslySetInnerHTML={{__html: text}} />;
+  // Jinak celý text může obsahovat HTML tagy i apostrofy
+  return <span dangerouslySetInnerHTML={{__html: highlightApostrophes(text)}} />;
 }
 
 function DetailPage({ id, onBack, defects, isAdmin = false }) {
