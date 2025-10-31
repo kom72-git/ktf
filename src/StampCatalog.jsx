@@ -647,7 +647,6 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       }}
                       className={`ktf-btn-check${savedCaption ? ' saved' : ''}`}
                     >✓</button>
-                    <span style={{color:'#b88', fontSize:'11px', marginLeft:8}}>Podporuje HTML tagy, např. &lt;b&gt;tučně&lt;/b&gt;</span>
                   </div>
                 ) : (
                   <span className="study-img-caption-text" style={{pointerEvents: 'none'}} dangerouslySetInnerHTML={{__html: item.popisObrazkuStudie || ''}} />
@@ -1028,7 +1027,11 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
               )}
               {/* --- POPIS STUDIE --- */}
               <div style={{marginTop: 16}}>
-                <span className="study-note" style={{marginBottom: 0, marginTop: 0, minHeight: 0}}>{item.popisStudie || <span style={{color:'#bbb'}}>–</span>}</span>
+                {item.popisStudie ? (
+                  <span className="study-note" style={{marginBottom: 0, marginTop: 0, minHeight: 0}} dangerouslySetInnerHTML={{__html: item.popisStudie}} />
+                ) : (
+                  <span className="study-note" style={{color:'#bbb', marginBottom: 0, marginTop: 0, minHeight: 0}}>–</span>
+                )}
               </div>
             </>
           )}
