@@ -1,3 +1,7 @@
+.stamp-title-abbr {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
 /* Ikony v tlačítkách – sjednocená velikost a odsazení */
 .btn-icon {
   font-size: 1.2em;

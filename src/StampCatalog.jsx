@@ -1,3 +1,22 @@
+
+import ZKRATKY_TOOLTIPY from './zkratky-tooltips';
+
+// Funkce pro nahrazení zkratek za <abbr title="...">ZKRATKA</abbr>
+function replaceAbbreviations(text) {
+  if (!text) return text;
+  Object.entries(ZKRATKY_TOOLTIPY).forEach(([abbr, full]) => {
+    let re;
+    if (abbr.includes('.')) {
+      // Zkratka s tečkou: musí být na začátku řádku, po mezeře, interpunkci nebo závorkách, a za ní musí být mezera, interpunkce, závorka nebo konec
+      re = new RegExp(`(?<=^|[\s\(\[\{{,;:])${abbr}(?=[\s\)\]\}},;:.!?]|$)`, 'g');
+    } else {
+      // Obyčejná zkratka: word boundary
+      re = new RegExp(`\\b${abbr}\\b`, 'g');
+    }
+    text = text.replace(re, `<abbr title=\"${full}\">${abbr}</abbr>`);
+  });
+  return text;
+}
 // Globální funkce pro řazení podle katalogového čísla: nejprve číslo, pak prefix
 export function katalogSort(a, b) {
   const getKat = (x) => typeof x === 'string' ? x : (x.katalogCislo || '');
@@ -29,22 +48,25 @@ function formatDefectDescription(text) {
   // Regex pro nalezení textu v hranatých závorkách na začátku
   const regex = /^(\[[^\]]+\])(.*)/;
   const match = text.match(regex);
-  // Funkce pro zvýraznění textu v apostrofech
-  function highlightApostrophes(str) {
-    // Najde text mezi apostrofy a obalí ho do <span class="variant-popis-apostrof">
-    return str.replace(/'([^']+)'/g, '<span class="variant-popis-apostrof">$1</span>');
+  // Funkce pro zvýraznění textu v apostrofech a nahrazení zkratek
+  function highlightApostrophesAndAbbr(str) {
+    // Nejprve zvýrazníme apostrofy
+    let s = str.replace(/'([^']+)'/g, '<span class="variant-popis-apostrof">$1</span>');
+    // Pak nahradíme zkratky za <abbr>
+    s = replaceAbbreviations(s);
+    return s;
   }
   if (match) {
-    // Zbytek textu může obsahovat HTML tagy i apostrofy
+    // Zbytek textu může obsahovat HTML tagy, apostrofy i zkratky
     return (
       <>
         <strong>{match[1]}</strong>
-        <span dangerouslySetInnerHTML={{__html: highlightApostrophes(match[2])}} />
+        <span dangerouslySetInnerHTML={{__html: highlightApostrophesAndAbbr(match[2])}} />
       </>
     );
   }
-  // Jinak celý text může obsahovat HTML tagy i apostrofy
-  return <span dangerouslySetInnerHTML={{__html: highlightApostrophes(text)}} />;
+  // Jinak celý text může obsahovat HTML tagy, apostrofy i zkratky
+  return <span dangerouslySetInnerHTML={{__html: highlightApostrophesAndAbbr(text)}} />;
 }
 
 function DetailPage({ id, onBack, defects, isAdmin = false }) {
@@ -507,7 +529,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             <span>)</span>
           </div>
         ) : (
-          `${item.emise} (${item.rok})`
+          <span className="detail-title-text" dangerouslySetInnerHTML={{__html: replaceAbbreviations(`${item.emise} (${item.rok})`)}} />
         )}
       </div>
       <div className="detail-catalog">
@@ -1010,25 +1032,25 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                 }
                 return (
                   <div className="study-inline-note" >
-                    <span className="study-inline-label">Rozlišeno dle studie:</span> {before}
+                    <span className="study-inline-label">Rozlišeno dle studie:</span> <span dangerouslySetInnerHTML={{__html: replaceAbbreviations(before)}} />
                     {after && (
                       <>
                         {','}
                         <span dangerouslySetInnerHTML={{__html: '&nbsp;'}} />
-                        <a href={item.studieUrl} target="_blank" rel="noopener noreferrer">{after}</a>
+                        <a href={item.studieUrl} target="_blank" rel="noopener noreferrer" dangerouslySetInnerHTML={{__html: replaceAbbreviations(after)}} />
                       </>
                     )}
                   </div>
                 );
               })() : item.Studie && (
                 <div className="study-inline-note" >
-                  <span className="study-inline-label">Rozlišeno dle studie:</span> {item.Studie}
+                  <span className="study-inline-label">Rozlišeno dle studie:</span> <span dangerouslySetInnerHTML={{__html: replaceAbbreviations(item.Studie)}} />
                 </div>
               )}
               {/* --- POPIS STUDIE --- */}
               <div style={{marginTop: 16}}>
                 {item.popisStudie ? (
-                  <span className="study-note" style={{marginBottom: 0, marginTop: 0, minHeight: 0}} dangerouslySetInnerHTML={{__html: item.popisStudie}} />
+                  <span className="study-note" style={{marginBottom: 0, marginTop: 0, minHeight: 0}} dangerouslySetInnerHTML={{__html: replaceAbbreviations(item.popisStudie)}} />
                 ) : (
                   <span className="study-note" style={{color:'#bbb', marginBottom: 0, marginTop: 0, minHeight: 0}}>–</span>
                 )}
@@ -1772,10 +1794,7 @@ export default function StampCatalog(props) {
                                 <div className="stamp-img-missing">obrázek chybí</div>
                               )}
                             </div>
-                            <div className="stamp-title">
-                              <span className="emission">{emise}</span>
-                              <span className="year"> ({rok})</span>
-                            </div>
+                            <div className="stamp-title stamp-title-abbr"><span dangerouslySetInnerHTML={{__html: replaceAbbreviations(`${emise} (${rok})`)}} /></div>
                             <div className="stamp-bottom">
                               <div>Katalog: <span className="catalog">{katalogText}</span></div>
                               {isSingle && (
@@ -1814,10 +1833,7 @@ export default function StampCatalog(props) {
                                 <div className="stamp-img-missing">obrázek chybí</div>
                               )}
                             </div>
-                            <div className="stamp-title">
-                              <span className="emission">{emise}</span>
-                              <span className="year"> ({rok})</span>
-                            </div>
+                            <div className="stamp-title stamp-title-abbr"><span dangerouslySetInnerHTML={{__html: replaceAbbreviations(`${item.emise} (${item.rok})`)}} /></div>
                             <div className="stamp-bottom">
                               <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
                               <span className="details-link" style={{marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer'}}>detaily</span>
