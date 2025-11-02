@@ -24,23 +24,31 @@ export default function AbbrWithTooltip({ abbr, title }) {
     };
   }, [visible]);
 
-  // Po zobrazení tooltipu na mobilu uprav pozici, aby byl celý viditelný
+  // Po zobrazení tooltipu uprav pozici, aby byl vždy celý viditelný (mobil i úzké okno)
   useEffect(() => {
     if (!visible) return;
-    if (!bubbleRef.current) return;
-    if (!window.matchMedia('(hover: none)').matches) return; // jen na mobilu
-    const bubble = bubbleRef.current;
-    const rect = bubble.getBoundingClientRect();
-    const vw = window.innerWidth;
-    let left = 0;
-    // Pokud tooltip přesahuje vpravo, posuň ho doleva
-    if (rect.right > vw - 8) {
-      left = vw - rect.width - 16;
-      if (left < 0) left = 8; // nikdy úplně vlevo
-      bubble.style.left = left + 'px';
-    } else {
-      bubble.style.left = '';
+    if (!bubbleRef.current || !abbrRef.current) return;
+    // Mobil = hover: none nebo úzké okno
+    const isMobile = window.matchMedia('(hover: none)').matches || window.innerWidth < 600;
+    if (!isMobile) {
+      bubbleRef.current.style.left = '';
+      bubbleRef.current.style.transform = '';
+      return;
     }
+    const bubble = bubbleRef.current;
+    const abbr = abbrRef.current;
+    // Zarovnat tooltip na střed zkratky
+    const abbrRect = abbr.getBoundingClientRect();
+    const bubbleRect = bubble.getBoundingClientRect();
+    const vw = window.innerWidth;
+    // Výchozí pozice: tooltip na střed zkratky
+    let left = abbrRect.left + abbrRect.width/2 - bubbleRect.width/2;
+    // Pokud by tooltip přesahoval vlevo, zarovnat na 8px od okraje
+    if (left < 8) left = 8;
+    // Pokud by tooltip přesahoval vpravo, zarovnat na 8px od pravého okraje
+    if (left + bubbleRect.width > vw - 8) left = vw - bubbleRect.width - 8;
+    bubble.style.left = left + 'px';
+    bubble.style.transform = 'none';
   }, [visible]);
 
   // Automatické zavření tooltipu po 3s na mobilech
