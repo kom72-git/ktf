@@ -41,17 +41,18 @@ export default function AbbrWithTooltip({ abbr, title }) {
     const abbrRect = abbr.getBoundingClientRect();
     const bubbleRect = bubble.getBoundingClientRect();
     const vw = window.innerWidth;
-    // Výchozí pozice: tooltip na střed zkratky
-    let left = abbrRect.left + abbrRect.width/2 - bubbleRect.width/2;
-    // Pokud by tooltip přesahoval vpravo, zarovnat pravý okraj k pravému okraji viewportu
+    // Výchozí pozice: tooltip na začátek zkratky (left: 0)
+    let left = abbrRect.left;
+    // Pokud by tooltip přesahoval pravý okraj, posunout ho doleva
     if (left + bubbleRect.width > vw - 8) {
       left = vw - bubbleRect.width - 8;
     }
-    // Pokud by tooltip přesahoval vlevo, zarovnat levý okraj k levému okraji viewportu
+    // Pokud by tooltip přesahoval vlevo (teoreticky), zarovnat na 8px
     if (left < 8) {
       left = 8;
     }
-    bubble.style.left = left + 'px';
+    // Nastavit pozici relativně k viewportu
+    bubble.style.left = (left - abbrRect.left) + 'px';
     bubble.style.transform = 'none';
   }, [visible]);
 
