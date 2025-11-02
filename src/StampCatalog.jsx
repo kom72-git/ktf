@@ -2,6 +2,23 @@
 import ZKRATKY_TOOLTIPY from './zkratky-tooltips';
 import AbbrWithTooltip from './AbbrWithTooltip';
 
+// Wrapper pro nadpis emise, který zabrání propagaci kliknutí na zkratku
+function EmissionTitleAbbr({ children }) {
+  // Zastaví propagaci kliknutí na zkratku (span s AbbrWithTooltip)
+  const handleClick = (e) => {
+    // Pokud klikám na zkratku nebo její wrapper, zastav propagaci
+    if (
+      e.target.closest('.ktf-abbr-tooltip-abbr') ||
+      e.target.closest('.ktf-abbr-tooltip-wrapper')
+    ) {
+      e.stopPropagation();
+    }
+  };
+  return (
+    <span onClick={handleClick}>{children}</span>
+  );
+}
+
 // Funkce pro nahrazení zkratek za <AbbrWithTooltip> (pole React node)
 function replaceAbbreviations(text) {
   if (!text) return text;
@@ -1060,7 +1077,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       <>
                         {','}
                         <span dangerouslySetInnerHTML={{__html: '&nbsp;'}} />
-                        <a href={item.studieUrl} target="_blank" rel="noopener noreferrer">{replaceAbbreviations(after)}</a>
+                        <a href={item.studieUrl} target="_blank" rel="noopener noreferrer">{after}</a>
                       </>
                     )}
                   </div>
@@ -1817,7 +1834,9 @@ export default function StampCatalog(props) {
                                 <div className="stamp-img-missing">obrázek chybí</div>
                               )}
                             </div>
-                            <div className="stamp-title stamp-title-abbr"><span>{replaceAbbreviations(`${emise} (${rok})`)}</span></div>
+                            <div className="stamp-title stamp-title-abbr">
+                              <EmissionTitleAbbr>{replaceAbbreviations(`${emise} (${rok})`)}</EmissionTitleAbbr>
+                            </div>
                             <div className="stamp-bottom">
                               <div>Katalog: <span className="catalog">{katalogText}</span></div>
                               {isSingle && (
@@ -1856,7 +1875,9 @@ export default function StampCatalog(props) {
                                 <div className="stamp-img-missing">obrázek chybí</div>
                               )}
                             </div>
-                            <div className="stamp-title stamp-title-abbr"><span>{replaceAbbreviations(`${item.emise} (${item.rok})`)}</span></div>
+                            <div className="stamp-title stamp-title-abbr">
+                              <EmissionTitleAbbr>{replaceAbbreviations(`${item.emise} (${item.rok})`)}</EmissionTitleAbbr>
+                            </div>
                             <div className="stamp-bottom">
                               <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
                               <span className="details-link" style={{marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer'}}>detaily</span>
