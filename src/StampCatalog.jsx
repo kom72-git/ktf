@@ -23,8 +23,11 @@ function replaceAbbreviations(text) {
       result.push(text.slice(lastIndex, idx));
     }
     if (abbr && ZKRATKY_TOOLTIPY[abbr]) {
+      // Pokud je uvnitř <a>, zamezíme klikatelnosti zkratky
       result.push(
-        <AbbrWithTooltip key={idx + '-' + abbr} abbr={abbr} title={ZKRATKY_TOOLTIPY[abbr]} />
+        <span style={{pointerEvents: 'auto'}} key={idx + '-' + abbr}>
+          <AbbrWithTooltip abbr={abbr} title={ZKRATKY_TOOLTIPY[abbr]} />
+        </span>
       );
     } else if (match[0]) {
       result.push(match[0]);

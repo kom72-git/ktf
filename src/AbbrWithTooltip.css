@@ -8,7 +8,7 @@
   font-style: normal;
   color: inherit;
 }
- .ktf-abbr-tooltip-bubble {
+.ktf-abbr-tooltip-bubble {
   position: absolute;
   left: 0;
   top: 125%;
@@ -20,19 +20,20 @@
   font-weight: normal;
   white-space: nowrap;
   box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-  z-index: 1000;
+  z-index: 2000;
   opacity: 0.97;
   pointer-events: none;
   border: 1px solid #ddd;
   transition: opacity 0.15s;
 }
-.ktf-abbr-tooltip-bubble::after {
+/* .ktf-abbr-tooltip-bubble::after {
   content: '';
   position: absolute;
-  bottom: 100%;
-  left: 16px;
-  border-width: 6px;
+  top: 0;
+  left: 24px;
+  transform: translateY(-98%);
+  border-width: 0 8px 8px 8px;
   border-style: solid;
-  border-color: #fff transparent transparent transparent;
-  filter: drop-shadow(0 -1px 1px #ddd);
-}
+  border-color: transparent transparent #fff transparent;
+  filter: drop-shadow(0 1px 1px #ddd);
+} */
