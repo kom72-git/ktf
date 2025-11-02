@@ -1,21 +1,40 @@
 
 import ZKRATKY_TOOLTIPY from './zkratky-tooltips';
+import AbbrWithTooltip from './AbbrWithTooltip';
 
-// Funkce pro nahrazení zkratek za <abbr title="...">ZKRATKA</abbr>
+// Funkce pro nahrazení zkratek za <AbbrWithTooltip> (pole React node)
 function replaceAbbreviations(text) {
   if (!text) return text;
-  Object.entries(ZKRATKY_TOOLTIPY).forEach(([abbr, full]) => {
-    let re;
-    if (abbr.includes('.')) {
-      // Zkratka s tečkou: musí být na začátku řádku, po mezeře, interpunkci nebo závorkách, a za ní musí být mezera, interpunkce, závorka nebo konec
-      re = new RegExp(`(?<=^|[\s\(\[\{{,;:])${abbr}(?=[\s\)\]\}},;:.!?]|$)`, 'g');
-    } else {
-      // Obyčejná zkratka: word boundary
-      re = new RegExp(`\\b${abbr}\\b`, 'g');
+  // Sestavíme regex pro všechny zkratky najednou (uniknout tečky)
+  const abbrs = Object.keys(ZKRATKY_TOOLTIPY).sort((a, b) => b.length - a.length).map(a => a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  if (abbrs.length === 0) return text;
+  const regex = new RegExp(
+    `((?<=^|[\s\(\[\{{,;:])(${abbrs.join('|')})(?=[\s\)\]\}},;:.!?]|$))|\\b(${abbrs.join('|')})\\b`,
+    'g'
+  );
+  const result = [];
+  let lastIndex = 0;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    const matchText = match[2] || match[3];
+    const abbr = matchText;
+    const idx = match.index;
+    if (idx > lastIndex) {
+      result.push(text.slice(lastIndex, idx));
     }
-    text = text.replace(re, `<abbr title=\"${full}\">${abbr}</abbr>`);
-  });
-  return text;
+    if (abbr && ZKRATKY_TOOLTIPY[abbr]) {
+      result.push(
+        <AbbrWithTooltip key={idx + '-' + abbr} abbr={abbr} title={ZKRATKY_TOOLTIPY[abbr]} />
+      );
+    } else if (match[0]) {
+      result.push(match[0]);
+    }
+    lastIndex = regex.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    result.push(text.slice(lastIndex));
+  }
+  return result.length === 1 ? result[0] : result;
 }
 // Globální funkce pro řazení podle katalogového čísla: nejprve číslo, pak prefix
 export function katalogSort(a, b) {
@@ -46,14 +65,15 @@ import "./fancybox-responsive.css";
 function formatDefectDescription(text) {
   if (!text) return text;
   // Regex pro nalezení textu v hranatých závorkách na začátku
-  const regex = /^(\[[^\]]+\])(.*)/;
+  const regex = /^([\[][^[\]]+[\]])(.*)/;
   const match = text.match(regex);
   // Funkce pro zvýraznění textu v apostrofech a nahrazení zkratek
   function highlightApostrophesAndAbbr(str) {
     // Nejprve zvýrazníme apostrofy
     let s = str.replace(/'([^']+)'/g, '<span class="variant-popis-apostrof">$1</span>');
-    // Pak nahradíme zkratky za <abbr>
-    s = replaceAbbreviations(s);
+    // Pak nahradíme zkratky za <AbbrWithTooltip>
+    // POZOR: zde nemůžeme použít React komponentu, musíme nahradit pouze HTML (jinak by to nešlo do dangerouslySetInnerHTML)
+    // Proto zde zkratky nebudou mít tooltip, pouze zvýraznění apostrofů
     return s;
   }
   if (match) {
@@ -529,7 +549,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             <span>)</span>
           </div>
         ) : (
-          <span className="detail-title-text" dangerouslySetInnerHTML={{__html: replaceAbbreviations(`${item.emise} (${item.rok})`)}} />
+          <span className="detail-title-text">{replaceAbbreviations(`${item.emise} (${item.rok})`)}</span>
         )}
       </div>
       <div className="detail-catalog">
@@ -1032,25 +1052,25 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                 }
                 return (
                   <div className="study-inline-note" >
-                    <span className="study-inline-label">Rozlišeno dle studie:</span> <span dangerouslySetInnerHTML={{__html: replaceAbbreviations(before)}} />
+                    <span className="study-inline-label">Rozlišeno dle studie:</span> <span>{replaceAbbreviations(before)}</span>
                     {after && (
                       <>
                         {','}
                         <span dangerouslySetInnerHTML={{__html: '&nbsp;'}} />
-                        <a href={item.studieUrl} target="_blank" rel="noopener noreferrer" dangerouslySetInnerHTML={{__html: replaceAbbreviations(after)}} />
+                        <a href={item.studieUrl} target="_blank" rel="noopener noreferrer">{replaceAbbreviations(after)}</a>
                       </>
                     )}
                   </div>
                 );
               })() : item.Studie && (
                 <div className="study-inline-note" >
-                  <span className="study-inline-label">Rozlišeno dle studie:</span> <span dangerouslySetInnerHTML={{__html: replaceAbbreviations(item.Studie)}} />
+                  <span className="study-inline-label">Rozlišeno dle studie:</span> <span>{replaceAbbreviations(item.Studie)}</span>
                 </div>
               )}
               {/* --- POPIS STUDIE --- */}
               <div style={{marginTop: 16}}>
                 {item.popisStudie ? (
-                  <span className="study-note" style={{marginBottom: 0, marginTop: 0, minHeight: 0}} dangerouslySetInnerHTML={{__html: replaceAbbreviations(item.popisStudie)}} />
+                  <span className="study-note" style={{marginBottom: 0, marginTop: 0, minHeight: 0}}>{replaceAbbreviations(item.popisStudie)}</span>
                 ) : (
                   <span className="study-note" style={{color:'#bbb', marginBottom: 0, marginTop: 0, minHeight: 0}}>–</span>
                 )}
@@ -1794,7 +1814,7 @@ export default function StampCatalog(props) {
                                 <div className="stamp-img-missing">obrázek chybí</div>
                               )}
                             </div>
-                            <div className="stamp-title stamp-title-abbr"><span dangerouslySetInnerHTML={{__html: replaceAbbreviations(`${emise} (${rok})`)}} /></div>
+                            <div className="stamp-title stamp-title-abbr"><span>{replaceAbbreviations(`${emise} (${rok})`)}</span></div>
                             <div className="stamp-bottom">
                               <div>Katalog: <span className="catalog">{katalogText}</span></div>
                               {isSingle && (
@@ -1833,7 +1853,7 @@ export default function StampCatalog(props) {
                                 <div className="stamp-img-missing">obrázek chybí</div>
                               )}
                             </div>
-                            <div className="stamp-title stamp-title-abbr"><span dangerouslySetInnerHTML={{__html: replaceAbbreviations(`${item.emise} (${item.rok})`)}} /></div>
+                            <div className="stamp-title stamp-title-abbr"><span>{replaceAbbreviations(`${item.emise} (${item.rok})`)}</span></div>
                             <div className="stamp-bottom">
                               <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
                               <span className="details-link" style={{marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer'}}>detaily</span>
