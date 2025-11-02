@@ -85,7 +85,8 @@ import "./fancybox-responsive.css";
 function formatDefectDescription(text) {
   if (!text) return text;
   // Regex pro nalezení textu v hranatých závorkách na začátku
-  const regex = /^([\[][^[\]]+[\]])(.*)/;
+  // Nově: pokud je uvnitř např. B1a, tučně [B1 a ] netučně, pokud je jen [B1], celé tučně
+  const regex = /^\[([A-Z]\d{1,2})([a-z])?\](.*)/i;
   const match = text.match(regex);
   // Funkce pro zvýraznění textu v apostrofech a nahrazení zkratek
   function highlightApostrophesAndAbbr(str) {
@@ -97,11 +98,13 @@ function formatDefectDescription(text) {
     return s;
   }
   if (match) {
-    // Zbytek textu může obsahovat HTML tagy, apostrofy i zkratky
+    // match[1] = B1, match[2] = a (nepovinné), match[3] = zbytek
     return (
       <>
-        <strong>{match[1]}</strong>
-        <span dangerouslySetInnerHTML={{__html: highlightApostrophesAndAbbr(match[2])}} />
+        <strong>[{match[1]}</strong>
+        {match[2] && <span>{match[2]}</span>}
+        <strong>]</strong>
+        <span dangerouslySetInnerHTML={{__html: highlightApostrophesAndAbbr(match[3])}} />
       </>
     );
   }
