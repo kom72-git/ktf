@@ -6,6 +6,7 @@ export default function AbbrWithTooltip({ abbr, title }) {
   const [visible, setVisible] = useState(false);
   const timeoutRef = useRef();
   const abbrRef = useRef();
+  const bubbleRef = useRef();
 
   // Zavřít tooltip při kliknutí mimo
   useEffect(() => {
@@ -21,6 +22,25 @@ export default function AbbrWithTooltip({ abbr, title }) {
       document.removeEventListener('mousedown', handleClick);
       document.removeEventListener('touchstart', handleClick);
     };
+  }, [visible]);
+
+  // Po zobrazení tooltipu na mobilu uprav pozici, aby byl celý viditelný
+  useEffect(() => {
+    if (!visible) return;
+    if (!bubbleRef.current) return;
+    if (!window.matchMedia('(hover: none)').matches) return; // jen na mobilu
+    const bubble = bubbleRef.current;
+    const rect = bubble.getBoundingClientRect();
+    const vw = window.innerWidth;
+    let left = 0;
+    // Pokud tooltip přesahuje vpravo, posuň ho doleva
+    if (rect.right > vw - 8) {
+      left = vw - rect.width - 16;
+      if (left < 0) left = 8; // nikdy úplně vlevo
+      bubble.style.left = left + 'px';
+    } else {
+      bubble.style.left = '';
+    }
   }, [visible]);
 
   // Automatické zavření tooltipu po 3s na mobilech
@@ -65,7 +85,7 @@ export default function AbbrWithTooltip({ abbr, title }) {
     >
       <abbr className="ktf-abbr-tooltip-abbr" aria-label={title}>{abbr}</abbr>
       {visible && (
-        <span className="ktf-abbr-tooltip-bubble">{title}</span>
+        <span className="ktf-abbr-tooltip-bubble" ref={bubbleRef}>{title}</span>
       )}
     </span>
   );
