@@ -1,3 +1,51 @@
+// Univerzální formátování popisu: zvýrazní apostrofy, hranaté závorky (pravidlo pro 3. pozici), nahradí zkratky za tooltipy, povolí HTML
+function formatPopisWithAll(text) {
+  if (!text) return '';
+  // 1. Zvýraznit apostrofy
+  let s = text.replace(/'([^']+)'/g, '<span class="variant-popis-apostrof">$1</span>');
+  // 2. Zvýraznit hranaté závorky s pravidlem na 3. pozici
+  s = s.replace(/\[([A-Z]\d{1,2})([a-z])?\]/gi, (m, p1, p2) => {
+    if (p2) {
+      return `<strong>[${p1}</strong>${p2}<strong>]</strong>`;
+    } else {
+      return `<strong>[${p1}]</strong>`;
+    }
+  });
+  // 3. Nahradit zkratky za tooltipy (stejná logika jako replaceAbbreviationsWithHtml)
+  const abbrs = Object.keys(ZKRATKY_TOOLTIPY).sort((a, b) => b.length - a.length).map(a => a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  if (abbrs.length > 0) {
+    const regex = new RegExp(
+      `((?<=^|[\s\(\[\{{,;:])(${abbrs.join('|')})(?=[\s\)\]\}},;:.!?]|$))|\\b(${abbrs.join('|')})\\b`,
+      'g'
+    );
+    s = s.replace(regex, (match, _g1, abbr1, abbr2) => {
+      const abbr = abbr1 || abbr2;
+      if (abbr && ZKRATKY_TOOLTIPY[abbr]) {
+        return `<span class=\"ktf-abbr-tooltip-wrapper\"><abbr class=\"ktf-abbr-tooltip-abbr\" title=\"${ZKRATKY_TOOLTIPY[abbr]}\">${abbr}</abbr></span>`;
+      }
+      return match;
+    });
+  }
+  return s;
+}
+// Funkce pro nahrazení zkratek v textu za HTML s tooltipem (pro použití s dangerouslySetInnerHTML)
+function replaceAbbreviationsWithHtml(text) {
+  if (!text) return '';
+  const abbrs = Object.keys(ZKRATKY_TOOLTIPY).sort((a, b) => b.length - a.length).map(a => a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  if (abbrs.length === 0) return text;
+  const regex = new RegExp(
+    `((?<=^|[\s\(\[\{{,;:])(${abbrs.join('|')})(?=[\s\)\]\}},;:.!?]|$))|\\b(${abbrs.join('|')})\\b`,
+    'g'
+  );
+  return text.replace(regex, (match, _g1, abbr1, abbr2) => {
+    const abbr = abbr1 || abbr2;
+    if (abbr && ZKRATKY_TOOLTIPY[abbr]) {
+      // Vložíme HTML pro tooltip (stejné třídy jako v AbbrWithTooltip)
+      return `<span class=\"ktf-abbr-tooltip-wrapper\"><abbr class=\"ktf-abbr-tooltip-abbr\" title=\"${ZKRATKY_TOOLTIPY[abbr]}\">${abbr}</abbr></span>`;
+    }
+    return match;
+  });
+}
 
 import ZKRATKY_TOOLTIPY from './zkratky-tooltips';
 import AbbrWithTooltip from './AbbrWithTooltip';
@@ -1093,7 +1141,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
               {/* --- POPIS STUDIE --- */}
               <div style={{marginTop: 16}}>
                 {item.popisStudie ? (
-                  <span className="study-note" style={{marginBottom: 0, marginTop: 0, minHeight: 0}}>{replaceAbbreviations(item.popisStudie)}</span>
+                  <span className="study-note" style={{marginBottom: 0, marginTop: 0, minHeight: 0}} dangerouslySetInnerHTML={{__html: formatPopisWithAll(item.popisStudie)}} />
                 ) : (
                   <span className="study-note" style={{color:'#bbb', marginBottom: 0, marginTop: 0, minHeight: 0}}>–</span>
                 )}
@@ -1312,7 +1360,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                         ) : (
                           <>
                             {def.popisVady && (
-                              <div className="variant-popis-detail">{formatDefectDescription(def.popisVady)}</div>
+                              <div className="variant-popis-detail" dangerouslySetInnerHTML={{__html: formatPopisWithAll(def.popisVady)}} />
                             )}
                             {isEditingAll && !def.popisVady && (
                               <div style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic', marginTop: '4px' }}>

@@ -3,6 +3,8 @@
 
 const ZKRATKY_TOOLTIPY = {
   "TF": "tisková forma",
+  "SČF": "Svaz českých filatelistů",
+  "SSČZ": "Společnost sběratelů československých známek",
   "SDDSR": "Sociálně demokratická dělnická strana Ruska",
   // Přidej další zkratky podle potřeby
 };
