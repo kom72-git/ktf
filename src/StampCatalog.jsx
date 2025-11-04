@@ -1,3 +1,4 @@
+import VariantTooltip from './VariantTooltip';
 // Univerzální formátování popisu: zvýrazní apostrofy, hranaté závorky (pravidlo pro 3. pozici), nahradí zkratky za tooltipy, povolí HTML
 function formatPopisWithAll(text) {
   if (!text) return '';
@@ -1359,9 +1360,28 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                           </div>
                         ) : (
                           <>
-                            {def.popisVady && (
-                              <div className="variant-popis-detail" dangerouslySetInnerHTML={{__html: formatPopisWithAll(def.popisVady)}} />
-                            )}
+                            {def.popisVady && (() => {
+                              const SPLIT_MARK = '[[...]]';
+                              const idx = def.popisVady.indexOf(SPLIT_MARK);
+                              if (idx !== -1) {
+                                const before = def.popisVady.slice(0, idx);
+                                const after = def.popisVady.slice(idx + SPLIT_MARK.length);
+                                return (
+                                  <div className="variant-popis-detail" style={{position: 'relative'}}>
+                                    {/* Placeholder přesunut nad tečky, nebo odstraněn */}
+                                    {/* <div className="variant-popis-tooltip-placeholder" style={{fontSize: '13px', color: '#888', marginBottom: 2}}>Zobrazit celý popis</div> */}
+                                    <span className="variant-popis-short" dangerouslySetInnerHTML={{__html: formatPopisWithAll(before)}} />
+                                    <VariantTooltip tooltip={<span style={{fontSize: '13px'}} dangerouslySetInnerHTML={{__html: formatPopisWithAll(after)}} />}>
+                                      …
+                                    </VariantTooltip>
+                                  </div>
+                                );
+                              } else {
+                                return (
+                                  <div className="variant-popis-detail" dangerouslySetInnerHTML={{__html: formatPopisWithAll(def.popisVady)}} />
+                                );
+                              }
+                            })()}
                             {isEditingAll && !def.popisVady && (
                               <div style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic', marginTop: '4px' }}>
                                 Klikni na editační ikonu pro přidání popisu
