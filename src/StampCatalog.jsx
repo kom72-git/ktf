@@ -504,11 +504,11 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
     if (!allVariants || allVariants.length === 0) return;
     const slides = allVariants.map(def => ({
       src: def.obrazekVady && def.obrazekVady[0] !== '/' && !def.obrazekVady.startsWith('http') ? '/' + def.obrazekVady : def.obrazekVady,
-      caption:
-        `<div class='fancybox-caption-center'>`
-        + `<span class='fancybox-caption-variant'>${def.variantaVady || ''}${def.variantaVady && def.umisteniVady ? ' – ' : ''}${def.umisteniVady || ''}</span>`
-        + (def.popisVady ? `<br><span class='fancybox-caption-desc'>${def.popisVady}</span>` : '')
-        + `</div>`
+        caption:
+          `<div class='fancybox-caption-center'>`
+          + `<span class='fancybox-caption-variant'>${def.variantaVady || ''}${def.variantaVady && def.umisteniVady ? ' – ' : ''}${def.umisteniVady || ''}</span>`
+          + (def.popisVady ? `<br><span class='fancybox-caption-desc'>${def.popisVady.replace(/\[\[\.\.\.\]\]/g, '')}</span>` : '')
+          + `</div>`
     }));
     Fancybox.show(slides, {
       startIndex: flatIndex,
