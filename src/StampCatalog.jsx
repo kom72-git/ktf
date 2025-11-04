@@ -29,7 +29,7 @@ function formatPopisWithAll(text) {
   }
   return s;
 }
-// Funkce pro nahrazení zkratek v textu za HTML s tooltipem (pro použití s dangerouslySetInnerHTML)
+// Funkce  pro nahrazení zkratek v textu za HTML s tooltipem (pro použití s dangerouslySetInnerHTML)
 function replaceAbbreviationsWithHtml(text) {
   if (!text) return '';
   const abbrs = Object.keys(ZKRATKY_TOOLTIPY).sort((a, b) => b.length - a.length).map(a => a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
