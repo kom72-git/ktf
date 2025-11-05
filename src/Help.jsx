@@ -15,7 +15,7 @@ export default function Help() {
             <div className="stamp-spec-row">
               <span className="stamp-spec-label">Popis</span>
               <span className="stamp-spec-value">
-                Tato stránka obsahuje základní informace o používání katalogu tiskových forem.
+                Tato stránka obsahuje základní informace o používání katalogu tiskových forem - zatím ve fázi testování.
               </span>
             </div>
             <div className="stamp-spec-row">
