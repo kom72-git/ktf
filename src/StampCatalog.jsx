@@ -230,7 +230,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
       // Pro lokální vývoj použijeme server API
       const isLocal = window.location.hostname === 'localhost';
       const apiUrl = isLocal 
-        ? `${API_BASE}/api/defects/${actualId}` // Lokální API server
+        ? `${API_BASE}/api/defects/${actualId}` // Lokální API server.
         : `/api/defects/${actualId}`; // Vercel
       
       console.log('API URL:', apiUrl);
