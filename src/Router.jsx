@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, useParams, useNavigate } from "react-router-dom";
 import StampCatalog from "./StampCatalog";
+import Help from "./Help";
 
 export default function Router() {
   return (
@@ -11,6 +12,7 @@ export default function Router() {
         <Route path="/emise/:slug-:year" element={<CatalogWrapper />} />
         <Route path="/emise/:slug" element={<CatalogWrapper />} />
         <Route path="/detail/:id" element={<DetailWrapper />} />
+        <Route path="/napoveda" element={<Help />} />
       </Routes>
     </BrowserRouter>
   );

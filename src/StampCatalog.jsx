@@ -1,4 +1,6 @@
 import VariantTooltip from './VariantTooltip';
+import Header from './Header';
+import Footer from './Footer';
 // Univerzální formátování popisu: zvýrazní apostrofy, hranaté závorky (pravidlo pro 3. pozici), nahradí zkratky za tooltipy, povolí HTML
 function formatPopisWithAll(text) {
   if (!text) return '';
@@ -1732,13 +1734,8 @@ export default function StampCatalog(props) {
   }
 
   return (
-  <div className="page-bg">
-  <header className="header">
-        <h1 className="main-title" style={{cursor: 'pointer'}} onClick={() => navigate && navigate('/') }>
-          <img src="/img/inicialy-K.png" alt="K" className="main-title-img" />atalog <span className="main-title-nowrap"><img src="/img/inicialy-T.png" alt="T" className="main-title-img" />iskových</span> <span className="main-title-nowrap"><img src="/img/inicialy-F.png" alt="F" className="main-title-img" />orem</span> <span className="main-title-small">československých známek</span>
-        </h1>
-        <p className="subtitle">Seznam studií rozlišení tiskových forem, desek a polí při tisku československých známek v letech 1945-92.</p>
-      </header>
+    <div className="page-bg">
+      <Header navigate={navigate} />
       <main className="main">
         {/* ...existující kód bez testovacího výpisu... */}
         {detailId ? (
@@ -1963,34 +1960,11 @@ export default function StampCatalog(props) {
           </>
         )}
       </main>
-      <footer className="footer">
-        <div className="footer-inner">
-          © {new Date().getFullYear()} kom72
-          {!isAdmin ? (
-            <>
-              &nbsp;|&nbsp;
-              <a href="#" onClick={(e) => { e.preventDefault(); setShowAdminLogin(true); }} style={{color: 'inherit', textDecoration: 'none'}}>
-                admin
-              </a>
-              &nbsp;|&nbsp;
-              <a href="#" style={{color: 'inherit', textDecoration: 'none', opacity: 0.7, cursor: 'not-allowed'}} title="Připravujeme">Kontakt</a>
-              &nbsp;|&nbsp;
-              <a href="#" style={{color: 'inherit', textDecoration: 'none', opacity: 0.7, cursor: 'not-allowed'}} title="Připravujeme">Nápověda</a>
-            </>
-          ) : (
-            <>
-              &nbsp;|&nbsp;
-              <span style={{color: '#10b981'}}>Admin mode</span>
-              &nbsp;|&nbsp;
-              <a href="https://github.com/kom72/ktf" target="_blank" rel="noopener noreferrer">GitHub</a>
-              &nbsp;|&nbsp;
-              <a href="#" onClick={(e) => { e.preventDefault(); handleAdminLogout(); }} style={{color: '#ef4444', textDecoration: 'none'}}>
-                Odhlásit
-              </a>
-            </>
-          )}
-        </div>
-      </footer>
+      <Footer
+        isAdmin={isAdmin}
+        onAdminLogin={() => setShowAdminLogin(true)}
+        onAdminLogout={handleAdminLogout}
+      />
       {/* AdminPanel je nyní vykresleno mimo footer, aby modal byl překryvný */}
       <AdminPanel
         isAdmin={isAdmin}
