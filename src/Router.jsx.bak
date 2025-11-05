@@ -1,11 +1,11 @@
 import React from "react";
-import { HashRouter, Routes, Route, useParams, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useParams, useNavigate } from "react-router-dom";
 import StampCatalog from "./StampCatalog";
 import Help from "./Help";
 
 export default function Router() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={<CatalogWrapper />} />
         <Route path="/rok/:year" element={<CatalogWrapper />} />
@@ -14,7 +14,7 @@ export default function Router() {
         <Route path="/detail/:id" element={<DetailWrapper />} />
         <Route path="/napoveda" element={<Help />} />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
 
@@ -23,8 +23,7 @@ function CatalogWrapper() {
   const params = useParams();
   // Rozlišíme, zda je to /rok/:year nebo /emise/:slug(-:year)?
   const { slug, year } = params;
-  // V HashRouter nelze spoléhat na window.location.pathname; určeme podle přítomnosti parametrů
-  const isYearRoute = (!slug && !!year);
+  const isYearRoute = window.location.pathname.startsWith('/rok/');
   const key = `${slug || 'all'}-${year || 'all'}-${isYearRoute ? 'year' : 'emission'}`;
   return (
     <StampCatalog

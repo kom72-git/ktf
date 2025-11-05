@@ -21,7 +21,7 @@ export default function Help() {
             <div className="stamp-spec-row">
               <span className="stamp-spec-label">Jak používat</span>
               <span className="stamp-spec-value">
-                <ul style={{margin:0, paddingLeft:'1.2em'}}>
+                <ul >
                   <li>Pro vyhledávání známek použijte pole v horní části katalogu.</li>
                   <li>Detail známky zobrazíte kliknutím na její název nebo obrázek.</li>
                   <li>Pokud jste administrátor, můžete přidávat nové známky a upravovat vady.</li>
@@ -32,7 +32,7 @@ export default function Help() {
             <div className="stamp-spec-row">
               <span className="stamp-spec-label">Kontakt</span>
               <span className="stamp-spec-value">
-                Pokud potřebujete další pomoc, napište na <a href="mailto:support@ktf.cz">support@ktf.cz</a>.
+                Pokud potřebujete další pomoc, napište na.
               </span>
             </div>
           </div>

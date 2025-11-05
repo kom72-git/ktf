@@ -14,7 +14,7 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
             &nbsp;|&nbsp;
             <a href="#" style={{color: 'inherit', textDecoration: 'none', opacity: 0.7, cursor: 'not-allowed'}} title="Připravujeme">Kontakt</a>
             &nbsp;|&nbsp;
-            <a href="/napoveda" style={{color: '#2563eb', textDecoration: 'underline', fontWeight: 500}}>Nápověda</a>
+            <a href="#/napoveda" style={{color: '#2563eb', textDecoration: 'underline', fontWeight: 500}}>Nápověda</a>
           </>
         ) : (
           <>
