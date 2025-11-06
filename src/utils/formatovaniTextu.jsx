@@ -1,5 +1,5 @@
 import React from "react";
-import AbbrWithTooltip from "../AbbrWithTooltip";
+import AbbrWithTooltip from "../components/AbbrWithTooltip.jsx";
 import ZKRATKY_TOOLTIPY from "../zkratky-tooltips";
 
 // Univerzální formátování popisu: apostrofy → zvýraznění, hranaté závorky → tučně, známé zkratky → tooltip HTML

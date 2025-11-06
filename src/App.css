@@ -148,6 +148,72 @@
 /* ========================== 3. Seznam známek (katalog) ========================== */
 /* ========================== 4. Detail známky ========================== */
 /* ========================== 5. Varianty a podvarianty ========================== */
+/* --- Tooltipy (zkratky a varianty) --- */
+.ktf-abbr-tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.ktf-abbr-tooltip-abbr {
+  text-decoration: underline dotted;
+  cursor: help;
+  font-style: normal;
+  color: inherit;
+}
+.ktf-abbr-tooltip-bubble {
+  position: absolute;
+  left: 0;
+  top: 125%;
+  background: #fff;
+  color: #222;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: normal;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  z-index: 2000;
+  opacity: 0.97;
+  pointer-events: none;
+  border: 1px solid #ddd;
+  transition: opacity 0.15s;
+}
+.variant-tooltip-bubble,
+.variant-tooltip-bubble * {
+  font-size: 16px !important;
+}
+.variant-popis-detail {
+  position: relative;
+}
+.variant-tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.variant-tooltip-trigger {
+  cursor: pointer;
+  color: #2563eb;
+  margin-left: 4px;
+  font-weight: bold;
+  border-radius: 4px;
+  padding: 0 4px;
+  background: rgba(220,230,255,0.5);
+}
+.variant-tooltip-bubble {
+  box-sizing: border-box;
+  position: absolute;
+  left: 0;
+  right: auto;
+  top: calc(100% + 8px);
+  transform: none;
+  z-index: 3000;
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 8px 14px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  width: 100%;
+  min-width: 120px;
+  word-break: break-word;
+}
 /* ========================== 6. Editační pole a admin sekce ========================== */
 /* Univerzální zarovnání popisku nad inputem */
 .label-top-input {
