@@ -1,57 +1,25 @@
+import React, { useState, useMemo, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { Fancybox } from "@fancyapps/ui";
+import { Search, Image } from "lucide-react";
 import VariantTooltip from './VariantTooltip';
 import Header from './Header';
 import Footer from './Footer';
-// Univerzální formátování popisu: zvýrazní apostrofy, hranaté závorky (pravidlo pro 3. pozici), nahradí zkratky za tooltipy, povolí HTML
-function formatPopisWithAll(text) {
-  if (!text) return '';
-  // 1. Zvýraznit apostrofy
-  let s = text.replace(/'([^']+)'/g, '<span class="variant-popis-apostrof">$1</span>');
-  // 2. Zvýraznit hranaté závorky s pravidlem na 3. pozici
-  s = s.replace(/\[([A-Z]\d{1,2})([a-z])?\]/gi, (m, p1, p2) => {
-    if (p2) {
-      return `<strong>[${p1}</strong>${p2}<strong>]</strong>`;
-    } else {
-      return `<strong>[${p1}]</strong>`;
-    }
-  });
-  // 3. Nahradit zkratky za tooltipy (stejná logika jako replaceAbbreviationsWithHtml)
-  const abbrs = Object.keys(ZKRATKY_TOOLTIPY).sort((a, b) => b.length - a.length).map(a => a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  if (abbrs.length > 0) {
-    const regex = new RegExp(
-      `((?<=^|[\s\(\[\{{,;:])(${abbrs.join('|')})(?=[\s\)\]\}},;:.!?]|$))|\\b(${abbrs.join('|')})\\b`,
-      'g'
-    );
-    s = s.replace(regex, (match, _g1, abbr1, abbr2) => {
-      const abbr = abbr1 || abbr2;
-      if (abbr && ZKRATKY_TOOLTIPY[abbr]) {
-        return `<span class=\"ktf-abbr-tooltip-wrapper\"><abbr class=\"ktf-abbr-tooltip-abbr\" title=\"${ZKRATKY_TOOLTIPY[abbr]}\">${abbr}</abbr></span>`;
-      }
-      return match;
-    });
-  }
-  return s;
-}
-// Funkce  pro nahrazení zkratek v textu za HTML s tooltipem (pro použití s dangerouslySetInnerHTML)
-function replaceAbbreviationsWithHtml(text) {
-  if (!text) return '';
-  const abbrs = Object.keys(ZKRATKY_TOOLTIPY).sort((a, b) => b.length - a.length).map(a => a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  if (abbrs.length === 0) return text;
-  const regex = new RegExp(
-    `((?<=^|[\s\(\[\{{,;:])(${abbrs.join('|')})(?=[\s\)\]\}},;:.!?]|$))|\\b(${abbrs.join('|')})\\b`,
-    'g'
-  );
-  return text.replace(regex, (match, _g1, abbr1, abbr2) => {
-    const abbr = abbr1 || abbr2;
-    if (abbr && ZKRATKY_TOOLTIPY[abbr]) {
-      // Vložíme HTML pro tooltip (stejné třídy jako v AbbrWithTooltip)
-      return `<span class=\"ktf-abbr-tooltip-wrapper\"><abbr class=\"ktf-abbr-tooltip-abbr\" title=\"${ZKRATKY_TOOLTIPY[abbr]}\">${abbr}</abbr></span>`;
-    }
-    return match;
-  });
-}
-
-import ZKRATKY_TOOLTIPY from './zkratky-tooltips';
-import AbbrWithTooltip from './AbbrWithTooltip';
+import AdminPanel from "./AdminPanel";
+import {
+  formatPopisWithAll,
+  formatDefectDescription,
+  replaceAbbreviations,
+  sklonujPolozka
+} from './utils/formatovaniTextu.jsx';
+import {
+  katalogSort,
+  naturalVariantSort,
+  compareVariantsWithBracket
+} from './utils/katalog.js';
+import "./App.css";
+import "@fancyapps/ui/dist/fancybox/fancybox.css";
+import "./fancybox-responsive.css";
 
 // Wrapper pro nadpis emise, který zabrání propagaci kliknutí na zkratku
 function EmissionTitleAbbr({ children }) {
@@ -68,99 +36,6 @@ function EmissionTitleAbbr({ children }) {
   return (
     <span onClick={handleClick}>{children}</span>
   );
-}
-
-// Funkce pro nahrazení zkratek za <AbbrWithTooltip> (pole React node)
-function replaceAbbreviations(text) {
-  if (!text) return text;
-  // Sestavíme regex pro všechny zkratky najednou (uniknout tečky)
-  const abbrs = Object.keys(ZKRATKY_TOOLTIPY).sort((a, b) => b.length - a.length).map(a => a.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  if (abbrs.length === 0) return text;
-  const regex = new RegExp(
-    `((?<=^|[\s\(\[\{{,;:])(${abbrs.join('|')})(?=[\s\)\]\}},;:.!?]|$))|\\b(${abbrs.join('|')})\\b`,
-    'g'
-  );
-  const result = [];
-  let lastIndex = 0;
-  let match;
-  while ((match = regex.exec(text)) !== null) {
-    const matchText = match[2] || match[3];
-    const abbr = matchText;
-    const idx = match.index;
-    if (idx > lastIndex) {
-      result.push(text.slice(lastIndex, idx));
-    }
-    if (abbr && ZKRATKY_TOOLTIPY[abbr]) {
-      // Pokud je uvnitř <a>, zamezíme klikatelnosti zkratky
-      result.push(
-        <span style={{pointerEvents: 'auto'}} key={idx + '-' + abbr}>
-          <AbbrWithTooltip abbr={abbr} title={ZKRATKY_TOOLTIPY[abbr]} />
-        </span>
-      );
-    } else if (match[0]) {
-      result.push(match[0]);
-    }
-    lastIndex = regex.lastIndex;
-  }
-  if (lastIndex < text.length) {
-    result.push(text.slice(lastIndex));
-  }
-  return result.length === 1 ? result[0] : result;
-}
-// Globální funkce pro řazení podle katalogového čísla: nejprve číslo, pak prefix
-export function katalogSort(a, b) {
-  const getKat = (x) => typeof x === 'string' ? x : (x.katalogCislo || '');
-  const katA = getKat(a);
-  const katB = getKat(b);
-  const numA = (katA.match(/\d+/) || [""])[0];
-  const numB = (katB.match(/\d+/) || [""])[0];
-  if (numA !== numB) {
-    return Number(numA) - Number(numB);
-  }
-  // Pokud čísla stejná, porovnej prefixy (vše před číslem, bez mezer)
-  const prefixA = katA.replace(numA, "").replace(/\s+/g, "");
-  const prefixB = katB.replace(numB, "").replace(/\s+/g, "");
-  return prefixA.localeCompare(prefixB);
-}
-import React, { useState, useMemo, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import AdminPanel from "./AdminPanel";
-import { Search, Image } from "lucide-react";
-import "./App.css";
-import { Fancybox } from "@fancyapps/ui";
-import "@fancyapps/ui/dist/fancybox/fancybox.css";
-import "./fancybox-responsive.css";
-
-// Helper funkce pro formátování popisů vad - text v [] bude tučný
-function formatDefectDescription(text) {
-  if (!text) return text;
-  // Regex pro nalezení textu v hranatých závorkách na začátku
-  // Nově: pokud je uvnitř např. B1a, tučně [B1 a ] netučně, pokud je jen [B1], celé tučně
-  const regex = /^\[([A-Z]\d{1,2})([a-z])?\](.*)/i;
-  const match = text.match(regex);
-  // Funkce pro zvýraznění textu v apostrofech a nahrazení zkratek
-  function highlightApostrophesAndAbbr(str) {
-    // Nejprve zvýrazníme apostrofy
-    let s = str.replace(/'([^']+)'/g, '<span class="variant-popis-apostrof">$1</span>');
-    // Pak nahradíme zkratky za <AbbrWithTooltip>
-    // POZOR: zde nemůžeme použít React komponentu, musíme nahradit pouze HTML (jinak by to nešlo do dangerouslySetInnerHTML)
-    // Proto zde zkratky nebudou mít tooltip, pouze zvýraznění apostrofů
-    return s;
-  }
-  if (match) {
-    // match[1] = B1, match[2] = a (nepovinné), match[3] = zbytek
-    return (
-      <>
-        <strong>[{match[1]}</strong>
-        {match[2] && <span>{match[2]}</span>}
-        <strong>]</strong>
-        <span dangerouslySetInnerHTML={{__html: highlightApostrophesAndAbbr(match[3])}} />
-      </>
-    );
-  }
-  // Jinak celý text může obsahovat HTML tagy, apostrofy i zkratky
-  return <span dangerouslySetInnerHTML={{__html: highlightApostrophesAndAbbr(text)}} />;
 }
 
 function DetailPage({ id, onBack, defects, isAdmin = false }) {
@@ -463,43 +338,10 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
     grouped[groupKey].push(def);
   });
 
-  // Přirozené řazení variant
-  function naturalVariantSort(a, b) {
-    const va = a.variantaVady;
-    const vb = b.variantaVady;
-    const parse = v => {
-      const m = v.match(/^([A-Z])(\d+)?(?:\.(\d+))?/i);
-      if (!m) return [v, 0, null];
-      return [m[1], m[2] ? parseInt(m[2], 10) : 0, m[3] ? parseInt(m[3], 10) : null];
-    };
-    const [la, na, sa] = parse(va);
-    const [lb, nb, sb] = parse(vb);
-    if (la !== lb) return la.localeCompare(lb);
-    if (na !== nb) return na - nb;
-    if (sa === null && sb !== null) return -1;
-    if (sa !== null && sb === null) return 1;
-    if (sa !== null && sb !== null) return sa - sb;
-    return 0;
-  }
-
   // Sestavíme globální pole všech variant v pořadí vykreslení napříč všemi skupinami
   const allVariants = Object.keys(grouped).sort().flatMap(groupKey => {
     const defsInGroup = grouped[groupKey];
-    return defsInGroup.slice().sort((a, b) => {
-      const cmp = naturalVariantSort(a, b);
-      if (cmp !== 0) return cmp;
-      function extractBracketOrder(def) {
-        if (!def.popisVady) return null;
-        const m = def.popisVady.match(/^\s*\[([^\]]+)\]/);
-        return m ? m[1] : null;
-      }
-      const orderA = extractBracketOrder(a);
-      const orderB = extractBracketOrder(b);
-      if (orderA === null && orderB !== null) return 1;
-      if (orderA !== null && orderB === null) return -1;
-      if (orderA === null && orderB === null) return 0;
-      return orderA.localeCompare(orderB, undefined, { numeric: true });
-    });
+    return defsInGroup.slice().sort(compareVariantsWithBracket);
   });
   // Fancybox galerie pro skupinu
   const openFancybox = (flatIndex = 0) => {
@@ -1163,44 +1005,13 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
             });
             const uniqueDefs = Array.from(uniqueDefsMap.values());
             // Přirozené řazení
-            function naturalVariantSort(a, b) {
-              const va = a.variantaVady;
-              const vb = b.variantaVady;
-              const parse = v => {
-                const m = v.match(/^([A-Z])(\d+)?(?:\.(\d+))?/i);
-                if (!m) return [v, 0, null];
-                return [m[1], m[2] ? parseInt(m[2], 10) : 0, m[3] ? parseInt(m[3], 10) : null];
-              };
-              const [la, na, sa] = parse(va);
-              const [lb, nb, sb] = parse(vb);
-              if (la !== lb) return la.localeCompare(lb);
-              if (na !== nb) return na - nb;
-              if (sa === null && sb !== null) return -1;
-              if (sa !== null && sb === null) return 1;
-              if (sa !== null && sb !== null) return sa - sb;
-              return 0;
-            }
             const sortedDefs = uniqueDefs.slice().sort(naturalVariantSort);
             // --- úprava číslování obrázků ---
             const NO_IMAGE = '/img/no-image.png';
             // Sestavíme globální pole všech variant v pořadí vykreslení napříč všemi skupinami
             const allVariants = Object.keys(grouped).sort().flatMap(groupKey => {
               const defsInGroup = grouped[groupKey];
-              return defsInGroup.slice().sort((a, b) => {
-                const cmp = naturalVariantSort(a, b);
-                if (cmp !== 0) return cmp;
-                function extractBracketOrder(def) {
-                  if (!def.popisVady) return null;
-                  const m = def.popisVady.match(/^\s*\[([^\]]+)\]/);
-                  return m ? m[1] : null;
-                }
-                const orderA = extractBracketOrder(a);
-                const orderB = extractBracketOrder(b);
-                if (orderA === null && orderB !== null) return 1;
-                if (orderA !== null && orderB === null) return -1;
-                if (orderA === null && orderB === null) return 0;
-                return orderA.localeCompare(orderB, undefined, { numeric: true });
-              });
+              return defsInGroup.slice().sort(compareVariantsWithBracket);
             });
             // Mapování: def -> pořadí (index+1)
             function getSimpleImageNumber(def) {
@@ -1237,25 +1048,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                 )}
                 <div className="variants">
                   {/* Všechny výskyty variant včetně duplicit, v přirozeném pořadí */}
-                  {defs.slice().sort((a, b) => {
-                    // Nejprve původní naturalVariantSort
-                    const cmp = naturalVariantSort(a, b);
-                    if (cmp !== 0) return cmp;
-                    // Pokud je varianta stejná, řadíme podle popisu v hranatých závorkách
-                    function extractBracketOrder(def) {
-                      if (!def.popisVady) return null;
-                      const m = def.popisVady.match(/^\s*\[([^\]]+)\]/);
-                      return m ? m[1] : null;
-                    }
-                    const orderA = extractBracketOrder(a);
-                    const orderB = extractBracketOrder(b);
-                    // Nejprve upřednostnit ty, které mají závorku
-                    if (orderA === null && orderB !== null) return 1;
-                    if (orderA !== null && orderB === null) return -1;
-                    if (orderA === null && orderB === null) return 0;
-                    // Porovnáme jako string, pokud je více hodnot, řadí se lexikálně
-                    return orderA.localeCompare(orderB, undefined, { numeric: true });
-                  }).map((def, i) => {
+                  {defs.slice().sort(compareVariantsWithBracket).map((def, i) => {
                     const flatIndex = allVariants.indexOf(def);
                     return (
                       <div key={def.idVady || `var-${i}`} className="variant" >
@@ -1370,19 +1163,16 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                                 const after = def.popisVady.slice(idx + SPLIT_MARK.length);
                                 return (
                                   <div className="variant-popis-detail" style={{position: 'relative'}}>
-                                    {/* Placeholder přesunut nad tečky, nebo odstraněn */}
-                                    {/* <div className="variant-popis-tooltip-placeholder" style={{fontSize: '13px', color: '#888', marginBottom: 2}}>Zobrazit celý popis</div> */}
-                                    <span className="variant-popis-short" dangerouslySetInnerHTML={{__html: formatPopisWithAll(before)}} />
-                                    <VariantTooltip tooltip={<span style={{fontSize: '13px'}} dangerouslySetInnerHTML={{__html: formatPopisWithAll(after)}} />}>
+                                    <span className="variant-popis-short">{formatDefectDescription(before)}</span>
+                                    <VariantTooltip tooltip={<span style={{fontSize: '13px'}}>{formatDefectDescription(after)}</span>}>
                                       …
                                     </VariantTooltip>
                                   </div>
                                 );
-                              } else {
-                                return (
-                                  <div className="variant-popis-detail" dangerouslySetInnerHTML={{__html: formatPopisWithAll(def.popisVady)}} />
-                                );
                               }
+                              return (
+                                <div className="variant-popis-detail">{formatDefectDescription(def.popisVady)}</div>
+                              );
                             })()}
                             {isEditingAll && !def.popisVady && (
                               <div style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic', marginTop: '4px' }}>
@@ -1513,7 +1303,7 @@ function DetailPage({ id, onBack, defects, isAdmin = false }) {
                     ) : (
                       <>
                         {def.popisVady && (
-                          <div className="variant-popis-detail" dangerouslySetInnerHTML={{__html: def.popisVady}} />
+                          <div className="variant-popis-detail">{formatDefectDescription(def.popisVady)}</div>
                         )}
                         {isEditingAll && !def.popisVady && (
                           <div style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic', marginTop: '4px' }}>
@@ -1737,11 +1527,6 @@ export default function StampCatalog(props) {
     return arr;
   }, [query, year, emission, catalog, stamps]);
 
-  function sklonujPolozka(count) {
-    if (count === 1) return 'položka';
-    if (count >= 2 && count <= 4) return 'položky';
-    return 'položek';
-  }
 
   return (
     <div className="page-bg">
