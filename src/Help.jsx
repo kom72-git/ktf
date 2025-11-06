@@ -1,11 +1,13 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
 
 export default function Help() {
+  const navigate = useNavigate();
   return (
     <div className="page-bg">
-      <Header />
+      <Header navigate={navigate} />
       <main className="main">
         <div className="stamp-detail-block">
           <div className="detail-title">

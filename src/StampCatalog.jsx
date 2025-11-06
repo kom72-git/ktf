@@ -1616,6 +1616,7 @@ export default function StampCatalog(props) {
       localStorage.setItem('ktf_admin_session', 'active');
       setIsAdmin(true);
       setShowAdminLogin(false);
+      window.dispatchEvent(new Event('ktf-admin-refresh'));
     } else {
       alert('Nesprávné heslo');
     }
@@ -1623,6 +1624,7 @@ export default function StampCatalog(props) {
   const handleAdminLogout = () => {
     localStorage.removeItem('ktf_admin_session');
     setIsAdmin(false);
+    window.dispatchEvent(new Event('ktf-admin-refresh'));
   };
 
   // (Synchronizace s URL už není potřeba, vše je řízeno routerem)
@@ -1657,6 +1659,14 @@ export default function StampCatalog(props) {
         setDefects(data);
       })
       .catch(err => console.error("Chyba při načítání vad:", err));
+  }, []);
+
+  useEffect(() => {
+    const openLogin = () => setShowAdminLogin(true);
+    window.addEventListener('ktf-admin-open-login', openLogin);
+    return () => {
+      window.removeEventListener('ktf-admin-open-login', openLogin);
+    };
   }, []);
 
   useEffect(() => {
