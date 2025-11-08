@@ -2,11 +2,16 @@
 // Každou zkratku přidej jako klíč, vysvětlení jako hodnotu
 
 const ZKRATKY_TOOLTIPY = {
-  "TF": "tisková forma",
+  "DV": "desková vada",
+  "OTp": "ocelotisk z plochy",
+  "OZ": "papír se záměrnou přísadou opticky zjasňující látky",
+  "PL": "opřepážkový list",
+  "PO": "perforační otvor",
   "SČF": "Svaz českých filatelistů",
-  "SSČZ": "Společnost sběratelů československých známek",
   "SDDSR": "Sociálně demokratická dělnická strana Ruska",
-  // Přidej další zkratky podle potřeby
+  "SSČZ": "Společnost sběratelů československých známek", 
+  "TF": "tisková forma",
+  "ZP": "známkové pole",
 };
 
 export default ZKRATKY_TOOLTIPY;

@@ -30,7 +30,11 @@ const StampSchema = new mongoose.Schema({
   naklad: String,
   schemaTF: String,
   Studie: String,
-  popisObrazkuStudie: String // nový popisek pod obrázkem studie
+  studieUrl: String,
+  popisObrazkuStudie: String,
+  popisStudie: String,
+  popisStudie2: String,
+  obrazekAutor: String
 });
 
 export default mongoose.model("Stamp", StampSchema);

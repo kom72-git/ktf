@@ -183,6 +183,48 @@ export default function StampCatalog(props) {
     return ["all", ...Array.from(s).sort(katalogSort)];
   }, [year, stamps]);
 
+  const fieldSuggestions = useMemo(() => {
+    const fields = [
+      "emise",
+      "rok",
+      "katalogCislo",
+      "obrazek",
+      "obrazekStudie",
+      "datumVydani",
+      "navrh",
+      "rytec",
+      "druhTisku",
+      "tiskovaForma",
+      "zoubkovani",
+      "papir",
+      "rozmer",
+      "naklad",
+      "schemaTF",
+      "Studie",
+      "studieUrl",
+    "popisObrazkuStudie",
+    "popisStudie",
+    "popisStudie2",
+    "obrazekAutor",
+    ];
+    const collect = (field) => {
+      const values = new Set();
+      stamps.forEach((stamp) => {
+        const raw = stamp[field];
+        if (raw === null || raw === undefined) return;
+        const value = typeof raw === "string" ? raw.trim() : String(raw).trim();
+        if (value) {
+          values.add(value);
+        }
+      });
+      return Array.from(values).sort((a, b) => a.localeCompare(b, "cs"));
+    };
+    return fields.reduce((acc, field) => {
+      acc[field] = collect(field);
+      return acc;
+    }, {});
+  }, [stamps]);
+
   // Výchozí náhled: 20 nejnovějších známek podle _id (největší = nejnovější)
   const filtered = useMemo(() => {
     let arr = stamps
@@ -223,7 +265,13 @@ export default function StampCatalog(props) {
       <main className="main">
         {/* ...existující kód bez testovacího výpisu... */}
         {detailId ? (
-          <DetailPage id={detailId} onBack={() => setDetailId(null)} defects={defects} isAdmin={isAdmin} />
+          <DetailPage
+            id={detailId}
+            onBack={() => setDetailId(null)}
+            defects={defects}
+            isAdmin={isAdmin}
+            fieldSuggestions={fieldSuggestions}
+          />
         ) : (
           <>
             {/* Tlačítko pro přidání nové známky pro admina */}
@@ -279,8 +327,34 @@ export default function StampCatalog(props) {
                 ))}
               </select>
               <select value={catalog} onChange={(e) => {
-                setCatalog(e.target.value);
-                // Neprováděj žádnou navigaci, pouze filtruj v paměti
+                const newCatalog = e.target.value;
+                setCatalog(newCatalog);
+                if (newCatalog !== "all") {
+                  const matches = stamps.filter((s) => {
+                    if (s.katalogCislo !== newCatalog) return false;
+                    if (year !== "all" && s.rok !== Number(year)) return false;
+                    if (emission !== "all" && s.emise !== emission) return false;
+                    if (query) {
+                      const q = query.toLowerCase();
+                      const matchesQuery =
+                        (s.emise && s.emise.toLowerCase().includes(q)) ||
+                        (s.katalogCislo && s.katalogCislo.toLowerCase().includes(q)) ||
+                        (s.rok && String(s.rok).includes(q));
+                      if (!matchesQuery) return false;
+                    }
+                    return true;
+                  });
+                  if (matches.length === 1) {
+                    const targetId = matches[0].idZnamky;
+                    if (props && props.setDetailId) {
+                      props.setDetailId(targetId);
+                    } else if (navigate) {
+                      navigate(`/detail/${targetId}`);
+                    } else {
+                      window.location.href = `/detail/${targetId}`;
+                    }
+                  }
+                }
               }}>
                 <option value="all">Katalogové číslo</option>
                 {filteredCatalogs.filter(c => c !== "all").map((c) => (
@@ -485,6 +559,7 @@ export default function StampCatalog(props) {
             alert('Chyba při komunikaci se serverem');
           }
         }}
+        fieldSuggestions={fieldSuggestions}
       />
     </div>
   );

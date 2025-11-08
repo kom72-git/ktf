@@ -2,6 +2,17 @@
   font-weight: 700;
   font-size: 1.1rem;
 }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 /* Ikony v tlačítkách – sjednocená velikost a odsazení */
 .btn-icon {
   font-size: 1.2em;
@@ -82,6 +93,21 @@
   display: block;
   margin: 0 auto;
 }
+.study-float-left {
+  float: left;
+  margin: 0 12px 12px 0;
+  max-width: 40%;
+  height: auto;
+}
+.study-float-right {
+  float: right;
+  margin: 0 0 12px 12px;
+  max-width: 40%;
+  height: auto;
+}
+.study-clear {
+  clear: both;
+}
 .study-img-caption-input {
   font-size: 0.95em;
   color: #444;
@@ -154,7 +180,9 @@
   display: inline-block;
 }
 .ktf-abbr-tooltip-abbr {
-  text-decoration: underline dotted;
+  text-decoration: underline dotted rgba(148, 163, 184, 0.6);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
   cursor: help;
   font-style: normal;
   color: inherit;
@@ -225,6 +253,9 @@
 .label-top-input label {
   font-weight: 500;
   display: block;
+}
+.ktf-edit-row-full {
+  width: 100%;
 }
 /* Zarovnání editačních polí pro studii */
 .ktf-edit-study-row {
@@ -338,6 +369,7 @@ textarea.resize-corner {
   font-weight: 400;
   margin-top: 18px;
   margin-bottom: 18px;
+  color: inherit;
 }
   /* Hlavní zelené tlačítko (např. Přidat variantu, Uložit vše) */
 .ktf-btn-confirm {
@@ -391,6 +423,43 @@ textarea.resize-corner {
   padding: 4px 6px;
   font-size: 15px;
   box-sizing: border-box;
+}
+.ktf-edit-textarea-study {
+  min-height: 200px;
+}
+.study-authors-row {
+  width: 100%;
+  margin-top: 18px;
+}
+.ktf-edit-inline-label {
+  min-width: 170px;
+  font-weight: 500;
+}
+.ktf-edit-authors-input {
+  flex: 1 1 0%;
+}
+.study-note-section {
+  margin-top: 16px;
+}
+.study-note-authors-wrapper {
+  margin-top: 12px;
+}
+.study-note-authors {
+  margin: 0;
+  min-height: 0;
+  display: block;
+}
+.study-note-placeholder {
+  color: #bbb;
+  margin: 0;
+  min-height: 0;
+  display: block;
+}
+.study-note-block {
+  margin-top: 20px;
+}
+.study-note-block.editing {
+  margin-top: 24px;
 }
 
 /* textarea pro popis studie v editaci detailu */
@@ -681,9 +750,21 @@ textarea.resize-corner {
   margin-top: 0;
 }
 .study-inline-label {
-  font-weight: 700;
-  margin-right: 8px !important;
+  font-weight: 600;
+  margin-right: 6px !important;
   vertical-align: baseline !important;
+  color: inherit;
+  font-family: inherit;
+}
+.study-inline-value {
+  font-weight: 400;
+  margin-right: 4px;
+  color: inherit;
+}
+.detail-catalog strong {
+  font-weight: 600;
+  color: inherit;
+  font-family: inherit;
 }
 .ktf-edit-row-flex {
   display: flex;
@@ -708,19 +789,6 @@ textarea.resize-corner {
   background: #fff;
 }
 
-/* Opravený blok variant-popis */
-.variant-popis {
-  font-size: 1.05em;
-  font-weight: 500;
-  margin-bottom: 12px;
-}
- .variant-dash {
-  font-weight: 400;
-  margin: 0 3px 0 6px;
-  display: inline;
-  vertical-align: middle;
-}
- 
 /* Layout pro detail známky */
 .stamp-detail-layout {
   display: flex;
@@ -850,16 +918,16 @@ textarea.resize-corner {
   font-weight: 400;
 }
 .variant-popis {
-  font-size: 1.05em;
-  font-weight: 500;
-  margin-bottom: 18px;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 14px;
 }
 .variant-popis-hlavni {
-  font-size: 1.0rem;
+  font-size: 1rem;
   font-weight: 700;
 }
 .variant-popis-detail {
-  font-size: 1.0rem;
+  font-size: 1rem;
   color: #222;
   font-weight: 400;
 }
@@ -960,10 +1028,16 @@ textarea.resize-corner {
 .back-btn:hover {
   background: #e0e0e0;
 }
-.detail-title {
-  font-size: 1.3rem;
+.detail-title { /* h1 */
+  font-size: 1.5rem;
   font-weight: 700;
-  margin-bottom: 2px;
+  margin: 0 0 2px 0;
+  padding: 0;
+}
+.detail-title-text {
+  margin: 0;
+  padding: 0;
+  font-size: inherit; /* h1 uvnitř – bere font z rodiče */
 }
 .detail-catalog {
   font-size: 1.05rem;

@@ -13,7 +13,7 @@ import {
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import "./fancybox-responsive.css";
 
-export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
+export default function DetailPage({ id, onBack, defects, isAdmin = false, fieldSuggestions = {} }) {
   const [item, setItem] = useState(null);
   const [isEditingAll, setIsEditingAll] = useState(false);
   const [editingDefect, setEditingDefect] = useState(null);
@@ -51,7 +51,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
           schemaTF: data.schemaTF || '',
           Studie: data.Studie || '',
           studieUrl: data.studieUrl || '',
-          popisObrazkuStudie: data.popisObrazkuStudie || ''
+          popisObrazkuStudie: data.popisObrazkuStudie || '',
+          popisStudie: data.popisStudie || '',
+          popisStudie2: data.popisStudie2 || '',
+          obrazekAutor: data.obrazekAutor || ''
         });
       })
       .catch(err => {
@@ -318,6 +321,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
     const defsInGroup = grouped[groupKey];
     return defsInGroup.slice().sort(compareVariantsWithBracket);
   });
+  const secondStudyBlockClass = isEditingAll ? 'study-note-block editing' : 'study-note-block';
+  const detailHeadingId = `stamp-detail-${item.idZnamky || id}-title`;
+  const specHeadingId = `${detailHeadingId}-spec`;
+  const studyHeadingId = `${detailHeadingId}-study`;
+  const variantsHeadingBaseId = `${detailHeadingId}-variant`;
+  const additionalStudyHeadingId = `${detailHeadingId}-study-after`;
   // Fancybox galerie pro skupinu
   const openFancybox = (flatIndex = 0) => {
     if (!allVariants || allVariants.length === 0) return;
@@ -344,7 +353,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
   };
 
   return (
-    <div className="stamp-detail-block">
+    <article className="stamp-detail-block" aria-labelledby={detailHeadingId}>
       <div className="button-row">
         <button onClick={onBack} className="back-btn">← Zpět</button>
         {isAdmin && (
@@ -381,7 +390,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
                     schemaTF: item.schemaTF || '',
                     Studie: item.Studie || '',
                     studieUrl: item.studieUrl || '',
-                    popisObrazkuStudie: item.popisObrazkuStudie || ''
+                    obrazekAutor: item.obrazekAutor || '',
+                    popisObrazkuStudie: item.popisObrazkuStudie || '',
+                    popisStudie: item.popisStudie || '',
+                    popisStudie2: item.popisStudie2 || ''
                   });
                   setIsEditingAll(false);
                 }
@@ -407,42 +419,47 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
           </>
         )}
       </div>
-      <div className="detail-title">
+      <header className="detail-title">
         {isEditingAll ? (
-          <div className="edit-title-row">
-            <input
-              type="text"
-              value={editStampData.emise}
-              onChange={(e) => setEditStampData({...editStampData, emise: e.target.value})}
-              className="edit-title-input"
-              placeholder="Název emise"
-            />
-            <button
-              onClick={() => saveTechnicalField('emise', editStampData.emise)}
-              className="ktf-btn-check"
-            >
-              ✓
-            </button>
-            <span>(</span>
-            <input
-              type="text"
-              value={editStampData.rok}
-              onChange={(e) => setEditStampData({...editStampData, rok: e.target.value})}
-              className="edit-year-input"
-              placeholder="Rok"
-            />
-            <button
-              onClick={() => saveTechnicalField('rok', editStampData.rok)}
-              className="ktf-btn-check"
-            >
-              ✓
-            </button>
-            <span>)</span>
-          </div>
+          <>
+            <h1 id={detailHeadingId} className="sr-only">
+              {replaceAbbreviations(`${item.emise} (${item.rok})`)}
+            </h1>
+            <div className="edit-title-row">
+              <input
+                type="text"
+                value={editStampData.emise}
+                onChange={(e) => setEditStampData({...editStampData, emise: e.target.value})}
+                className="edit-title-input"
+                placeholder="Název emise"
+              />
+              <button
+                onClick={() => saveTechnicalField('emise', editStampData.emise)}
+                className="ktf-btn-check"
+              >
+                ✓
+              </button>
+              <span>(</span>
+              <input
+                type="text"
+                value={editStampData.rok}
+                onChange={(e) => setEditStampData({...editStampData, rok: e.target.value})}
+                className="edit-year-input"
+                placeholder="Rok"
+              />
+              <button
+                onClick={() => saveTechnicalField('rok', editStampData.rok)}
+                className="ktf-btn-check"
+              >
+                ✓
+              </button>
+              <span>)</span>
+            </div>
+          </>
         ) : (
-          <span className="detail-title-text">{replaceAbbreviations(`${item.emise} (${item.rok})`)}</span>
+          <h1 id={detailHeadingId} className="detail-title-text">{replaceAbbreviations(`${item.emise} (${item.rok})`)}</h1>
         )}
-      </div>
+      </header>
       <div className="detail-catalog">
         {isEditingAll ? (
           <div className="label-top-input">
@@ -554,7 +571,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
               defaultType: 'image'
             });
           }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
+            <figure style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
               <img
                 src={(item.obrazekStudie && item.obrazekStudie[0] !== '/' ? '/' + item.obrazekStudie : item.obrazekStudie) || (item.obrazek && item.obrazek[0] !== '/' ? '/' + item.obrazek : item.obrazek)}
                 alt={item.emise}
@@ -562,7 +579,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
                 onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
               />
               {/* Popisek pod obrázkem studie */}
-              <div className={`study-img-caption${savedCaption ? ' ktf-saved-highlight' : ''}`}>
+              <figcaption className={`study-img-caption${savedCaption ? ' ktf-saved-highlight' : ''}`}>
                 {isEditingAll ? (
                   <div className="edit-field-row center-row">
                     <textarea
@@ -584,11 +601,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
                 ) : (
                   <span className="study-img-caption-text" style={{pointerEvents: 'none'}} dangerouslySetInnerHTML={{__html: item.popisObrazkuStudie || ''}} />
                 )}
-              </div>
-            </div>
+              </figcaption>
+            </figure>
           </div>
         </div>
-  <div className="stamp-spec stamp-detail-spec-col">
+        <section className="stamp-spec stamp-detail-spec-col" aria-labelledby={specHeadingId}>
+          <h2 id={specHeadingId} className="sr-only">Technické údaje</h2>
 
           <div className="stamp-spec-row">
             <span className="stamp-spec-label">Datum vydání</span>
@@ -681,6 +699,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       }
                     }}
                     className="ktf-edit-input-tech"
+                    autoComplete="off"
                   />
                   <button
                     onClick={() => saveTechnicalField('druhTisku', editStampData.druhTisku)}
@@ -690,7 +709,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   </button>
                 </div>
               ) : (
-                isEditingAll ? editStampData.druhTisku : item.druhTisku
+                item.druhTisku ? replaceAbbreviations(item.druhTisku) : ''
               )}
             </span>
           </div>
@@ -762,6 +781,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
                       }
                     }}
                     className="ktf-edit-input-tech"
+                    autoComplete="off"
                   />
                   <button
                     onClick={() => saveTechnicalField('papir', editStampData.papir)}
@@ -771,7 +791,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   </button>
                 </div>
               ) : (
-                isEditingAll ? editStampData.papir : item.papir
+                item.papir ? replaceAbbreviations(item.papir) : ''
               )}
             </span>
           </div>
@@ -860,10 +880,11 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
               )}
             </span>
           </div>
-        </div>
+        </section>
       </div>
-      {(isEditingAll || itemDefects.length > 0 || item.Studie) && (
-        <div>
+      {(isEditingAll || itemDefects.length > 0 || item.Studie || item.popisStudie || item.obrazekAutor || item.popisStudie2) && (
+        <section aria-labelledby={studyHeadingId}>
+          <h2 id={studyHeadingId} className="sr-only">Studie a varianty</h2>
           {isEditingAll ? (
             <>
               <div className="study-inline-note">
@@ -914,20 +935,22 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
               </div>
               {/* --- POPIS STUDIE --- */}
               <div className="ktf-edit-study-popis-row" style={{width: '100%'}}>
-                <div className="edit-field-row" style={{width: '100%'}}>
-                  <textarea
-                    value={typeof editStampData.popisStudie === 'string' ? editStampData.popisStudie : (item.popisStudie || '')}
-                    onChange={e => setEditStampData({ ...editStampData, popisStudie: e.target.value })}
-                    className="ktf-edit-textarea-long"
-                    placeholder="Popis konkrétní studie..."
-                    rows={10}
-                    style={{ minHeight: 200, resize: 'vertical', fontFamily: 'inherit', width: '100%' }}
-                  />
-                  <button
-                    onClick={() => saveTechnicalField('popisStudie', editStampData.popisStudie || '')}
-                    className="ktf-btn-check"
-                    style={{ alignSelf: 'flex-start', marginLeft: 8 }}
-                  >✓</button>
+                <div className="label-top-input ktf-edit-row-full">
+                  <label htmlFor="edit-popis-studie">Popis studie</label>
+                  <div className="edit-field-row ktf-edit-row-full">
+                    <textarea
+                      id="edit-popis-studie"
+                      value={typeof editStampData.popisStudie === 'string' ? editStampData.popisStudie : (item.popisStudie || '')}
+                      onChange={e => setEditStampData({ ...editStampData, popisStudie: e.target.value })}
+                      className="ktf-edit-textarea-long ktf-edit-textarea-study"
+                      placeholder="Popis konkrétní studie..."
+                      rows={10}
+                    />
+                    <button
+                      onClick={() => saveTechnicalField('popisStudie', editStampData.popisStudie || '')}
+                      className="ktf-btn-check"
+                    >✓</button>
+                  </div>
                 </div>
               </div>
             </>
@@ -943,7 +966,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
                 }
                 return (
                   <div className="study-inline-note" >
-                    <span className="study-inline-label">Rozlišeno dle studie:</span> <span>{replaceAbbreviations(before)}</span>
+                    <span className="study-inline-label">Rozlišeno dle studie:</span>
+                    <span className="study-inline-value">{replaceAbbreviations(before)}</span>
                     {after && (
                       <>
                         {','}
@@ -955,19 +979,21 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
                 );
               })() : item.Studie && (
                 <div className="study-inline-note" >
-                  <span className="study-inline-label">Rozlišeno dle studie:</span> <span>{replaceAbbreviations(item.Studie)}</span>
+                  <span className="study-inline-label">Rozlišeno dle studie:</span>
+                  <span className="study-inline-value">{replaceAbbreviations(item.Studie)}</span>
                 </div>
               )}
               {/* --- POPIS STUDIE --- */}
-              <div style={{marginTop: 16}}>
+              <div className="study-note-section">
                 {item.popisStudie ? (
-                  <span className="study-note" style={{marginBottom: 0, marginTop: 0, minHeight: 0}} dangerouslySetInnerHTML={{__html: formatPopisWithAll(item.popisStudie)}} />
+                  <span className="study-note" dangerouslySetInnerHTML={{__html: formatPopisWithAll(item.popisStudie)}} />
                 ) : (
-                  <span className="study-note" style={{color:'#bbb', marginBottom: 0, marginTop: 0, minHeight: 0}}>–</span>
+                  <span className="study-note-placeholder">–</span>
                 )}
               </div>
             </>
           )}
+          <div className="study-clear" />
           {/* Seskupení variant podle hlavní varianty (A, B, ...) */}
           {Object.keys(grouped).sort().map(group => {
             const defs = grouped[group];
@@ -1006,13 +1032,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
             const mainDef = sortedDefs.find(def => def.variantaVady && def.variantaVady.length === 1);
             const typVarianty = mainDef && mainDef.typVarianty ? mainDef.typVarianty : '';
             return (
-              <div key={group}>
-                <div className="variant-subtitle">
+              <section key={group} aria-labelledby={`${variantsHeadingBaseId}-${group}`}>
+                <h3 id={`${variantsHeadingBaseId}-${group}`} className="variant-subtitle">
                   Varianta {group}
                   {typVarianty && (
                     <><span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span><span className="variant-type">{typVarianty}</span></>
                   )}
-                </div>
+                </h3>
                 {subvariantLabels.length > 0 && (
                   <div className="variant-group-info">
                     <span className="variant-group-info-icon" title="Obsahuje podvarianty">
@@ -1160,17 +1186,17 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
                     );
                   })}
                 </div>
-              </div>
+              </section>
             );
           })}
           {/* Speciální skupina pro varianty s + */}
           {plusVariants.length > 0 && (
-            <div>
-              <div className="variant-subtitle">
+            <section aria-labelledby={`${variantsHeadingBaseId}-plus`}>
+              <h3 id={`${variantsHeadingBaseId}-plus`} className="variant-subtitle">
                 {plusVariants[0]?.variantaVady && plusVariants[0].variantaVady.includes(',')
                   ? `Společné ${plusVariants[0].variantaVady}`
                   : `Varianta ${plusVariants[0]?.variantaVady}`}
-              </div>
+              </h3>
               <div className="variants">
                 {plusVariants.map((def, i) => (
                   <div key={def.idVady || `plusvar-${i}`} className="variant">
@@ -1291,10 +1317,70 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false }) {
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
           )}
-        </div>
+          <section className={secondStudyBlockClass} aria-labelledby={additionalStudyHeadingId}>
+            <h2 id={additionalStudyHeadingId} className="sr-only">Doplňující popis studie</h2>
+            {isEditingAll ? (
+              <div className="label-top-input ktf-edit-row-full">
+                <label htmlFor="edit-popis-studie-2">Popis studie – část za variantami</label>
+                <div className="edit-field-row ktf-edit-row-full">
+                  <textarea
+                    id="edit-popis-studie-2"
+                    value={typeof editStampData.popisStudie2 === 'string' ? editStampData.popisStudie2 : (item.popisStudie2 || '')}
+                    onChange={e => setEditStampData({ ...editStampData, popisStudie2: e.target.value })}
+                    className="ktf-edit-textarea-long ktf-edit-textarea-study"
+                    placeholder="Druhý blok popisu zobrazený za variantami"
+                    rows={10}
+                  />
+                  <button
+                    onClick={() => saveTechnicalField('popisStudie2', editStampData.popisStudie2 || '')}
+                    className="ktf-btn-check"
+                  >✓</button>
+                </div>
+                <div className="edit-field-row study-authors-row">
+                  <label htmlFor="edit-obrazek-autor" className="ktf-edit-inline-label">Autoři obrázků:</label>
+                  <input
+                    type="text"
+                    id="edit-obrazek-autor"
+                    value={typeof editStampData.obrazekAutor === 'string' ? editStampData.obrazekAutor : (item.obrazekAutor || '')}
+                    onChange={e => setEditStampData({ ...editStampData, obrazekAutor: e.target.value })}
+                    className="ktf-edit-input-tech ktf-edit-input-long ktf-edit-authors-input"
+                    placeholder="Např. Jana Nováková, Petr Dvořák"
+                    autoComplete="off"
+                  />
+                  <button
+                    onClick={() => saveTechnicalField('obrazekAutor', editStampData.obrazekAutor || '')}
+                    className="ktf-btn-check"
+                  >✓</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                {item.popisStudie2 ? (
+                  <span
+                    className="study-note"
+                    dangerouslySetInnerHTML={{ __html: formatPopisWithAll(item.popisStudie2) }}
+                  />
+                ) : (
+                  <span className="study-note-placeholder">–</span>
+                )}
+                {item.obrazekAutor && (
+                  <>
+                    <div className="study-clear" />
+                    <div className="study-note-authors-wrapper">
+                      <div className="study-note study-note-authors">
+                        <strong>Obrázky poskytli:</strong>{' '}
+                        <span dangerouslySetInnerHTML={{ __html: formatPopisWithAll(item.obrazekAutor) }} />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </section>
+        </section>
       )}
-    </div>
+    </article>
   );
 }
