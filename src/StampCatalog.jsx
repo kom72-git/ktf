@@ -9,7 +9,7 @@ import {
   replaceAbbreviations,
   sklonujPolozka
 } from './utils/formatovaniTextu.jsx';
-import { katalogSort } from './utils/katalog.js';
+import { katalogSort, emissionToSlug, slugToEmission } from './utils/katalog.js';
 import "./App.css";
 
 
@@ -57,10 +57,10 @@ export default function StampCatalog(props) {
     if (match) {
       const slug = match[1];
       const rok = match[2];
-      emission = slugToEmission(slug) || "all";
+      emission = slugToEmission(slug, stamps) || "all";
       year = rok || "all";
     } else {
-      emission = slugToEmission(props.initialEmissionSlug) || "all";
+      emission = slugToEmission(props.initialEmissionSlug, stamps) || "all";
       year = props.initialYear || "all";
     }
   }
@@ -68,24 +68,6 @@ export default function StampCatalog(props) {
   const [internalDetailId, setInternalDetailId] = useState(null);
   const detailId = props && props.detailId ? props.detailId : internalDetailId;
   const setDetailId = props && props.setDetailId ? props.setDetailId : setInternalDetailId;
-
-  // Pomocná funkce na převod názvu emise na slug (bez diakritiky, malá písmena, pomlčky)
-  function emissionToSlug(emise) {
-    return emise
-      .normalize('NFD').replace(/\p{Diacritic}/gu, '')
-      .replace(/[^\w\s-]/g, '')
-      .trim()
-      .replace(/\s+/g, '-')
-      .toLowerCase();
-  }
-  // Pomocná funkce na převod slug zpět na název emise (najde v seznamu emisí)
-  function slugToEmission(slug) {
-    if (!slug) return null;
-    const allEmissions = stamps.map(s => s.emise);
-    // Porovnávej slugy bez diakritiky, malá písmena, pomlčky
-    return allEmissions.find(em => emissionToSlug(em) === slug.toLowerCase()) || null;
-  }
-
   // (Synchronizace stavu emise a roku už není potřeba, vše je odvozeno z props)
 
   // Funkce pro admin login/logout

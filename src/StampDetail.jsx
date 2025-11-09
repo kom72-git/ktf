@@ -4,7 +4,8 @@ import VariantTooltip from "./components/VariantTooltip.jsx";
 import {
   replaceAbbreviations,
   formatPopisWithAll,
-  formatDefectDescription
+  formatDefectDescription,
+  resolveAuthorsLabel
 } from "./utils/formatovaniTextu.jsx";
 import {
   naturalVariantSort,
@@ -299,6 +300,9 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
   // Vady pro tuto známku
   const itemDefects = defects.filter(d => d.idZnamky === item.idZnamky);
+  const authorsRaw = typeof item?.obrazekAutor === "string" ? item.obrazekAutor.trim() : "";
+  const authorsLabel = resolveAuthorsLabel(authorsRaw);
+  const authorsHtml = authorsLabel ? formatPopisWithAll(authorsRaw) : null;
 
   // Rozdělení na běžné a plus varianty
   const grouped = {};
@@ -316,11 +320,17 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     grouped[groupKey].push(def);
   });
 
-  // Sestavíme globální pole všech variant v pořadí vykreslení napříč všemi skupinami
-  const allVariants = Object.keys(grouped).sort().flatMap(groupKey => {
-    const defsInGroup = grouped[groupKey];
-    return defsInGroup.slice().sort(compareVariantsWithBracket);
-  });
+  const groupedKeysSorted = Object.keys(grouped).sort();
+  const groupedVariantsOrdered = groupedKeysSorted.flatMap(groupKey =>
+    grouped[groupKey].slice().sort(compareVariantsWithBracket)
+  );
+  const plusVariantsOrdered = plusVariants.slice();
+  // Jednotné pořadí všech variant pro konzistentní číslování a Fancybox
+  const allVariantsOrdered = [...groupedVariantsOrdered, ...plusVariantsOrdered];
+  const getImageNumber = (def) => {
+    const idx = allVariantsOrdered.indexOf(def);
+    return idx === -1 ? '?' : idx + 1;
+  };
   const secondStudyBlockClass = isEditingAll ? 'study-note-block editing' : 'study-note-block';
   const detailHeadingId = `stamp-detail-${item.idZnamky || id}-title`;
   const specHeadingId = `${detailHeadingId}-spec`;
@@ -329,8 +339,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const additionalStudyHeadingId = `${detailHeadingId}-study-after`;
   // Fancybox galerie pro skupinu
   const openFancybox = (flatIndex = 0) => {
-    if (!allVariants || allVariants.length === 0) return;
-    const slides = allVariants.map(def => ({
+    if (!allVariantsOrdered || allVariantsOrdered.length === 0) return;
+    const slides = allVariantsOrdered.map(def => ({
       src: def.obrazekVady && def.obrazekVady[0] !== '/' && !def.obrazekVady.startsWith('http') ? '/' + def.obrazekVady : def.obrazekVady,
         caption:
           `<div class='fancybox-caption-center'>`
@@ -1009,15 +1019,6 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             const sortedDefs = uniqueDefs.slice().sort(naturalVariantSort);
             // --- úprava číslování obrázků ---
             const NO_IMAGE = '/img/no-image.png';
-            // Sestavíme globální pole všech variant v pořadí vykreslení napříč všemi skupinami
-            const allVariants = Object.keys(grouped).sort().flatMap(groupKey => {
-              const defsInGroup = grouped[groupKey];
-              return defsInGroup.slice().sort(compareVariantsWithBracket);
-            });
-            // Mapování: def -> pořadí (index+1)
-            function getSimpleImageNumber(def) {
-              return allVariants.indexOf(def) + 1;
-            }
             const subvariantLabels = (() => {
               // Pouze skutečné podvarianty: délka větší než 1 nebo obsahují tečku
               const seen = new Set();
@@ -1050,7 +1051,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 <div className="variants">
                   {/* Všechny výskyty variant včetně duplicit, v přirozeném pořadí */}
                   {defs.slice().sort(compareVariantsWithBracket).map((def, i) => {
-                    const flatIndex = allVariants.indexOf(def);
+                    const flatIndex = allVariantsOrdered.indexOf(def);
                     return (
                       <div key={def.idVady || `var-${i}`} className="variant" >
                         <div className="variant-popis">
@@ -1110,7 +1111,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                             </div>
                           </div>
                         )}
-                        <div className="variant-label">Obr. {getSimpleImageNumber(def)}</div>
+                        <div className="variant-label">Obr. {getImageNumber(def)}</div>
                         {/* Editace nebo zobrazení popisu vady */}
                         {isEditingAll ? (
                           <div >
@@ -1190,16 +1191,18 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             );
           })}
           {/* Speciální skupina pro varianty s + */}
-          {plusVariants.length > 0 && (
+          {plusVariantsOrdered.length > 0 && (
             <section aria-labelledby={`${variantsHeadingBaseId}-plus`}>
               <h3 id={`${variantsHeadingBaseId}-plus`} className="variant-subtitle">
-                {plusVariants[0]?.variantaVady && plusVariants[0].variantaVady.includes(',')
-                  ? `Společné ${plusVariants[0].variantaVady}`
-                  : `Varianta ${plusVariants[0]?.variantaVady}`}
+                {plusVariantsOrdered[0]?.variantaVady && plusVariantsOrdered[0].variantaVady.includes(',')
+                  ? `Společné ${plusVariantsOrdered[0].variantaVady}`
+                  : `Varianta ${plusVariantsOrdered[0]?.variantaVady}`}
               </h3>
               <div className="variants">
-                {plusVariants.map((def, i) => (
-                  <div key={def.idVady || `plusvar-${i}`} className="variant">
+                {plusVariantsOrdered.map((def, idx) => {
+                  const flatIndex = allVariantsOrdered.indexOf(def);
+                  return (
+                    <div key={def.idVady || def._id || `plusvar-${idx}`} className="variant">
                     <div className="variant-popis">
                       {isEditingAll ? (
                         <div className="edit-variant-row">
@@ -1223,7 +1226,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         </>
                       )}
                     </div>
-                    <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(i)}>
+                    <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(flatIndex)}>
                       <img
                         src={def.obrazekVady && def.obrazekVady[0] !== '/' && !def.obrazekVady.startsWith('http') ? '/' + def.obrazekVady : def.obrazekVady}
                         alt={def.idVady}
@@ -1257,7 +1260,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         </div>
                       </div>
                     )}
-                    <div className="variant-label">Obr. {i + 1}</div>
+                    <div className="variant-label">Obr. {getImageNumber(def)}</div>
                     {/* Editace nebo zobrazení popisu vady */}
                     {isEditingAll ? (
                       <div >
@@ -1315,7 +1318,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       </>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           )}
@@ -1365,13 +1369,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 ) : (
                   <span className="study-note-placeholder">–</span>
                 )}
-                {item.obrazekAutor && (
+                {authorsLabel && authorsHtml && (
                   <>
                     <div className="study-clear" />
                     <div className="study-note-authors-wrapper">
                       <div className="study-note study-note-authors">
-                        <strong>Obrázky poskytli:</strong>{' '}
-                        <span dangerouslySetInnerHTML={{ __html: formatPopisWithAll(item.obrazekAutor) }} />
+                        <strong>{authorsLabel}</strong>{' '}
+                        <span dangerouslySetInnerHTML={{ __html: authorsHtml }} />
                       </div>
                     </div>
                   </>

@@ -52,8 +52,59 @@ export function compareVariantsWithBracket(a, b) {
   if (orderA === null && orderB !== null) return 1;
   if (orderA !== null && orderB === null) return -1;
   if (orderA === null && orderB === null) return 0;
-  return orderA.localeCompare(orderB, undefined, { numeric: true });
+  const tokenize = (value) => (
+    String(value)
+      .match(/[A-Za-z]+|\d+|[^A-Za-z0-9]+/g)
+      || []
+  );
+  const tokensA = tokenize(orderA);
+  const tokensB = tokenize(orderB);
+  const maxLength = Math.max(tokensA.length, tokensB.length);
+  for (let i = 0; i < maxLength; i += 1) {
+    const partA = tokensA[i];
+    const partB = tokensB[i];
+    if (partA === undefined) return -1;
+    if (partB === undefined) return 1;
+    if (partA === partB) continue;
+    const isNumA = /^\d+$/.test(partA);
+    const isNumB = /^\d+$/.test(partB);
+    if (isNumA && isNumB) {
+      const diff = Number(partA) - Number(partB);
+      if (diff !== 0) return diff;
+      continue;
+    }
+    const diff = partA.localeCompare(partB, undefined, { sensitivity: "base" });
+    if (diff !== 0) return diff;
+  }
+  return tokensA.length - tokensB.length;
 }
 
 
 // DALŠÍ BLOKY
+
+// Slugování názvů emisí pro použití v URL (HashRouter apod.)
+export function emissionToSlug(emise = "") {
+  if (!emise) return "";
+  return String(emise)
+    .normalize('NFD').replace(/\p{Diacritic}/gu, '')
+    .replace(/[^\w\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .toLowerCase();
+}
+
+// Vyhledání původního názvu emise podle slugu
+export function slugToEmission(slug, items = []) {
+  if (!slug) return null;
+  const normalizedSlug = String(slug).toLowerCase();
+  if (!Array.isArray(items) || items.length === 0) return null;
+  const names = items
+    .map(item => {
+      if (!item) return null;
+      if (typeof item === "string") return item;
+      if (typeof item === "object" && item.emise) return item.emise;
+      return null;
+    })
+    .filter(Boolean);
+  return names.find(name => emissionToSlug(name) === normalizedSlug) || null;
+}

@@ -6,11 +6,19 @@ import ZKRATKY_TOOLTIPY from "../zkratky-tooltips";
 export function formatPopisWithAll(text) {
   if (!text) return "";
   let s = text.replace(/'([^']+)'/g, '<span class="variant-popis-apostrof">$1</span>');
-  s = s.replace(/\[([A-Z]\d{1,2})([a-z])?\]/gi, (m, p1, p2) => {
-    if (p2) {
-      return `<strong>[${p1}</strong>${p2}<strong>]</strong>`;
+  s = s.replace(/\[([^\]]+)\]/g, (match, content) => {
+    const mainMatch = content.match(/^([A-Z]\d{1,2})([a-z])?$/);
+    if (mainMatch) {
+      const [, mainPart, suffix] = mainMatch;
+      if (suffix) {
+        return `<strong>[${mainPart}</strong>${suffix}<strong>]</strong>`;
+      }
+      return `<strong>[${mainPart}]</strong>`;
     }
-    return `<strong>[${p1}]</strong>`;
+    if (/^[a-z]+$/.test(content)) {
+      return `<strong>[${content}]</strong>`;
+    }
+    return `<strong>[${content}]</strong>`;
   });
   const abbrs = Object.keys(ZKRATKY_TOOLTIPY)
     .sort((a, b) => b.length - a.length)
@@ -92,7 +100,7 @@ export function replaceAbbreviations(text) {
 // Formátování popisu vady včetně hranatých závorek a apostrofů, vrací React fragment
 export function formatDefectDescription(text) {
   if (!text) return text;
-  const regex = /^\[([A-Z]\d{1,2})([a-z])?\](.*)/i;
+  const regex = /^\[([^\]]+)\](.*)/i;
   const match = text.match(regex);
 
   const formatInnerHtml = (str) => {
@@ -102,17 +110,68 @@ export function formatDefectDescription(text) {
   };
 
   if (match) {
+    const bracketContent = match[1];
+    const suffixText = formatInnerHtml(match[2]);
+    const mainMatch = bracketContent.match(/^([A-Z]\d{1,2})([a-z])?$/);
+    if (mainMatch) {
+      const [, mainPart, suffix] = mainMatch;
+      return (
+        <>
+          <strong>[{mainPart}</strong>
+          {suffix && <span>{suffix}</span>}
+          <strong>]</strong>
+          <span dangerouslySetInnerHTML={{ __html: suffixText }} />
+        </>
+      );
+    }
+    if (/^[a-z]+$/.test(bracketContent)) {
+      return (
+        <>
+          <strong>[{bracketContent}]</strong>
+          <span dangerouslySetInnerHTML={{ __html: suffixText }} />
+        </>
+      );
+    }
     return (
       <>
-        <strong>[{match[1]}</strong>
-        {match[2] && <span>{match[2]}</span>}
-        <strong>]</strong>
-        <span dangerouslySetInnerHTML={{ __html: formatInnerHtml(match[3]) }} />
+        <strong>[{bracketContent}]</strong>
+        <span dangerouslySetInnerHTML={{ __html: suffixText }} />
       </>
     );
   }
 
   return <span dangerouslySetInnerHTML={{ __html: formatInnerHtml(text) }} />;
+}
+
+// --- Autoři obrázků: jednoduchá heuristika pro skloňování titulku ---
+const FEMALE_SURNAME_SUFFIX = "ová";
+
+const hasMultipleAuthors = (raw = "") => {
+  if (!raw) return false;
+  if (raw.includes(";")) return true;
+  if (/\)\s*,/.test(raw)) return true;
+  if (/\sa\s+[A-ZÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/.test(raw)) return true;
+  const withoutParens = raw.replace(/\([^)]*\)/g, "");
+  const commaCount = (withoutParens.match(/,/g) || []).length;
+  return commaCount > 1;
+};
+
+const isFemaleAuthor = (raw = "") => {
+  if (!raw) return false;
+  const withoutParens = raw.replace(/\([^)]*\)/g, "");
+  const beforeComma = withoutParens.split(",")[0] || "";
+  const trimmed = beforeComma.trim();
+  if (!trimmed) return false;
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return false;
+  const surname = parts[parts.length - 1].replace(/[.,;]+$/, "");
+  return surname.toLowerCase().endsWith(FEMALE_SURNAME_SUFFIX);
+};
+
+export function resolveAuthorsLabel(raw = "") {
+  if (!raw || typeof raw !== "string" || raw.trim() === "") return null;
+  if (hasMultipleAuthors(raw)) return "Obrázky poskytli:";
+  return isFemaleAuthor(raw) ? "Obrázek poskytla:" : "Obrázek poskytl:";
 }
 
 // Skloňování slova „položka“ podle počtu záznamů při použití FILTRŮ či VYHLEDÁVÁNÍ
