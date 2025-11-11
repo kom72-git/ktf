@@ -4,8 +4,7 @@ import VariantTooltip from "./components/VariantTooltip.jsx";
 import {
   replaceAbbreviations,
   formatPopisWithAll,
-  formatDefectDescription,
-  resolveAuthorsLabel
+  formatDefectDescription
 } from "./utils/formatovaniTextu.jsx";
 import {
   naturalVariantSort,
@@ -301,8 +300,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   // Vady pro tuto známku
   const itemDefects = defects.filter(d => d.idZnamky === item.idZnamky);
   const authorsRaw = typeof item?.obrazekAutor === "string" ? item.obrazekAutor.trim() : "";
-  const authorsLabel = resolveAuthorsLabel(authorsRaw);
-  const authorsHtml = authorsLabel ? formatPopisWithAll(authorsRaw) : null;
+  const hasAuthors = authorsRaw.length > 0;
+  const authorsHtml = hasAuthors ? formatPopisWithAll(authorsRaw) : null;
 
   // Rozdělení na běžné a plus varianty
   const grouped = {};
@@ -1343,7 +1342,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   >✓</button>
                 </div>
                 <div className="edit-field-row study-authors-row">
-                  <label htmlFor="edit-obrazek-autor" className="ktf-edit-inline-label">Autoři obrázků:</label>
+                  <label htmlFor="edit-obrazek-autor" className="ktf-edit-inline-label">Zdroj obrázků:</label>
                   <input
                     type="text"
                     id="edit-obrazek-autor"
@@ -1369,13 +1368,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 ) : (
                   <span className="study-note-placeholder">–</span>
                 )}
-                {authorsLabel && authorsHtml && (
+                {hasAuthors && authorsHtml && (
                   <>
                     <div className="study-clear" />
                     <div className="study-note-authors-wrapper">
-                      <div className="study-note study-note-authors">
-                        <strong>{authorsLabel}</strong>{' '}
-                        <span dangerouslySetInnerHTML={{ __html: authorsHtml }} />
+                      <div className="study-note-authors-shell">
+                        <span className="study-note-authors-icon" aria-hidden="true" />
+                        <div className="study-note study-note-authors" dangerouslySetInnerHTML={{ __html: authorsHtml }} />
                       </div>
                     </div>
                   </>

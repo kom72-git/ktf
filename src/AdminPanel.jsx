@@ -504,7 +504,7 @@ export default function AdminPanel({
                 )}
               </div>
               <div className="label-top-input">
-                <label>Autoři obrázků variant</label>
+                <label>Zdroj obrázků variant</label>
                 <input
                   type="text"
                   value={newStampData.obrazekAutor}

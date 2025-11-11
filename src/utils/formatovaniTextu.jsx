@@ -25,15 +25,20 @@ export function formatPopisWithAll(text) {
     .map(a => a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   if (abbrs.length > 0) {
     const regex = new RegExp(
-      `((?<=^|[\\s\\(\\[\\{{,;:])(${abbrs.join("|")})(?=[\\s\\)\\]\\}},;:.!?]|$))|\\b(${abbrs.join("|")})\\b`,
+      `((?<=^|[\\s\\(\\[\\{{,;:])\\*?(${abbrs.join("|")})(?=[\\s\\)\\]\\}},;:.!?]|$))|\\b\\*?(${abbrs.join("|")})\\b`,
       "g"
     );
+    // Marker `*` před zkratkou potlačí tooltip a marker se odstraní
     s = s.replace(regex, (match, _g1, abbr1, abbr2) => {
       const abbr = abbr1 || abbr2;
-      if (abbr && ZKRATKY_TOOLTIPY[abbr]) {
+      if (!abbr) return match;
+      if (match.startsWith("*")) {
+        return abbr;
+      }
+      if (ZKRATKY_TOOLTIPY[abbr]) {
         return `<span class=\"ktf-abbr-tooltip-wrapper\"><abbr class=\"ktf-abbr-tooltip-abbr\" title=\"${ZKRATKY_TOOLTIPY[abbr]}\">${abbr}</abbr></span>`;
       }
-      return match;
+      return abbr;
     });
   }
   return s;
@@ -47,15 +52,20 @@ export function replaceAbbreviationsWithHtml(text) {
     .map(a => a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   if (abbrs.length === 0) return text;
   const regex = new RegExp(
-    `((?<=^|[\\s\\(\\[\\{{,;:])(${abbrs.join("|")})(?=[\\s\\)\\]\\}},;:.!?]|$))|\\b(${abbrs.join("|")})\\b`,
+    `((?<=^|[\\s\\(\\[\\{{,;:])\\*?(${abbrs.join("|")})(?=[\\s\\)\\]\\}},;:.!?]|$))|\\b\\*?(${abbrs.join("|")})\\b`,
     "g"
   );
+  // Marker `*` před zkratkou potlačí tooltip i v HTML reprezentaci
   return text.replace(regex, (match, _g1, abbr1, abbr2) => {
     const abbr = abbr1 || abbr2;
-    if (abbr && ZKRATKY_TOOLTIPY[abbr]) {
-      return `<span class=\"ktf-abbr-tooltip-wrapper\"><abbr class=\"ktf-abbr-tooltip-abbr\" title=\"${ZKRATKY_TOOLTIPY[abbr]}\">${abbr}</abbr></span>`;
+    if (!abbr) return match;
+    if (match.startsWith("*")) {
+      return abbr;
     }
-    return match;
+    if (ZKRATKY_TOOLTIPY[abbr]) {
+      return `<span class="ktf-abbr-tooltip-wrapper"><abbr class="ktf-abbr-tooltip-abbr" title="${ZKRATKY_TOOLTIPY[abbr]}">${abbr}</abbr></span>`;
+    }
+    return abbr;
   });
 }
 
@@ -67,20 +77,24 @@ export function replaceAbbreviations(text) {
     .map(a => a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   if (abbrs.length === 0) return text;
   const regex = new RegExp(
-    `((?<=^|[\\s\\(\\[\\{{,;:])(${abbrs.join("|")})(?=[\\s\\)\\]\\}},;:.!?]|$))|\\b(${abbrs.join("|")})\\b`,
+    `((?<=^|[\\s\\(\\[\\{{,;:])\\*?(${abbrs.join("|")})(?=[\\s\\)\\]\\}},;:.!?]|$))|\\b\\*?(${abbrs.join("|")})\\b`,
     "g"
   );
   const result = [];
   let lastIndex = 0;
   let match;
   while ((match = regex.exec(text)) !== null) {
-    const matchText = match[2] || match[3];
-    const abbr = matchText;
+    const rawMatch = match[0];
+    const abbr = match[2] || match[3];
+    if (!abbr) continue;
     const idx = match.index;
     if (idx > lastIndex) {
       result.push(text.slice(lastIndex, idx));
     }
-    if (abbr && ZKRATKY_TOOLTIPY[abbr]) {
+    // Marker `*` před zkratkou zajistí běžný text bez tooltipu
+    if (rawMatch.startsWith("*")) {
+      result.push(abbr);
+    } else if (ZKRATKY_TOOLTIPY[abbr]) {
       result.push(
         <span style={{ pointerEvents: "auto" }} key={`${idx}-${abbr}`}>
           <AbbrWithTooltip abbr={abbr} title={ZKRATKY_TOOLTIPY[abbr]} />
@@ -106,7 +120,8 @@ export function formatDefectDescription(text) {
   const formatInnerHtml = (str) => {
     if (!str) return "";
     const withApostrophes = str.replace(/'([^']+)'/g, '<span class="variant-popis-apostrof">$1</span>');
-    return replaceAbbreviationsWithHtml(withApostrophes);
+    const withItalics = italicizeCastNakladu(withApostrophes);
+    return replaceAbbreviationsWithHtml(withItalics);
   };
 
   if (match) {
@@ -143,7 +158,9 @@ export function formatDefectDescription(text) {
   return <span dangerouslySetInnerHTML={{ __html: formatInnerHtml(text) }} />;
 }
 
+/*
 // --- Autoři obrázků: jednoduchá heuristika pro skloňování titulku ---
+// Zachováno pro případné budoucí použití; aktuální UI zobrazuje pouze neutrální label.
 const FEMALE_SURNAME_SUFFIX = "ová";
 
 const hasMultipleAuthors = (raw = "") => {
@@ -171,8 +188,9 @@ const isFemaleAuthor = (raw = "") => {
 export function resolveAuthorsLabel(raw = "") {
   if (!raw || typeof raw !== "string" || raw.trim() === "") return null;
   if (hasMultipleAuthors(raw)) return "Obrázky poskytli:";
-  return isFemaleAuthor(raw) ? "Obrázek poskytla:" : "Obrázek poskytl:";
+  return isFemaleAuthor(raw) ? "Obrázky poskytla:" : "Obrázky poskytl:";
 }
+*/
 
 // Skloňování slova „položka“ podle počtu záznamů při použití FILTRŮ či VYHLEDÁVÁNÍ
 export function sklonujPolozka(count) {
@@ -180,3 +198,15 @@ export function sklonujPolozka(count) {
   if (count >= 2 && count <= 4) return "položky";
   return "položek";
 }
+
+// --- Varianty: zvýraznění textu „část nákladu“ kurzívou ---
+const italicizeCastNakladu = (value = "") =>
+  value.replace(/(\(část nákladu\)|část nákladu)/gi, (match, _p1, offset, source) => {
+    const before = source.slice(0, offset);
+    const after = source.slice(offset + match.length);
+    if (before.endsWith("<em>") && after.startsWith("</em>")) {
+      return match;
+    }
+    return `<em>${match}</em>`;
+  });
+

@@ -5,7 +5,7 @@ const ZKRATKY_TOOLTIPY = {
   "DV": "desková vada",
   "OTp": "ocelotisk z plochy",
   "OZ": "papír se záměrnou přísadou opticky zjasňující látky",
-  "PL": "opřepážkový list",
+  "PL": "přepážkový list",
   "PO": "perforační otvor",
   "SČF": "Svaz českých filatelistů",
   "SDDSR": "Sociálně demokratická dělnická strana Ruska",
