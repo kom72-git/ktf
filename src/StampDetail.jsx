@@ -299,9 +299,66 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
   // Vady pro tuto známku
   const itemDefects = defects.filter(d => d.idZnamky === item.idZnamky);
+  const popisStudie2Raw = typeof item?.popisStudie2 === "string" ? item.popisStudie2 : "";
+  const hasPopisStudie2Content = /[^\s,]/.test(popisStudie2Raw);
+  const popisStudie2Display = hasPopisStudie2Content ? popisStudie2Raw.trim() : "";
   const authorsRaw = typeof item?.obrazekAutor === "string" ? item.obrazekAutor.trim() : "";
   const hasAuthors = authorsRaw.length > 0;
   const authorsHtml = hasAuthors ? formatPopisWithAll(authorsRaw) : null;
+  const authorSuggestionValues = Array.isArray(fieldSuggestions?.obrazekAutor)
+    ? fieldSuggestions.obrazekAutor
+    : [];
+  const authorSuggestionListId = authorSuggestionValues.length
+    ? `detail-authors-options-${item.idZnamky || id || "default"}`
+    : undefined;
+  const studyReferenceBlock = (() => {
+    if (!item?.Studie) return null;
+
+    const renderWrapper = (content) => (
+      <div className="study-note-reference-wrapper">
+        <div className="study-note-reference-shell">
+          <span className="study-note-reference-icon" aria-hidden="true" />
+          <div className="study-note study-note-reference">
+            {content}
+          </div>
+        </div>
+      </div>
+    );
+
+    if (item.studieUrl) {
+      let before = item.Studie;
+      let after = "";
+      const idx = item.Studie.indexOf(",");
+      if (idx !== -1) {
+        before = item.Studie.slice(0, idx);
+        after = item.Studie.slice(idx + 1).replace(/^\s*/, "");
+      }
+      const beforeContent = replaceAbbreviations(before);
+      return renderWrapper(
+        <span className="study-note-reference-text">
+          {beforeContent}
+          {after && item.studieUrl && (
+            <>
+              {", "}
+              <a
+                href={item.studieUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="study-note-reference-link"
+              >
+                {after}
+              </a>
+            </>
+          )}
+        </span>
+      );
+    }
+
+    const beforeContent = replaceAbbreviations(item.Studie);
+    return renderWrapper(
+      <span className="study-note-reference-text">{beforeContent}</span>
+    );
+  })();
 
   // Rozdělení na běžné a plus varianty
   const grouped = {};
@@ -891,7 +948,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           </div>
         </section>
       </div>
-      {(isEditingAll || itemDefects.length > 0 || item.Studie || item.popisStudie || item.obrazekAutor || item.popisStudie2) && (
+  {(isEditingAll || itemDefects.length > 0 || item.Studie || item.popisStudie || item.obrazekAutor || hasPopisStudie2Content) && (
         <section aria-labelledby={studyHeadingId}>
           <h2 id={studyHeadingId} className="sr-only">Studie a varianty</h2>
           {isEditingAll ? (
@@ -907,7 +964,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         value={editStampData.Studie || ''}
                         onChange={(e) => setEditStampData({...editStampData, Studie: e.target.value})}
                         className="ktf-edit-input-tech ktf-edit-input-long"
-                        placeholder="Rozlišeno dle studie: text, část pro link"
+                        placeholder="Zpracováno dle studie: text, část pro link"
                       />
                       <button
                         onClick={() => {
@@ -965,33 +1022,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             </>
           ) : (
             <>
-              {item.Studie && item.studieUrl ? (() => {
-                let before = item.Studie;
-                let after = '';
-                const idx = item.Studie.indexOf(',');
-                if (idx !== -1) {
-                  before = item.Studie.slice(0, idx);
-                  after = item.Studie.slice(idx + 1).replace(/^\s*/, '');
-                }
-                return (
-                  <div className="study-inline-note" >
-                    <span className="study-inline-label">Rozlišeno dle studie:</span>
-                    <span className="study-inline-value">{replaceAbbreviations(before)}</span>
-                    {after && (
-                      <>
-                        {','}
-                        <span dangerouslySetInnerHTML={{__html: '&nbsp;'}} />
-                        <a href={item.studieUrl} target="_blank" rel="noopener noreferrer">{after}</a>
-                      </>
-                    )}
-                  </div>
-                );
-              })() : item.Studie && (
-                <div className="study-inline-note" >
-                  <span className="study-inline-label">Rozlišeno dle studie:</span>
-                  <span className="study-inline-value">{replaceAbbreviations(item.Studie)}</span>
-                </div>
-              )}
+              {studyReferenceBlock}
               {/* --- POPIS STUDIE --- */}
               <div className="study-note-section">
                 {item.popisStudie ? (
@@ -1330,7 +1361,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 <div className="edit-field-row ktf-edit-row-full">
                   <textarea
                     id="edit-popis-studie-2"
-                    value={typeof editStampData.popisStudie2 === 'string' ? editStampData.popisStudie2 : (item.popisStudie2 || '')}
+                    value={typeof editStampData.popisStudie2 === 'string' ? editStampData.popisStudie2 : popisStudie2Display}
                     onChange={e => setEditStampData({ ...editStampData, popisStudie2: e.target.value })}
                     className="ktf-edit-textarea-long ktf-edit-textarea-study"
                     placeholder="Druhý blok popisu zobrazený za variantami"
@@ -1350,8 +1381,16 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     onChange={e => setEditStampData({ ...editStampData, obrazekAutor: e.target.value })}
                     className="ktf-edit-input-tech ktf-edit-input-long ktf-edit-authors-input"
                     placeholder="Např. Jana Nováková, Petr Dvořák"
+                    list={authorSuggestionListId}
                     autoComplete="off"
                   />
+                  {authorSuggestionListId && (
+                    <datalist id={authorSuggestionListId}>
+                      {authorSuggestionValues.map(value => (
+                        <option key={value} value={value} />
+                      ))}
+                    </datalist>
+                  )}
                   <button
                     onClick={() => saveTechnicalField('obrazekAutor', editStampData.obrazekAutor || '')}
                     className="ktf-btn-check"
@@ -1360,13 +1399,11 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
               </div>
             ) : (
               <>
-                {item.popisStudie2 ? (
+                {hasPopisStudie2Content && (
                   <span
                     className="study-note"
-                    dangerouslySetInnerHTML={{ __html: formatPopisWithAll(item.popisStudie2) }}
+                    dangerouslySetInnerHTML={{ __html: formatPopisWithAll(popisStudie2Display) }}
                   />
-                ) : (
-                  <span className="study-note-placeholder">–</span>
                 )}
                 {hasAuthors && authorsHtml && (
                   <>

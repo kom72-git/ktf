@@ -435,20 +435,29 @@ textarea.resize-corner {
   min-width: 170px;
   font-weight: 500;
 }
+.study-note-reference-wrapper,
+.study-note-authors-wrapper {
+  padding: 10px 16px;
+  border: 1px solid #f8f8f8;
+  border-radius: 12px;
+  background: #fafbfc;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
+}
+.study-note-reference-wrapper {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
 .study-note-authors-wrapper {
   margin-top: 26px;
-  padding: 10px 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  background: #f9fafb;
-  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.06);
 }
+.study-note-reference-shell,
 .study-note-authors-shell {
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 4px 0;
 }
+.study-note-reference-icon,
 .study-note-authors-icon {
   width: 30px;
   height: 30px;
@@ -457,6 +466,9 @@ textarea.resize-corner {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
   flex: 0 0 auto;
   display: inline-block;
+}
+.study-note-reference-icon {
+  background: #2563eb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M3 6.2c0-.84.68-1.52 1.52-1.52 2.41 0 4.65.67 6.44 1.86 1.79-1.19 4.03-1.86 6.44-1.86.84 0 1.52.68 1.52 1.52v11.6c0 .84-.68 1.52-1.52 1.52-2.41 0-4.65.67-6.44 1.86-1.79-1.19-4.03-1.86-6.44-1.86-.84 0-1.52-.68-1.52-1.52V6.2z' stroke='%23ffffff' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M12 6.5v11' stroke='%23ffffff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center/18px 18px no-repeat;
 }
 .study-note.study-note-authors {
   margin: 0;
@@ -479,6 +491,35 @@ textarea.resize-corner {
   color: #6b7280;
   text-transform: uppercase;
   margin-bottom: 3px;
+}
+.study-note.study-note-reference {
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  font-size: 0.94rem;
+  color: #374151;
+  line-height: 1.38;
+}
+.study-note.study-note-reference::before {
+  content: 'Zpracováno dle studie';
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #6b7280;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.study-note-reference-text {
+  display: inline;
+}
+.study-note-reference a {
+  color: #2563eb;
+  text-decoration: underline;
 }
 .study-note-placeholder {
   color: #bbb;

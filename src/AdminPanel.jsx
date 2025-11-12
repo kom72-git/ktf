@@ -510,29 +510,9 @@ export default function AdminPanel({
                   value={newStampData.obrazekAutor}
                   onChange={e => setNewStampData({ ...newStampData, obrazekAutor: e.target.value })}
                   placeholder="Např. Jana Nováková, Petr Dvořák"
+                  list={hasSuggestions('obrazekAutor') ? getSuggestionListId('obrazekAutor') : undefined}
                   autoComplete="off"
                 />
-                {hasSuggestions('obrazekAutor') && (
-                  <div style={{ marginTop: 8 }}>
-                    <select
-                      defaultValue=""
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (!value) return;
-                        setNewStampData(prev => ({ ...prev, obrazekAutor: value }));
-                        e.target.value = "";
-                      }}
-                      className="ktf-edit-input-tech"
-                    >
-                      <option value="">Vybrat dřívější text…</option>
-                      {getSuggestionValues('obrazekAutor').map((value) => (
-                        <option key={value} value={value}>
-                          {value.length > 80 ? `${value.slice(0, 80)}…` : value}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
               </div>
               <div style={{marginTop: '16px', display: 'flex', gap: '12px'}}>
                 <button type="submit" className="ktf-btn-confirm">Přidat</button>
