@@ -304,7 +304,62 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const popisStudie2Display = hasPopisStudie2Content ? popisStudie2Raw.trim() : "";
   const authorsRaw = typeof item?.obrazekAutor === "string" ? item.obrazekAutor.trim() : "";
   const hasAuthors = authorsRaw.length > 0;
-  const authorsHtml = hasAuthors ? formatPopisWithAll(authorsRaw) : null;
+  const renderAbbrevContent = (value, keyPrefix) => {
+    if (Array.isArray(value)) {
+      return value.map((part, idx) => (
+        <React.Fragment key={`${keyPrefix}-${idx}`}>{part}</React.Fragment>
+      ));
+    }
+    return value;
+  };
+  const authorsDisplay = (() => {
+    if (!hasAuthors) return null;
+    const raw = authorsRaw;
+    const segments = [];
+    const regex = /\([^)]*\)/g;
+    let lastIndex = 0;
+    let match;
+    while ((match = regex.exec(raw)) !== null) {
+      const idx = match.index;
+      if (idx > lastIndex) {
+        segments.push({ text: raw.slice(lastIndex, idx), highlight: true });
+      }
+      segments.push({ text: match[0], highlight: false });
+      lastIndex = idx + match[0].length;
+    }
+    if (lastIndex < raw.length) {
+      segments.push({ text: raw.slice(lastIndex), highlight: true });
+    }
+    if (segments.length === 0) {
+      segments.push({ text: raw, highlight: true });
+    }
+    const segmentNodes = segments
+      .map((segment, idx) => {
+        const content = replaceAbbreviations(segment.text);
+        if (content === null || content === undefined || content === "") {
+          return null;
+        }
+        if (segment.highlight) {
+          return (
+            <span key={`author-${idx}`} className="study-note-authors-highlight">
+              {renderAbbrevContent(content, `author-${idx}`)}
+            </span>
+          );
+        }
+        return (
+          <React.Fragment key={`author-${idx}`}>
+            {renderAbbrevContent(content, `author-${idx}`)}
+          </React.Fragment>
+        );
+      })
+      .filter(Boolean);
+
+    if (!segmentNodes.length) {
+      return null;
+    }
+
+    return <span className="study-note-authors-line">{segmentNodes}</span>;
+  })();
   const authorSuggestionValues = Array.isArray(fieldSuggestions?.obrazekAutor)
     ? fieldSuggestions.obrazekAutor
     : [];
@@ -325,38 +380,101 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       </div>
     );
 
+    const renderEmphasized = (value, keyPrefix) => {
+      if (!value && value !== 0) return null;
+      return (
+        <span className="study-note-reference-author">
+          {renderAbbrevContent(value, keyPrefix)}
+        </span>
+      );
+    };
+
+    const rawStudie = item.Studie || "";
+    const LINK_MARK = "%";
+    const commaIdx = rawStudie.indexOf(",");
+    const authorRaw = commaIdx !== -1 ? rawStudie.slice(0, commaIdx) : rawStudie;
+    const remainderRawFull = commaIdx !== -1 ? rawStudie.slice(commaIdx + 1) : "";
+    const remainderRaw = remainderRawFull.replace(/^\s*/, "");
+    const hasRemainder = remainderRaw.length > 0;
+
+    const authorContent = authorRaw ? replaceAbbreviations(authorRaw) : null;
+    const authorNode = authorContent ? renderEmphasized(authorContent, "study-author") : null;
+
     if (item.studieUrl) {
-      let before = item.Studie;
-      let after = "";
-      const idx = item.Studie.indexOf(",");
-      if (idx !== -1) {
-        before = item.Studie.slice(0, idx);
-        after = item.Studie.slice(idx + 1).replace(/^\s*/, "");
-      }
-      const beforeContent = replaceAbbreviations(before);
-      return renderWrapper(
-        <span className="study-note-reference-text">
-          {beforeContent}
-          {after && item.studieUrl && (
-            <>
-              {", "}
+      if (hasRemainder) {
+        const firstMark = remainderRaw.indexOf(LINK_MARK);
+        if (firstMark !== -1) {
+          const secondMark = remainderRaw.indexOf(LINK_MARK, firstMark + 1);
+          const preLinkRaw = remainderRaw.slice(0, firstMark);
+          const linkRaw = secondMark !== -1
+            ? remainderRaw.slice(firstMark + 1, secondMark)
+            : remainderRaw.slice(firstMark + 1);
+          const postLinkRaw = secondMark !== -1 ? remainderRaw.slice(secondMark + 1) : "";
+
+          const linkContent = linkRaw ? replaceAbbreviations(linkRaw) : null;
+          if (linkContent) {
+            const preLinkContent = preLinkRaw ? replaceAbbreviations(preLinkRaw) : null;
+            const postLinkContent = postLinkRaw ? replaceAbbreviations(postLinkRaw) : null;
+            return renderWrapper(
+              <span className="study-note-reference-text">
+                {authorNode}
+                {authorNode && (preLinkContent || linkContent || postLinkContent) ? ", " : null}
+                {preLinkContent ? renderAbbrevContent(preLinkContent, "study-prelink") : null}
+                <a
+                  href={item.studieUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="study-note-reference-link"
+                >
+                  {renderAbbrevContent(linkContent, "study-link")}
+                </a>
+                {postLinkContent ? renderAbbrevContent(postLinkContent, "study-postlink") : null}
+              </span>
+            );
+          }
+        }
+
+        const remainderContent = replaceAbbreviations(remainderRaw);
+        return renderWrapper(
+          <span className="study-note-reference-text">
+            {authorNode}
+            {authorNode && remainderContent ? ", " : null}
+            {remainderContent ? (
               <a
                 href={item.studieUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="study-note-reference-link"
               >
-                {after}
+                {renderAbbrevContent(remainderContent, "study-after")}
               </a>
-            </>
-          )}
+            ) : null}
+          </span>
+        );
+      }
+
+      return renderWrapper(
+        <span className="study-note-reference-text">
+          {authorNode}
         </span>
       );
     }
 
-    const beforeContent = replaceAbbreviations(item.Studie);
+    if (hasRemainder) {
+      const remainderContent = replaceAbbreviations(remainderRaw);
+      return renderWrapper(
+        <span className="study-note-reference-text">
+          {authorNode}
+          {authorNode && remainderContent ? ", " : null}
+          {remainderContent ? renderAbbrevContent(remainderContent, "study-after") : null}
+        </span>
+      );
+    }
+
     return renderWrapper(
-      <span className="study-note-reference-text">{beforeContent}</span>
+      <span className="study-note-reference-text">
+        {authorNode}
+      </span>
     );
   })();
 
@@ -955,8 +1073,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             <>
               <div className="study-inline-note">
                 <div className="ktf-edit-study-row">
-                  <div className="ktf-edit-study-col label-top-input">
-                    <label htmlFor="edit-study-text">Text studie:</label>
+                  <div className="ktf-edit-study-col label-top-input study-input-primary-col">
+                    <label htmlFor="edit-study-text">Zpracováno dle studie:</label>
                     <div className="edit-field-row">
                       <input
                         id="edit-study-text"
@@ -964,7 +1082,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         value={editStampData.Studie || ''}
                         onChange={(e) => setEditStampData({...editStampData, Studie: e.target.value})}
                         className="ktf-edit-input-tech ktf-edit-input-long"
-                        placeholder="Zpracováno dle studie: text, část pro link"
+                        placeholder="Zpracováno dle studie: text %klikací část%"
                       />
                       <button
                         onClick={() => {
@@ -975,8 +1093,9 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         ✓
                       </button>
                     </div>
+                    <span className="ktf-edit-hint">Klikací část uzavři mezi %text%.</span>
                   </div>
-                  <div className="ktf-edit-study-col label-top-input">
+                  <div className="ktf-edit-study-col label-top-input study-input-secondary-col">
                     <label htmlFor="edit-study-url">URL pro část za čárkou:</label>
                     <div className="edit-field-row">
                       <input
@@ -1405,13 +1524,15 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     dangerouslySetInnerHTML={{ __html: formatPopisWithAll(popisStudie2Display) }}
                   />
                 )}
-                {hasAuthors && authorsHtml && (
+                {hasAuthors && authorsDisplay && (
                   <>
                     <div className="study-clear" />
                     <div className="study-note-authors-wrapper">
                       <div className="study-note-authors-shell">
                         <span className="study-note-authors-icon" aria-hidden="true" />
-                        <div className="study-note study-note-authors" dangerouslySetInnerHTML={{ __html: authorsHtml }} />
+                        <div className="study-note study-note-authors">
+                          {authorsDisplay}
+                        </div>
                       </div>
                     </div>
                   </>

@@ -260,8 +260,9 @@
 /* Zarovnání editačních polí pro studii */
 .ktf-edit-study-row {
   display: flex;
-  gap: 32px;
+  gap: 20px;
   align-items: flex-start;
+  flex-wrap: nowrap;
 }
 
 .ktf-edit-study-col {
@@ -270,6 +271,17 @@
   min-width: 340px;
   max-width: 520px;
   flex: 1 1 0%;
+}
+.study-input-primary-col {
+  flex: 1 1 0%;
+  min-width: 360px;
+  max-width: none;
+}
+.study-input-secondary-col {
+  flex: 0 0 400px;
+  width: 400px;
+  max-width: 400px;
+  min-width: 300px;
 }
  .ktf-edit-input-tech {
   flex: 1;
@@ -285,6 +297,12 @@
   display: flex;
   align-items: center;
   gap: 5px;
+}
+.ktf-edit-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+  display: block;
 }
 /* Input pro editaci roku */
 .edit-year-input {
@@ -424,6 +442,16 @@ textarea.resize-corner {
   font-size: 15px;
   box-sizing: border-box;
 }
+.study-input-primary-col .ktf-edit-input-long {
+  min-width: 480px;
+  max-width: none;
+  width: 100%;
+}
+.study-input-secondary-col .ktf-edit-input-long {
+  min-width: 320px;
+  max-width: 100%;
+  width: 100%;
+}
 .ktf-edit-textarea-study {
   min-height: 200px;
 }
@@ -515,6 +543,14 @@ textarea.resize-corner {
   margin-bottom: 3px;
 }
 .study-note-reference-text {
+  display: inline;
+}
+.study-note-reference-author,
+.study-note-authors-highlight {
+  font-weight: 600;
+  color: #1f2937;
+}
+.study-note-authors-line {
   display: inline;
 }
 .study-note-reference a {
