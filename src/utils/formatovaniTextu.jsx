@@ -6,19 +6,34 @@ import ZKRATKY_TOOLTIPY from "../zkratky-tooltips";
 export function formatPopisWithAll(text) {
   if (!text) return "";
   let s = text.replace(/'([^']+)'/g, '<span class="variant-popis-apostrof">$1</span>');
-  s = s.replace(/\[([^\]]+)\]/g, (match, content) => {
+  // Support both [B1a] and [B1]a (suffix inside or immediately after brackets)
+  // capture optional single-letter suffix immediately after the closing bracket
+  s = s.replace(/\[([^\]]+)\]([A-Za-z])?/g, (match, content, outsideSuffix) => {
     const mainMatch = content.match(/^([A-Z]\d{1,2})([a-z])?$/);
     if (mainMatch) {
-      const [, mainPart, suffix] = mainMatch;
-      if (suffix) {
-        return `<strong>[${mainPart}</strong>${suffix}<strong>]</strong>`;
+      const [, mainPart, suffixInBracket] = mainMatch;
+      if (suffixInBracket) {
+        // [B1a] -> render suffix inside bracket as before
+        return `<strong>[${mainPart}</strong>${suffixInBracket}<strong>]</strong>` + (outsideSuffix ? `<span class="variant-suffix">${outsideSuffix}</span>` : '');
+      }
+      // no suffix inside bracket, but there may be one immediately after
+      if (outsideSuffix) {
+        return `<strong>[${mainPart}]</strong><span class="variant-suffix">${outsideSuffix}</span>`;
       }
       return `<strong>[${mainPart}]</strong>`;
     }
+    // generic bracket content
     if (/^[a-z]+$/.test(content)) {
-      return `<strong>[${content}]</strong>`;
+      return `<strong>[${content}]</strong>` + (outsideSuffix ? `<span class="variant-suffix">${outsideSuffix}</span>` : '');
     }
-    return `<strong>[${content}]</strong>`;
+    return `<strong>[${content}]</strong>` + (outsideSuffix ? `<span class="variant-suffix">${outsideSuffix}</span>` : '');
+  });
+  // After converting brackets to <strong>, support the case where a lowercase suffix
+  // appears immediately after the bracket, e.g. "[AB]a" or "[A,B]b".
+  // Convert "<strong>[... ]</strong>a" -> "<strong>[...]</strong><span class=variant-suffix>a</span>"
+  // also handle case where brackets were already converted to <strong>...</strong>
+  s = s.replace(/<strong>\[([^\]]+)\]<\/strong>([A-Za-z])/g, (m, inside, suf) => {
+    return `<strong>[${inside}]</strong><span class=\"variant-suffix\">${suf}</span>`;
   });
   const abbrs = Object.keys(ZKRATKY_TOOLTIPY)
     .sort((a, b) => b.length - a.length)
@@ -126,27 +141,60 @@ export function formatDefectDescription(text) {
 
   if (match) {
     const bracketContent = match[1];
-    const suffixText = formatInnerHtml(match[2]);
+    const restRaw = match[2] || ""; // text za hranatou zavorkou
     const mainMatch = bracketContent.match(/^([A-Z]\d{1,2})([a-z])?$/);
+    // Pokud je po závorkách bezprostředně následující malý písmenový suffix (např. [B1]a nebo [AB]a),
+    // oddělíme ho a vykreslíme jako samostatný vizuální element `.variant-suffix`.
+    const suffixOutsideMatch = restRaw.match(/^([a-z])(.*)$/s);
     if (mainMatch) {
-      const [, mainPart, suffix] = mainMatch;
+      const [, mainPart, suffixInBracket] = mainMatch;
+      if (suffixInBracket) {
+        // suffix uvnitř závorky (např. [B1a]) — zachovej stávající chování
+        const suffixText = formatInnerHtml(restRaw);
+        return (
+          <>
+            <strong>[{mainPart}</strong>
+            <span>{suffixInBracket}</span>
+            <strong>]</strong>
+            <span dangerouslySetInnerHTML={{ __html: suffixText }} />
+          </>
+        );
+      }
+      if (suffixOutsideMatch) {
+        const suffix = suffixOutsideMatch[1];
+        const after = suffixOutsideMatch[2] || "";
+        const afterHtml = formatInnerHtml(after.trimStart());
+        return (
+          <>
+            <strong>[{mainPart}]</strong>
+            <span className="variant-suffix">{suffix}</span>
+            {after && <span dangerouslySetInnerHTML={{ __html: ' ' + afterHtml }} />}
+          </>
+        );
+      }
+      // žádný suffix, normální případ
+      const suffixText = formatInnerHtml(restRaw);
       return (
         <>
-          <strong>[{mainPart}</strong>
-          {suffix && <span>{suffix}</span>}
-          <strong>]</strong>
+          <strong>[{mainPart}]</strong>
           <span dangerouslySetInnerHTML={{ __html: suffixText }} />
         </>
       );
     }
-    if (/^[a-z]+$/.test(bracketContent)) {
+    // obecné hranaté obsahy — také podpora sufixu ihned za zavorkou (např. [AB]a)
+    if (suffixOutsideMatch) {
+      const suffix = suffixOutsideMatch[1];
+      const after = suffixOutsideMatch[2] || "";
+      const afterHtml = formatInnerHtml(after.trimStart());
       return (
         <>
           <strong>[{bracketContent}]</strong>
-          <span dangerouslySetInnerHTML={{ __html: suffixText }} />
+          <span className="variant-suffix">{suffix}</span>
+          {after && <span dangerouslySetInnerHTML={{ __html: ' ' + afterHtml }} />}
         </>
       );
     }
+    const suffixText = formatInnerHtml(restRaw);
     return (
       <>
         <strong>[{bracketContent}]</strong>

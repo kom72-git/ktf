@@ -212,6 +212,16 @@
 .variant-popis-detail {
   position: relative;
 }
+
+.variant-suffix {
+  font-weight: 500;
+  margin-left: 2px;
+  margin-right: 12px;
+  display: inline-block;
+  color: #2d2e35;
+  font-size: 0.97em;
+  line-height: 1.2;
+}
 .variant-tooltip-wrapper {
   position: relative;
   display: inline-block;

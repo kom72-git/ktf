@@ -1266,14 +1266,14 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                           <div >
                             <textarea
                               defaultValue={def.popisVady || ''}
+                              rows={5}
                               style={{
                                 width: '100%',
                                 padding: '6px',
                                 border: '1px solid #ddd',
                                 borderRadius: '4px',
                                 fontSize: '12px',
-                                minHeight: '60px',
-                                resize: 'both',
+                                resize: 'vertical',
                                 fontFamily: 'inherit'
                               }}
                               placeholder="Popis vady... (Ctrl+Enter pro uložení)"
@@ -1308,10 +1308,20 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                           <>
                             {def.popisVady && (() => {
                               const SPLIT_MARK = '[[...]]';
-                              const idx = def.popisVady.indexOf(SPLIT_MARK);
-                              if (idx !== -1) {
-                                const before = def.popisVady.slice(0, idx);
-                                const after = def.popisVady.slice(idx + SPLIT_MARK.length);
+                              const SPLIT_REGEX = /\[\[\s*\.{3}\s*\]\]/;
+                              let parts = typeof def.popisVady === 'string' ? def.popisVady.split(SPLIT_REGEX) : [def.popisVady];
+                              // Fallback: if split didn't match but exact literal exists, use indexOf split
+                              if (parts.length === 1 && typeof def.popisVady === 'string') {
+                                const idxExact = def.popisVady.indexOf('[[...]]');
+                                if (idxExact !== -1) {
+                                  parts = [def.popisVady.slice(0, idxExact), def.popisVady.slice(idxExact + '[[...]]'.length)];
+                                }
+                              }
+                              if (parts.length > 1) {
+                                // remove any stray markers left in parts as a safeguard
+                                const before = parts[0].replace(SPLIT_REGEX, '');
+                                const after = parts.slice(1).join('').replace(SPLIT_REGEX, '');
+                                // split parts prepared (no debug logs)
                                 return (
                                   <div className="variant-popis-detail" style={{position: 'relative'}}>
                                     <span className="variant-popis-short">{formatDefectDescription(before)}</span>
@@ -1415,14 +1425,14 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       <div >
                         <textarea
                           defaultValue={def.popisVady || ''}
+                          rows={5}
                           style={{
                             width: '100%',
                             padding: '6px',
                             border: '1px solid #ddd',
                             borderRadius: '4px',
                             fontSize: '12px',
-                            minHeight: '60px',
-                            resize: 'both',
+                            resize: 'vertical',
                             fontFamily: 'inherit'
                           }}
                           placeholder="Popis vady... (Ctrl+Enter pro uložení)"
@@ -1455,9 +1465,44 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       </div>
                     ) : (
                       <>
-                        {def.popisVady && (
-                          <div className="variant-popis-detail">{formatDefectDescription(def.popisVady)}</div>
-                        )}
+                        {def.popisVady && (() => {
+                          const SPLIT_REGEX = /\[\[\s*\.{3}\s*\]\]/;
+                          let parts = typeof def.popisVady === 'string' ? def.popisVady.split(SPLIT_REGEX) : [def.popisVady];
+                          if (parts.length === 1 && typeof def.popisVady === 'string') {
+                            const idxExact = def.popisVady.indexOf('[[...]]');
+                            if (idxExact !== -1) {
+                              parts = [def.popisVady.slice(0, idxExact), def.popisVady.slice(idxExact + '[[...]]'.length)];
+                            }
+                          }
+                          if (parts.length > 1) {
+                            const before = parts[0].replace(SPLIT_REGEX, '');
+                            const after = parts.slice(1).join('').replace(SPLIT_REGEX, '');
+                            return (
+                              <div className="variant-popis-detail" style={{position: 'relative'}}>
+                                <span className="variant-popis-short">{formatDefectDescription(before)}</span>
+                                <VariantTooltip tooltip={<span style={{fontSize: '13px'}}>{formatDefectDescription(after)}</span>}>
+                                  …
+                                </VariantTooltip>
+                              </div>
+                            );
+                          }
+                          // If text is long, show clamped 5 lines and a tooltip with full text
+                          const renderedFull2 = formatDefectDescription(def.popisVady);
+                          const isLong2 = typeof def.popisVady === 'string' && def.popisVady.length > 500;
+                          if (isLong2) {
+                            return (
+                              <div className="variant-popis-detail" style={{position: 'relative'}}>
+                                <span className="variant-popis-short variant-popis-clamped">{renderedFull2}</span>
+                                <VariantTooltip tooltip={<div style={{fontSize: '13px'}}>{renderedFull2}</div>}>
+                                  …
+                                </VariantTooltip>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="variant-popis-detail">{renderedFull2}</div>
+                          );
+                        })()}
                         {isEditingAll && !def.popisVady && (
                           <div style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic', marginTop: '4px' }}>
                             Klikni na editační ikonu pro přidání popisu<br/>
