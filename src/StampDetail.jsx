@@ -380,13 +380,17 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       </div>
     );
 
-    const renderEmphasized = (value, keyPrefix) => {
+    // Funkce pro vykreslení autora se speciální netučnou spojkou 'a'
+    const renderEmphasizedWithConj = (value, keyPrefix) => {
       if (!value && value !== 0) return null;
-      return (
-        <span className="study-note-reference-author">
-          {renderAbbrevContent(value, keyPrefix)}
-        </span>
-      );
+      // Rozdělíme podle spojky 'a' (včetně různých variant s mezerami)
+      const parts = String(value).split(/(\s+\ba\b\s*)/i);
+      return parts.map((part, idx) => {
+        if (/^\s*a\s*$/i.test(part)) {
+          return <span key={keyPrefix+"-conj-"+idx} className="study-note-authors-conj">{part}</span>;
+        }
+        return <span key={keyPrefix+"-bold-"+idx} className="study-note-reference-author">{renderAbbrevContent(part, keyPrefix+"-"+idx)}</span>;
+      });
     };
 
     const rawStudie = item.Studie || "";
@@ -398,7 +402,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     const hasRemainder = remainderRaw.length > 0;
 
     const authorContent = authorRaw ? replaceAbbreviations(authorRaw) : null;
-    const authorNode = authorContent ? renderEmphasized(authorContent, "study-author") : null;
+    const authorNode = authorContent ? renderEmphasizedWithConj(authorContent, "study-author") : null;
 
     if (item.studieUrl) {
       if (hasRemainder) {
