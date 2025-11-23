@@ -1,3 +1,9 @@
+.variant-img-special {
+  border: 1px solid #e53935 !important;
+  border-radius: 8px !important;
+  background: #f3f4f6 !important;
+  box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
+}
 .stamp-title-abbr {
   font-weight: 700;
   font-size: 1.1rem;
@@ -520,20 +526,34 @@ textarea.resize-corner {
   color: #374151;
   line-height: 1.38;
 }
-.study-note.study-note-authors::before {
-  content: 'Zdroj obrázků';
-    font-weight: 400 !important;
-    font-family: inherit !important;
-    font-style: normal !important;
-    color: inherit;
-    letter-spacing: 0.01em;
-    opacity: 0.85;
+.study-note-authors-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.12em;
-  color: #6b7280;
   text-transform: uppercase;
-  margin-bottom: 3px;
+  color: #6b7280;
+}
+
+.study-note-authors-count {
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.study-note-authors-line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  color: inherit;
+}
+.study-note-authors-delimiter {
+  display: inline-block;
+  padding-right: 0.45rem;
+  margin-left: 0;
+  color: #9ca3af;
+  font-weight: 600;
 }
 .study-note.study-note-reference {
   margin: 0;
@@ -567,9 +587,6 @@ textarea.resize-corner {
 .study-note-authors-highlight {
   font-weight: 600;
   color: #1f2937;
-}
-.study-note-authors-line {
-  display: inline;
 }
 .study-note-reference a {
   color: #2563eb;

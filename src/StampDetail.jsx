@@ -12,6 +12,7 @@ import {
 } from "./utils/katalog.js";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import "./fancybox-responsive.css";
+import ImageSources from "./components/ImageSources.jsx";
 
 export default function DetailPage({ id, onBack, defects, isAdmin = false, fieldSuggestions = {} }) {
   const [item, setItem] = useState(null);
@@ -312,54 +313,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     }
     return value;
   };
-  const authorsDisplay = (() => {
-    if (!hasAuthors) return null;
-    const raw = authorsRaw;
-    const segments = [];
-    const regex = /\([^)]*\)/g;
-    let lastIndex = 0;
-    let match;
-    while ((match = regex.exec(raw)) !== null) {
-      const idx = match.index;
-      if (idx > lastIndex) {
-        segments.push({ text: raw.slice(lastIndex, idx), highlight: true });
-      }
-      segments.push({ text: match[0], highlight: false });
-      lastIndex = idx + match[0].length;
-    }
-    if (lastIndex < raw.length) {
-      segments.push({ text: raw.slice(lastIndex), highlight: true });
-    }
-    if (segments.length === 0) {
-      segments.push({ text: raw, highlight: true });
-    }
-    const segmentNodes = segments
-      .map((segment, idx) => {
-        const content = replaceAbbreviations(segment.text);
-        if (content === null || content === undefined || content === "") {
-          return null;
-        }
-        if (segment.highlight) {
-          return (
-            <span key={`author-${idx}`} className="study-note-authors-highlight">
-              {renderAbbrevContent(content, `author-${idx}`)}
-            </span>
-          );
-        }
-        return (
-          <React.Fragment key={`author-${idx}`}>
-            {renderAbbrevContent(content, `author-${idx}`)}
-          </React.Fragment>
-        );
-      })
-      .filter(Boolean);
-
-    if (!segmentNodes.length) {
-      return null;
-    }
-
-    return <span className="study-note-authors-line">{segmentNodes}</span>;
-  })();
+  // Počet zdrojů obrázků (autorů) pro zobrazení v bloku se zdroji
+  const authorsCount = authorsRaw.split(',').map(s => s.trim()).filter(Boolean).length;
   const authorSuggestionValues = Array.isArray(fieldSuggestions?.obrazekAutor)
     ? fieldSuggestions.obrazekAutor
     : [];
@@ -1205,6 +1160,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   {/* Všechny výskyty variant včetně duplicit, v přirozeném pořadí */}
                   {defs.slice().sort(compareVariantsWithBracket).map((def, i) => {
                     const flatIndex = allVariantsOrdered.indexOf(def);
+                    const isSpecial = /\/_[^/]+$/.test(def.obrazekVady || '');
                     return (
                       <div key={def.idVady || `var-${i}`} className="variant" >
                         <div className="variant-popis">
@@ -1234,6 +1190,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                           <img
                             src={def.obrazekVady && def.obrazekVady[0] !== '/' && !def.obrazekVady.startsWith('http') ? '/' + def.obrazekVady : def.obrazekVady}
                             alt={def.idVady}
+                            className={isSpecial ? 'variant-img-special' : ''}
                             onError={e => { e.target.onerror = null; e.target.src = NO_IMAGE; }}
                           />
                         </div>
@@ -1364,6 +1321,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
               <div className="variants">
                 {plusVariantsOrdered.map((def, idx) => {
                   const flatIndex = allVariantsOrdered.indexOf(def);
+                  const isSpecial = /\/_[^/]+$/.test(def.obrazekVady || '');
                   return (
                     <div key={def.idVady || def._id || `plusvar-${idx}`} className="variant">
                     <div className="variant-popis">
@@ -1393,6 +1351,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       <img
                         src={def.obrazekVady && def.obrazekVady[0] !== '/' && !def.obrazekVady.startsWith('http') ? '/' + def.obrazekVady : def.obrazekVady}
                         alt={def.idVady}
+                        className={isSpecial ? 'variant-img-special' : ''}
                         onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
                       />
                     </div>
@@ -1573,15 +1532,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     dangerouslySetInnerHTML={{ __html: formatPopisWithAll(popisStudie2Display) }}
                   />
                 )}
-                {hasAuthors && authorsDisplay && (
+                {hasAuthors && authorsRaw && (
                   <>
                     <div className="study-clear" />
                     <div className="study-note-authors-wrapper">
                       <div className="study-note-authors-shell">
                         <span className="study-note-authors-icon" aria-hidden="true" />
-                        <div className="study-note study-note-authors">
-                          {authorsDisplay}
-                        </div>
+                        <ImageSources value={authorsRaw} />
                       </div>
                     </div>
                   </>
