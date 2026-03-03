@@ -3,7 +3,9 @@
 
 const ZKRATKY_TOOLTIPY = {
   "DV": "desková vada",
+  "HT": "hlubotisk",
   "OTp": "ocelotisk z plochy",
+  "OTr": "ocelotisk rotační",
   "OZ": "papír se záměrnou přísadou opticky zjasňující látky",
   "PL": "přepážkový list",
   "PO": "perforační otvor",
