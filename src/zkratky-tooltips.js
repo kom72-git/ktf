@@ -2,6 +2,7 @@
 // Každou zkratku přidej jako klíč, vysvětlení jako hodnotu
 
 const ZKRATKY_TOOLTIPY = {
+  "DO": "desková odchylka",
   "DV": "desková vada",
   "HT": "hlubotisk",
   "OTp": "ocelotisk z plochy",
