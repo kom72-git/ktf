@@ -305,11 +305,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     }
   };
 
-  const handleHiddenToggle = async (checked) => {
+  const handleVisibilityToggle = async (isPublished) => {
+    const nextHidden = !isPublished;
     const previous = Boolean(editStampData.isHidden);
-    setEditStampData((prev) => ({ ...prev, isHidden: checked }));
+    setEditStampData((prev) => ({ ...prev, isHidden: nextHidden }));
     setIsSavingHidden(true);
-    const saved = await saveMainField('isHidden', checked);
+    const saved = await saveMainField('isHidden', nextHidden);
     setIsSavingHidden(false);
     if (!saved) {
       setEditStampData((prev) => ({ ...prev, isHidden: previous }));
@@ -599,11 +600,11 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             >
               <input
                 type="checkbox"
-                checked={Boolean(editStampData.isHidden)}
-                onChange={(e) => handleHiddenToggle(e.target.checked)}
+                checked={!Boolean(editStampData.isHidden)}
+                onChange={(e) => handleVisibilityToggle(e.target.checked)}
                 disabled={isSavingHidden}
               />
-              {isSavingHidden ? 'ukládám…' : 'zneviditelnit'}
+              {isSavingHidden ? 'ukládám…' : 'zveřejněno'}
             </label>
           </>
         )}
