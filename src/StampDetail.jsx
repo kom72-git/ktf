@@ -20,6 +20,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const [editingDefect, setEditingDefect] = useState(null);
   const [editStampData, setEditStampData] = useState({});
   const [savedCaption, setSavedCaption] = useState(false);
+  const [isSavingHidden, setIsSavingHidden] = useState(false);
   useEffect(() => {
     const API_BASE =
       import.meta.env.VITE_API_BASE ||
@@ -29,7 +30,14 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         ? "" // Pro Vercel používáme relativní cesty, backend bude na stejné doméně
         : "http://localhost:3001"); // Lokální vývoj
     fetch(`${API_BASE}/api/stamps/${id}`)
-      .then(res => res.json())
+      .then(async (res) => {
+        if (!res.ok) {
+          const error = new Error("Známka nenalezena");
+          error.status = res.status;
+          throw error;
+        }
+        return res.json();
+      })
       .then(data => {
         console.log("[DetailPage] Načtená data:", data);
         setItem(data);
@@ -55,13 +63,17 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           popisObrazkuStudie: data.popisObrazkuStudie || '',
           popisStudie: data.popisStudie || '',
           popisStudie2: data.popisStudie2 || '',
-          obrazekAutor: data.obrazekAutor || ''
+          obrazekAutor: data.obrazekAutor || '',
+          isHidden: Boolean(data.isHidden)
         });
       })
       .catch(err => {
         console.error("[DetailPage] Chyba při načítání detailu:", err);
+        if (err?.status === 404 && typeof onBack === "function") {
+          onBack();
+        }
       });
-  }, [id]);
+  }, [id, onBack]);
 
   // Funkce pro editaci vady
   const saveDefectEdit = async (defectId, updatedData) => {
@@ -292,6 +304,28 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       setEditingDefect(null);
     }
   };
+
+  const handleHiddenToggle = async (checked) => {
+    const previous = Boolean(editStampData.isHidden);
+    setEditStampData((prev) => ({ ...prev, isHidden: checked }));
+    setIsSavingHidden(true);
+    const saved = await saveMainField('isHidden', checked);
+    setIsSavingHidden(false);
+    if (!saved) {
+      setEditStampData((prev) => ({ ...prev, isHidden: previous }));
+      return;
+    }
+    const notification = document.createElement('div');
+    notification.textContent = 'Uloženo';
+    notification.className = 'ktf-notification';
+    document.body.appendChild(notification);
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        document.body.removeChild(notification);
+      }
+    }, 1500);
+  };
+
   if (!item) return <div className="p-8">Načítám…</div>;
   if (item.error) {
     console.error("[DetailPage] API vrátilo chybu:", item.error);
@@ -536,7 +570,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     obrazekAutor: item.obrazekAutor || '',
                     popisObrazkuStudie: item.popisObrazkuStudie || '',
                     popisStudie: item.popisStudie || '',
-                    popisStudie2: item.popisStudie2 || ''
+                    popisStudie2: item.popisStudie2 || '',
+                    isHidden: Boolean(item.isHidden)
                   });
                   setIsEditingAll(false);
                 }
@@ -559,6 +594,17 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             >
               + Přidat variantu
             </button>
+            <label
+              className="hide-stamp-toggle"
+            >
+              <input
+                type="checkbox"
+                checked={Boolean(editStampData.isHidden)}
+                onChange={(e) => handleHiddenToggle(e.target.checked)}
+                disabled={isSavingHidden}
+              />
+              {isSavingHidden ? 'ukládám…' : 'zneviditelnit'}
+            </label>
           </>
         )}
       </div>

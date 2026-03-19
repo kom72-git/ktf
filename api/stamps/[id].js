@@ -19,6 +19,11 @@ async function connectToDatabase() {
   }
 }
 
+function includeHiddenForRequest(req) {
+  const host = String(req.headers["x-forwarded-host"] || req.headers.host || "").toLowerCase();
+  return host.includes("localhost") || host.includes("127.0.0.1") || host.includes("app.github.dev");
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -35,8 +40,40 @@ export default async function handler(req, res) {
     // Získáme ID známky z URL
     const { id } = req.query;
     console.log("Looking for stamp with idZnamky:", id);
-    
-    const stamp = await mongoose.connection.db.collection("stamps").findOne({ idZnamky: id });
+
+    if (req.method === 'PUT') {
+      const updateData = { ...(req.body || {}) };
+      delete updateData._id;
+
+      const result = await mongoose.connection.db.collection("stamps").updateOne(
+        { idZnamky: id },
+        { $set: updateData }
+      );
+
+      if (!result.matchedCount) {
+        return res.status(404).json({ error: "Známka nenalezena" });
+      }
+
+      const updatedStamp = await mongoose.connection.db.collection("stamps").findOne({ idZnamky: id });
+      return res.status(200).json(updatedStamp);
+    }
+
+    if (req.method !== 'GET') {
+      return res.status(405).json({ error: "Metoda není podporována" });
+    }
+
+    const includeHidden = includeHiddenForRequest(req);
+    const query = includeHidden
+      ? { idZnamky: id }
+      : {
+          idZnamky: id,
+          $or: [
+            { isHidden: { $exists: false } },
+            { isHidden: false }
+          ]
+        };
+
+    const stamp = await mongoose.connection.db.collection("stamps").findOne(query);
     
     if (!stamp) {
       console.log("Stamp not found for id:", id);

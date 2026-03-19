@@ -21,6 +21,11 @@ async function connectToDatabase() {
   }
 }
 
+function includeHiddenForRequest(req) {
+  const host = String(req.headers["x-forwarded-host"] || req.headers.host || "").toLowerCase();
+  return host.includes("localhost") || host.includes("127.0.0.1") || host.includes("app.github.dev");
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -34,7 +39,16 @@ export default async function handler(req, res) {
   try {
     await connectToDatabase();
     console.log("Getting stamps from database...");
-    const stamps = await mongoose.connection.db.collection("stamps").find({}).toArray();
+    const includeHidden = includeHiddenForRequest(req);
+    const query = includeHidden
+      ? {}
+      : {
+          $or: [
+            { isHidden: { $exists: false } },
+            { isHidden: false }
+          ]
+        };
+    const stamps = await mongoose.connection.db.collection("stamps").find(query).toArray();
     console.log("Found stamps:", stamps.length);
     return res.status(200).json(stamps);
   } catch (err) {

@@ -394,6 +394,20 @@ textarea.resize-corner {
   display: flex;
   gap: 12px;
   margin-bottom: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.hide-stamp-toggle {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 10px;
 }
 .study-inline-note {
   display: flex;
