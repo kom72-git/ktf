@@ -81,8 +81,11 @@ export function naturalVariantSort(a, b) {
   const va = a?.variantaVady || "";
   const vb = b?.variantaVady || "";
   const parse = value => {
-    const match = String(value).match(/^([A-Z])([0-9]+)?(?:\.([0-9]+))?/i);
-    if (!match) return [String(value), 0, null];
+    const str = String(value);
+    // Čistě číselná varianta: 1, 2, 10, 11 ...
+    if (/^\d+$/.test(str)) return ['\x00', parseInt(str, 10), null];
+    const match = str.match(/^([A-Z])([0-9]+)?(?:\.([0-9]+))?/i);
+    if (!match) return [str, 0, null];
     return [match[1], match[2] ? parseInt(match[2], 10) : 0, match[3] ? parseInt(match[3], 10) : null];
   };
   const [la, na, sa] = parse(va);

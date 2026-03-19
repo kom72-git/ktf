@@ -481,14 +481,28 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       plusVariants.push(def);
       return;
     }
-    // Hlavní varianta je první písmeno (A, B, ...)
-    const main = def.variantaVady.match(/^[A-Z]/i);
-    const groupKey = main ? main[0] : '?';
+    // Hlavní varianta je první písmeno (A, B, ...) nebo číslo → číselné jdou do jedné skupiny
+    const isNum = /^\d+$/.test(def.variantaVady);
+    const lk = !isNum && def.variantaVady.match(/^([A-Z])/i);
+    const groupKey = isNum ? '__numeric__' : (lk ? lk[0] : '?');
+    // Alternativa: každé číslo jako vlastní skupina (odkomentovat + zakomentovat řádek výše):
+    // const groupKey = isNum ? def.variantaVady : (lk ? lk[0] : '?');
     if (!grouped[groupKey]) grouped[groupKey] = [];
     grouped[groupKey].push(def);
   });
 
-  const groupedKeysSorted = Object.keys(grouped).sort();
+  const groupedKeysSorted = Object.keys(grouped).sort((ka, kb) => {
+    if (ka === '__numeric__') return 1;
+    if (kb === '__numeric__') return -1;
+    return ka.localeCompare(kb);
+  });
+  // Alternativa pro individuální číselné skupiny (párovat s výše):
+  // const groupedKeysSorted = Object.keys(grouped).sort((ka, kb) => {
+  //   const na = /^\d+$/.test(ka), nb = /^\d+$/.test(kb);
+  //   if (na && nb) return parseInt(ka, 10) - parseInt(kb, 10);
+  //   if (na) return 1; if (nb) return -1;
+  //   return ka.localeCompare(kb);
+  // });
   const groupedVariantsOrdered = groupedKeysSorted.flatMap(groupKey =>
     grouped[groupKey].slice().sort(compareVariantsWithBracket)
   );
@@ -1160,7 +1174,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           )}
           <div className="study-clear" />
           {/* Seskupení variant podle hlavní varianty (A, B, ...) */}
-          {Object.keys(grouped).sort().map(group => {
+          {groupedKeysSorted.map(group => {
             const defs = grouped[group];
             // Deduplicitace podle variantaVady
             const uniqueDefsMap = new Map();
@@ -1180,17 +1194,28 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
               return sortedDefs.filter(def => {
                 if (!def.variantaVady) return false;
                 if (def.variantaVady.length === 1) return false; // základní varianta (A, B, ...)
+                if (/^\d+$/.test(def.variantaVady)) return false; // číselné varianty 1, 2, 10 ... nejsou podvarianty
                 if (seen.has(def.variantaVady)) return false;
                 seen.add(def.variantaVady);
                 return true;
               }).map(d => d.variantaVady);
             })();
-            const mainDef = sortedDefs.find(def => def.variantaVady && def.variantaVady.length === 1);
+            const isNumericGroup = group === '__numeric__';
+            const numericNums = isNumericGroup
+              ? sortedDefs.map(d => parseInt(d.variantaVady, 10)).filter(n => !isNaN(n)).sort((a,b) => a-b)
+              : [];
+            const numericHeading = isNumericGroup && numericNums.length > 0
+              ? (numericNums.length === 1
+                  ? `Varianta ${numericNums[0]}`
+                  : `Varianty ${numericNums[0]} - ${numericNums[numericNums.length - 1]}`)
+              : null;
+            const mainDef = sortedDefs.find(def => def.variantaVady &&
+              (def.variantaVady.length === 1 || /^\d+$/.test(def.variantaVady)));
             const typVarianty = mainDef && mainDef.typVarianty ? mainDef.typVarianty : '';
             return (
               <section key={group} aria-labelledby={`${variantsHeadingBaseId}-${group}`}>
                 <h3 id={`${variantsHeadingBaseId}-${group}`} className="variant-subtitle">
-                  Varianta {group}
+                  {isNumericGroup ? numericHeading : `Varianta ${group}`}
                   {typVarianty && (
                     <><span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span><span className="variant-type">{typVarianty}</span></>
                   )}
