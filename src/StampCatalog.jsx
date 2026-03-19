@@ -7,15 +7,21 @@ import DetailPage from "./StampDetail.jsx";
 import EmissionTitleAbbr from "./components/EmissionTitleAbbr.jsx";
 import {
   replaceAbbreviations,
-  sklonujPolozka
+  sklonujPolozka,
+  sklonujEmise,
+  sklonujZnamek,
+  sklonujPosledniVlozeneEmise
 } from './utils/formatovaniTextu.jsx';
 import { katalogSort, emissionToSlug, slugToEmission } from './utils/katalog.js';
 import "./App.css";
 
 
 export default function StampCatalog(props) {
+  const HOMEPAGE_BOX_LIMIT = 8; // 👈 zde měň počet zobrazených boxů/emisí na HomePage 
   // Stav pro rozbalené boxy (klíč: emise|rok)
   const [expandedBoxes, setExpandedBoxes] = useState([]);
+  const [showAllHome, setShowAllHome] = useState(false);
+  const [homeSortMode, setHomeSortMode] = useState("db");
   const location = typeof useLocation === 'function' ? useLocation() : {};
 
   // Automatické rozbalení boxu po příchodu z hlavní stránky
@@ -49,8 +55,9 @@ export default function StampCatalog(props) {
   // Všechny filtry a zobrazení budou vycházet pouze z těchto hodnot
   let emission = "all";
   let year = "all";
+  const normalizedInitialYear = props.initialYear === "all-years" ? "all" : props.initialYear;
   if (props.onlyYear) {
-    year = props.initialYear || "all";
+    year = normalizedInitialYear || "all";
     emission = "all";
   } else if (props.initialEmissionSlug) {
     const match = props.initialEmissionSlug.match(/^(.*)-(\d{4})$/);
@@ -61,7 +68,7 @@ export default function StampCatalog(props) {
       year = rok || "all";
     } else {
       emission = slugToEmission(props.initialEmissionSlug, stamps) || "all";
-      year = props.initialYear || "all";
+      year = normalizedInitialYear || "all";
     }
   }
   const [catalog, setCatalog] = useState("all");
@@ -156,13 +163,24 @@ export default function StampCatalog(props) {
   }, [year, stamps]);
 
   const filteredCatalogs = useMemo(() => {
+    const extractCatalogSerial = (value = "") => {
+      const text = String(value || "");
+      const match = text.match(/(\d{3,4})/);
+      if (!match) return Number.POSITIVE_INFINITY;
+      return Number(match[1]);
+    };
+
     let filtered = stamps;
     if (year !== "all") {
       filtered = filtered.filter((d) => d.rok === Number(year));
     }
     const s = new Set(filtered.map((d) => d.katalogCislo));
-    // Nejprve podle čísla, pak podle prefixu
-    return ["all", ...Array.from(s).sort(katalogSort)];
+    return ["all", ...Array.from(s).sort((a, b) => {
+      const serialA = extractCatalogSerial(a);
+      const serialB = extractCatalogSerial(b);
+      if (serialA !== serialB) return serialA - serialB;
+      return String(a).localeCompare(String(b), "cs", { sensitivity: "base", numeric: true });
+    })];
   }, [year, stamps]);
 
   const fieldSuggestions = useMemo(() => {
@@ -207,7 +225,7 @@ export default function StampCatalog(props) {
     }, {});
   }, [stamps]);
 
-  // Výchozí náhled: 20 nejnovějších známek podle _id (největší = nejnovější)
+  // Výchozí náhled: všechny známky (nikde se neřeže na 20) a pro homepage se 4 boxy omezí až v rendereru.
   const filtered = useMemo(() => {
     let arr = stamps
       .filter((d) => {
@@ -224,21 +242,110 @@ export default function StampCatalog(props) {
         }
         return true;
       });
-    // Pokud je vybrán konkrétní rok, řadíme podle katalogového čísla (primárně číslo, pak prefix)
     if (year !== "all") {
       arr = [...arr].sort(katalogSort);
     }
-    // Pokud nejsou použity žádné filtry, zobrazíme pouze 20 nejnovějších
+    // Pokud nejsou použity žádné filtry, řadíme podle posledního přidání, bez omezení počtu položek.
     if (
       year === "all" &&
       emission === "all" &&
       catalog === "all" &&
       !query
     ) {
-      arr = [...arr].sort((a, b) => b._id.localeCompare(a._id)).slice(0, 20);
+      arr = [...arr].sort((a, b) => b._id.localeCompare(a._id));
     }
     return arr;
   }, [query, year, emission, catalog, stamps]);
+
+  // Počet boxů, které máme ve filtrovaném seznamu (skupina emise|rok)
+  const totalBoxCount = useMemo(() => {
+    const unique = new Set(filtered.map((d) => `${d.emise}|${d.rok}`));
+    return unique.size;
+  }, [filtered]);
+
+  const isHomepageDefault =
+    year === "all" && emission === "all" && catalog === "all" && !query;
+  const groupedBoxes = useMemo(() => {
+    const extractCatalogSerial = (value = "") => {
+      const text = String(value || "");
+      const match = text.match(/(\d{3,4})/);
+      if (!match) return Number.POSITIVE_INFINITY;
+      return Number(match[1]);
+    };
+
+    const emissionMap = new Map();
+    const sortedStamps = [...filtered].sort((a, b) => b._id.localeCompare(a._id));
+    sortedStamps.forEach(item => {
+      const key = `${item.emise}|${item.rok}`;
+      if (!emissionMap.has(key)) {
+        emissionMap.set(key, [item]);
+      } else {
+        emissionMap.get(key).push(item);
+      }
+    });
+
+    return Array.from(emissionMap.entries()).sort((a, b) => {
+      const itemA = a[1][0];
+      const itemB = b[1][0];
+
+      if (isHomepageDefault) {
+        if (!showAllHome || homeSortMode === "db") {
+          return itemB._id.localeCompare(itemA._id);
+        }
+
+        if (homeSortMode === "alpha") {
+          const emiseA = (itemA.emise || "").toString();
+          const emiseB = (itemB.emise || "").toString();
+          const alphaCmp = emiseA.localeCompare(emiseB, "cs", { sensitivity: "base", numeric: true });
+          if (alphaCmp !== 0) {
+            return alphaCmp;
+          }
+          const yearCmp = Number(itemA.rok) - Number(itemB.rok);
+          if (yearCmp !== 0) {
+            return yearCmp;
+          }
+          return itemA._id.localeCompare(itemB._id);
+        }
+
+        if (homeSortMode === "num") {
+          const sortedCatalogA = [...a[1]].sort(katalogSort);
+          const sortedCatalogB = [...b[1]].sort(katalogSort);
+          const catalogA = sortedCatalogA[0]?.katalogCislo || "";
+          const catalogB = sortedCatalogB[0]?.katalogCislo || "";
+          const serialA = extractCatalogSerial(catalogA);
+          const serialB = extractCatalogSerial(catalogB);
+          if (serialA !== serialB) {
+            return serialA - serialB;
+          }
+          return itemA._id.localeCompare(itemB._id);
+        }
+
+        return itemB._id.localeCompare(itemA._id);
+      }
+
+      return itemB._id.localeCompare(itemA._id);
+    });
+  }, [filtered, isHomepageDefault, homeSortMode, showAllHome]);
+
+  const boxesToRender = useMemo(() => {
+    if (isHomepageDefault && !showAllHome) {
+      return groupedBoxes.slice(0, HOMEPAGE_BOX_LIMIT);
+    }
+    return groupedBoxes;
+  }, [groupedBoxes, isHomepageDefault, showAllHome]);
+
+  const displayedBoxCount = boxesToRender.length;
+
+  const displayedStampCount = useMemo(() => {
+    return boxesToRender.reduce((sum, [, items]) => sum + items.length, 0);
+  }, [boxesToRender]);
+
+  useEffect(() => {
+    if (!isHomepageDefault) {
+      setShowAllHome(false);
+      setHomeSortMode("db");
+    }
+  }, [isHomepageDefault]);
 
 
   return (
@@ -353,33 +460,69 @@ export default function StampCatalog(props) {
                 }
               }}>Vyčistit</button>
             </section>
-            <div className="count-info">
-              {year === "all" && emission === "all" && catalog === "all" && !query
-                ? <>Poslední přidané položky z celkových <strong>{stamps.length}</strong> v katalogu</>
-                : <>Obsahuje: <strong>{filtered.length}</strong> {sklonujPolozka(filtered.length)}</>}
+            <div className="count-info-row">
+              <div className="count-info">
+                {isHomepageDefault ? (
+                  <>
+                    Zobrazeno: <strong>{displayedBoxCount}</strong> {sklonujPosledniVlozeneEmise(displayedBoxCount)} (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)}) z celkových <strong>{totalBoxCount}</strong> v katalogu
+                  </>
+                ) : (
+                  <>
+                    Obsahuje: <strong>{totalBoxCount}</strong> {sklonujEmise(totalBoxCount)} (<strong>{filtered.length}</strong> {sklonujZnamek(filtered.length)})
+                  </>
+                )}
+              </div>
+              <div className="count-controls">
+                {isHomepageDefault && (
+                  <>
+                    <button
+                      type="button"
+                      className={`count-control-link ${showAllHome ? "active" : ""}`}
+                      onClick={() => {
+                        setShowAllHome((prev) => {
+                          const next = !prev;
+                          if (!next) setHomeSortMode("db");
+                          return next;
+                        });
+                      }}
+                    >
+                      {showAllHome ? "Zobrazit méně" : "Zobrazit vše"}
+                    </button>
+                    {showAllHome && (
+                      <>
+                        <span className="count-controls-divider">|</span>
+                        <span className="count-controls-label">Řazení:</span>
+                        <button
+                          type="button"
+                          className={`count-control-link ${homeSortMode === "alpha" ? "active" : ""}`}
+                          onClick={() => setHomeSortMode("alpha")}
+                        >
+                          emise
+                        </button>
+                        <button
+                          type="button"
+                          className={`count-control-link ${homeSortMode === "num" ? "active" : ""}`}
+                          onClick={() => setHomeSortMode("num")}
+                        >
+                          katalog
+                        </button>
+                        <button
+                          type="button"
+                          className={`count-control-link ${homeSortMode === "db" ? "active" : ""}`}
+                          onClick={() => setHomeSortMode("db")}
+                        >
+                          nové
+                        </button>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
             <div className="stamp-list-layout">
               {(() => {
-                // Pokud je aktivní pouze filtr roku (adresa /rok/XXXX), zobrazíme přímo známky z daného roku
-                // VŽDY seskupovat do boxů podle (emise, rok), i při použití filtrů
                 {
-                  // Vezmi vždy aktuální filtered pole (po všech filtrech)
-                  const stampsToShow = filtered;
-                  // Seskupení boxů podle (emise, rok)
-                  const emissionMap = new Map();
-                  // Nejprve seřadíme stamps podle _id sestupně (nejnovější první)
-                  const sortedStamps = [...stampsToShow].sort((a, b) => b._id.localeCompare(a._id));
-                  sortedStamps.forEach(item => {
-                    const key = `${item.emise}|${item.rok}`;
-                    if (!emissionMap.has(key)) {
-                      emissionMap.set(key, [item]);
-                    } else {
-                      emissionMap.get(key).push(item);
-                    }
-                  });
-                  return Array.from(emissionMap.entries())
-                    .sort((a, b) => b[1][0]._id.localeCompare(a[1][0]._id))
-                    .flatMap(([key, items]) => {
+                  return boxesToRender.flatMap(([key, items]) => {
                       const sortedItems = [...items].sort(katalogSort);
                       const item = sortedItems[0];
                       const isSingle = sortedItems.length === 1;
@@ -390,19 +533,49 @@ export default function StampCatalog(props) {
                         // SLOUČENÝ BOX
                         // Výpis katalogových čísel všech známek v boxu
                         const katalogCisla = sortedItems.map(z => z.katalogCislo).filter(Boolean);
-                        // Rozparsovat prefixy a čísla
+                        // Rozparsovat prefixy, čísla a variantní sufixy
                         const parsed = katalogCisla.map(kat => {
-                          const m = kat.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*(\d+)/i);
-                          return m ? { prefix: (m[1] || '').trim(), cislo: m[2] } : { prefix: '', cislo: kat };
+                          const m = kat.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*(\d+)([A-ZČŘŽŠĚÚŮ]*)$/i);
+                          if (!m) {
+                            return { prefix: '', number: kat, suffix: '', value: kat };
+                          }
+                          return {
+                            prefix: (m[1] || '').trim(),
+                            number: m[2],
+                            suffix: (m[3] || '').trim(),
+                            value: `${m[2]}${(m[3] || '').trim()}`,
+                          };
                         });
-                        const allSamePrefix = parsed.every(p => p.prefix === parsed[0].prefix);
+                        const allSamePrefix = parsed.length > 0 && parsed.every(p => p.prefix === parsed[0].prefix);
                         let katalogText = '';
                         if (allSamePrefix && parsed[0].prefix) {
-                          // Všechny mají stejný prefix – vždy čárkovaný seznam
-                          const cisla = parsed.map(p => p.cislo);
-                          katalogText = parsed[0].prefix + ' ' + cisla.join(', ');
+                          const hasVariantSuffix = parsed.some(p => p.suffix);
+                          if (hasVariantSuffix) {
+                            const groups = parsed.reduce((acc, p) => {
+                              const key = p.suffix || '';
+                              if (!acc[key]) acc[key] = [];
+                              acc[key].push(p);
+                              return acc;
+                            }, {});
+                            const groupKeys = Object.keys(groups).sort((a, b) => {
+                              if (a === '') return -1;
+                              if (b === '') return 1;
+                              return a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true });
+                            });
+                            katalogText = groupKeys
+                              .map((key, index) => {
+                                const numbers = groups[key].map(item => item.value);
+                                if (index === 0) {
+                                  return `${parsed[0].prefix} ${numbers.join(', ')}`;
+                                }
+                                return numbers.join(', ');
+                              })
+                              .join('; ');
+                          } else {
+                            const numbers = parsed.map(p => p.number);
+                            katalogText = `${parsed[0].prefix} ${numbers.join(', ')}`;
+                          }
                         } else {
-                          // Různé prefixy nebo bez prefixu
                           katalogText = katalogCisla.join(', ');
                         }
                         return (

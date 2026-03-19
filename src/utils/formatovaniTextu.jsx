@@ -33,7 +33,7 @@ export function formatPopisWithAll(text) {
   // Convert "<strong>[... ]</strong>a" -> "<strong>[...]</strong><span class=variant-suffix>a</span>"
   // also handle case where brackets were already converted to <strong>...</strong>
   s = s.replace(/<strong>\[([^\]]+)\]<\/strong>([A-Za-z])/g, (m, inside, suf) => {
-    return `<strong>[${inside}]</strong><span class=\"variant-suffix\">${suf}</span>`;
+    return `<strong>[${inside}]</strong><span class="variant-suffix">${suf}</span>`;
   });
   const abbrs = Object.keys(ZKRATKY_TOOLTIPY)
     .sort((a, b) => b.length - a.length)
@@ -51,7 +51,7 @@ export function formatPopisWithAll(text) {
         return abbr;
       }
       if (ZKRATKY_TOOLTIPY[abbr]) {
-        return `<span class=\"ktf-abbr-tooltip-wrapper\"><abbr class=\"ktf-abbr-tooltip-abbr\" title=\"${ZKRATKY_TOOLTIPY[abbr]}\">${abbr}</abbr></span>`;
+        return `<span class="ktf-abbr-tooltip-wrapper"><abbr class="ktf-abbr-tooltip-abbr" title="${ZKRATKY_TOOLTIPY[abbr]}">${abbr}</abbr></span>`;
       }
       return abbr;
     });
@@ -247,6 +247,18 @@ export function sklonujPolozka(count) {
   return "položek";
 }
 
+export function sklonujEmise(count) {
+  if (count === 1) return "emisi";
+  if (count >= 2 && count <= 4) return "emise";
+  return "emisí";
+}
+
+export function sklonujZnamek(count) {
+  if (count === 1) return "známka";
+  if (count >= 2 && count <= 4) return "známky";
+  return "známek";
+}
+
 // --- Varianty: zvýraznění textu „část nákladu“ kurzívou ---
 const italicizeCastNakladu = (value = "") =>
   value.replace(/(\(část nákladu\)|část nákladu)/gi, (match, _p1, offset, source) => {
@@ -257,4 +269,18 @@ const italicizeCastNakladu = (value = "") =>
     }
     return `<em>${match}</em>`;
   });
+
+export function sklonujZobrazeno(count, jednotka) {
+  if (count === 1) {
+    return jednotka === "emise" ? "Zobrazena" : "Zobrazen";
+  }
+  return "Zobrazeno";
+}
+
+// "poslední vložená emise" / "poslední vložené emise" / "posledních vložených emisí"
+export function sklonujPosledniVlozeneEmise(count) {
+  if (count === 1) return "poslední vložená emise";
+  if (count >= 2 && count <= 4) return "poslední vložené emise";
+  return "posledních vložených emisí";
+}
 

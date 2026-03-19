@@ -1,19 +1,79 @@
 // Pomocné funkce pro práci s katalogem a variantami
 
+// Odstraní vícenásobné mezery a trim
+function normalizeCatalogPrefix(value) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function parseCatalogNumber(katalogCislo) {
+  const fromString = String(katalogCislo || "").trim();
+  const match = fromString.match(/^([\s\S]*?)(\d+)([A-Za-z]*)$/);
+  if (!match) {
+    return {
+      prefix: normalizeCatalogPrefix(fromString),
+      number: NaN,
+      suffix: "",
+      original: fromString,
+    };
+  }
+  const rawPrefix = match[1] || "";
+  const rawNumber = match[2] || "0";
+  const rawSuffix = match[3] || "";
+  return {
+    prefix: normalizeCatalogPrefix(rawPrefix),
+    number: Number(rawNumber),
+    suffix: rawSuffix.toUpperCase(),
+    original: fromString,
+  };
+}
+
 // ŘAZENÍ KATALOGOVÝCH ČÍSEL A VARIANT
-// Řazení katalogových čísel: nejprve číslo, následně písmenkový prefix
+// Řadí podle prefixu (před číslem), pak varianty (sufix za číslem: A/B etc.), a potom čísla.
 export function katalogSort(a, b) {
-  const getKat = x => (typeof x === "string" ? x : x.katalogCislo || "");
+  const getKat = (x) => {
+    if (typeof x === "string") return x;
+    if (x && typeof x === "object") return x.katalogCislo || "";
+    return "";
+  };
+
   const katA = getKat(a);
   const katB = getKat(b);
-  const numA = (katA.match(/\d+/) || [""])[0];
-  const numB = (katB.match(/\d+/) || [""])[0];
-  if (numA !== numB) {
-    return Number(numA) - Number(numB);
+  const parsedA = parseCatalogNumber(katA);
+  const parsedB = parseCatalogNumber(katB);
+
+  const prefixCompare = parsedA.prefix.localeCompare(parsedB.prefix, undefined, {
+    sensitivity: "base",
+    numeric: true,
+  });
+  if (prefixCompare !== 0) return prefixCompare;
+
+  // Nejprve řadíme podle varianty (sufix A/B); pokud u obou není sufix, pokračujeme na číslo.
+  const hasSuffixA = parsedA.suffix !== "";
+  const hasSuffixB = parsedB.suffix !== "";
+  if (hasSuffixA !== hasSuffixB) {
+    return hasSuffixA ? 1 : -1;
   }
-  const prefixA = katA.replace(numA, "").replace(/\s+/g, "");
-  const prefixB = katB.replace(numB, "").replace(/\s+/g, "");
-  return prefixA.localeCompare(prefixB);
+
+  if (parsedA.suffix !== parsedB.suffix) {
+    if (!parsedA.suffix) return -1;
+    if (!parsedB.suffix) return 1;
+    const suffixCompare = parsedA.suffix.localeCompare(parsedB.suffix, undefined, {
+      sensitivity: "base",
+      numeric: true,
+    });
+    if (suffixCompare !== 0) return suffixCompare;
+  }
+
+  if (parsedA.number !== parsedB.number) {
+    // Pokud chceme, aby varianty zůstaly seskupeny: součet se pochytá v sufixu, pak teprve v čísle.
+    return parsedA.number - parsedB.number;
+  }
+
+  // Fallback přes celý text
+  return parsedA.original.localeCompare(parsedB.original, undefined, {
+    sensitivity: "base",
+    numeric: true,
+  });
 }
 
 // Přirozené řazení variant typu A, A1, A1.1 …
