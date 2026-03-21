@@ -16,7 +16,7 @@
     }
   },
   "postCreateCommand": "npm install -g concurrently && npm install && cd server && npm install",
-  "postStartCommand": "concurrently \"cd server && npm start\" \"npm run dev\"",
+  "postStartCommand": "bash /workspaces/ktf/.devcontainer/start-services.sh",
   "customizations": {
     "vscode": {
       "settings": {},
