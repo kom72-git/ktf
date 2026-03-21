@@ -518,6 +518,34 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const specHeadingId = `${detailHeadingId}-spec`;
   const studyHeadingId = `${detailHeadingId}-study`;
   const variantsHeadingBaseId = `${detailHeadingId}-variant`;
+
+  const normalizeImageSrc = (src) => {
+    if (!src || typeof src !== "string") return "";
+    return src[0] !== "/" && !src.startsWith("http") ? `/${src}` : src;
+  };
+
+  const openSingleImageLightbox = (src, caption = "") => {
+    const normalizedSrc = normalizeImageSrc(src);
+    if (!normalizedSrc) return;
+    Fancybox.show(
+      [
+        {
+          src: normalizedSrc,
+          caption,
+        },
+      ],
+      {
+        Toolbar: ["zoom", "close"],
+        dragToClose: true,
+        animated: true,
+        compact: false,
+        showClass: "fancybox-zoomIn",
+        hideClass: "fancybox-zoomOut",
+        closeButton: "top",
+        defaultType: "image",
+      }
+    );
+  };
   const additionalStudyHeadingId = `${detailHeadingId}-study-after`;
   // Fancybox galerie pro skupinu
   const openFancybox = (flatIndex = 0) => {
@@ -1053,12 +1081,23 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
               )}
             </span>
           </div>
-          <div className="stamp-spec-row">
+          <div className="stamp-spec-row spec-tf-row">
             <span className="stamp-spec-label">Schéma TF</span>
             <span className="stamp-spec-value">
               {isEditingAll ? (
                 <div>
-                  {item.schemaTF && <img src={item.schemaTF} alt="Schéma TF" className="tf-img" onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }} />}
+                  {item.schemaTF && (
+                    <img
+                      src={normalizeImageSrc(item.schemaTF)}
+                      alt="Schéma TF"
+                      className="tf-img tf-img-clickable"
+                      onClick={() => openSingleImageLightbox(item.schemaTF, "Schéma TF")}
+                      onError={e => {
+                        e.target.onerror = null;
+                        e.target.src = '/img/no-image.png';
+                      }}
+                    />
+                  )}
                   <div className="edit-field-row">
                     <input
                       type="text"
@@ -1080,7 +1119,18 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </div>
                 </div>
               ) : (
-                item.schemaTF && <img src={item.schemaTF} alt="Schéma TF" className="tf-img" onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }} />
+                item.schemaTF && (
+                  <img
+                    src={normalizeImageSrc(item.schemaTF)}
+                    alt="Schéma TF"
+                    className="tf-img tf-img-clickable"
+                    onClick={() => openSingleImageLightbox(item.schemaTF, "Schéma TF")}
+                    onError={e => {
+                      e.target.onerror = null;
+                      e.target.src = '/img/no-image.png';
+                    }}
+                  />
+                )
               )}
             </span>
           </div>

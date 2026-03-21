@@ -858,53 +858,35 @@ textarea.resize-corner {
   opacity: 0.7;
 }
 .spec-tf-row {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-start !important;
-}
-.spec-tf-row .stamp-spec-label {
-  padding-bottom: 8px;
-}
-.spec-tf-row .tf-img {
-  margin-top: 18px;
-}
-.spec-tf-row .tf-img {
-  margin-top: 12px;
-}
-.spec-tf-row .stamp-spec-label {
-  min-width: 0;
-  margin-right: 0;
-}
-.spec-tf-row {
   display: flex;
-  flex-direction: column;
   align-items: flex-start;
 }
-.stamp-spec-value .tf-img {
-  display: block;
-  margin-top: 6px;
-  max-width: 100%;
-  height: auto;
+.spec-tf-row .stamp-spec-label {
+  white-space: nowrap;
 }
-.stamp-spec-row .tf-img {
+.spec-tf-row .stamp-spec-value {
   display: block;
-  margin-left: 0;
-  margin-top: 6px;
-  width: 100%;
+  min-width: 0;
+}
+.spec-tf-row .tf-img {
+  display: block;
+  margin: 0;
+  max-width: min(220px, 100%);
+  max-height: 120px;
+  width: auto;
+  height: auto;
 }
 .variant-general-note {
   font-size: 0.95em;
   color: #666;
   margin-top: 4px;
 }
-.tf-img {
-  /* Původní výška byla 7em, nyní přidáváme max velikost dle inline stylu */
-  max-width: 220px;
-  max-height: 120px;
-  width: auto;
-  height: auto; /* Pokud by bylo potřeba zachovat 7em, lze přidat !important, ale pro správné měřítko obrázku je lepší auto */
-  vertical-align: top;
-  margin-top: 0;
+.tf-img-clickable {
+  cursor: pointer;
+}
+/* Reset browser default margin (1em 40px) na figure uvnitř image wrapperu */
+.stamp-detail-img-bg-none figure {
+  margin: 0;
 }
 .study-inline-label {
   font-weight: 600;
@@ -980,7 +962,7 @@ textarea.resize-corner {
 }
 .stamp-detail-img-main {
   display: block !important;
-  max-width: 400px !important;
+  max-width: 520px !important;
   width: 100% !important;
   max-height: 70vh !important;
   object-fit: contain !important;
@@ -1453,7 +1435,7 @@ textarea.resize-corner {
   }
   .stamp-detail-img-main {
     max-width: 100%;
-    max-height: 180px !important;
+    max-height: 50vh !important;
     height: auto;
     margin: 0 auto;
     display: block;
@@ -1565,4 +1547,5 @@ textarea.resize-corner {
     display: block;
     margin: 0 auto 8px auto;
   }
+
 }
