@@ -18,7 +18,7 @@ import "./App.css";
 
 export default function StampCatalog(props) {
   const HOMEPAGE_BOX_LIMIT = 12; // 👈 zde měň výchozí počet zobrazených boxů/emisí na HomePage
-  const HOME_BOX_LIMIT_OPTIONS = [4, HOMEPAGE_BOX_LIMIT, 10, 20, 40]; // 👈 zde měň výchozí počty v rozevíracím seznamu na HomePage
+  const HOME_BOX_LIMIT_OPTIONS = [4, HOMEPAGE_BOX_LIMIT, 8, 20, 40]; // 👈 zde měň výchozí počty v rozevíracím seznamu na HomePage
   const homeBoxLimitOptions = Array.from(new Set(HOME_BOX_LIMIT_OPTIONS)).sort((a, b) => a - b);
   // Stav pro rozbalené boxy (klíč: emise|rok)
   const [expandedBoxes, setExpandedBoxes] = useState([]);
@@ -176,6 +176,15 @@ export default function StampCatalog(props) {
     return ["all", ...Array.from(s).sort()];
   }, [year, stamps]);
 
+  const filteredYears = useMemo(() => {
+    let filtered = stamps;
+    if (emission !== "all") {
+      filtered = filtered.filter((d) => d.emise === emission);
+    }
+    const s = new Set(filtered.map((d) => d.rok));
+    return ["all", ...Array.from(s).sort((a, b) => a - b)];
+  }, [emission, stamps]);
+
   const filteredCatalogs = useMemo(() => {
     const extractCatalogSerial = (value = "") => {
       const text = String(value || "");
@@ -188,6 +197,9 @@ export default function StampCatalog(props) {
     if (year !== "all") {
       filtered = filtered.filter((d) => d.rok === Number(year));
     }
+    if (emission !== "all") {
+      filtered = filtered.filter((d) => d.emise === emission);
+    }
     const s = new Set(filtered.map((d) => d.katalogCislo));
     return ["all", ...Array.from(s).sort((a, b) => {
       const serialA = extractCatalogSerial(a);
@@ -195,7 +207,7 @@ export default function StampCatalog(props) {
       if (serialA !== serialB) return serialA - serialB;
       return String(a).localeCompare(String(b), "cs", { sensitivity: "base", numeric: true });
     })];
-  }, [year, stamps]);
+  }, [year, emission, stamps]);
 
   const fieldSuggestions = useMemo(() => {
     const fields = [
@@ -364,6 +376,34 @@ export default function StampCatalog(props) {
     return boxesToRender.reduce((sum, [, items]) => sum + items.length, 0);
   }, [boxesToRender]);
 
+  const visibleExpandableKeys = useMemo(() => {
+    return boxesToRender
+      .filter(([, items]) => items.length > 1)
+      .map(([key]) => key);
+  }, [boxesToRender]);
+
+  const areAllVisibleExpanded = useMemo(() => {
+    if (visibleExpandableKeys.length === 0) return false;
+    return visibleExpandableKeys.every((key) => expandedBoxes.includes(key));
+  }, [visibleExpandableKeys, expandedBoxes]);
+
+  function handleToggleVisibleBoxes() {
+    if (visibleExpandableKeys.length === 0) return;
+
+    setExpandedBoxes((prev) => {
+      const next = new Set(prev);
+      const shouldExpand = !visibleExpandableKeys.every((key) => next.has(key));
+
+      if (shouldExpand) {
+        visibleExpandableKeys.forEach((key) => next.add(key));
+      } else {
+        visibleExpandableKeys.forEach((key) => next.delete(key));
+      }
+
+      return Array.from(next);
+    });
+  }
+
   return (
     <div className="page-bg">
       <Header navigate={navigate} />
@@ -410,7 +450,7 @@ export default function StampCatalog(props) {
                 }
               }}>
                 <option value="all">Rok</option>
-                {years.filter(y => y !== "all").map((y) => (
+                {filteredYears.filter(y => y !== "all").map((y) => (
                   <option key={y} value={y}>{y}</option>
                 ))}
               </select>
@@ -466,7 +506,10 @@ export default function StampCatalog(props) {
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
-              <button onClick={() => {
+              <button
+                title="Vyčistit filtry"
+                aria-label="Vyčistit filtry"
+                onClick={() => {
                 setQuery("");
                 setCatalog("all");
                 if (navigate) {
@@ -474,23 +517,25 @@ export default function StampCatalog(props) {
                 } else {
                   window.location.href = `/`;
                 }
-              }}>Vyčistit</button>
+              }}>
+                Vyčistit
+              </button>
             </section>
             <div className="count-info-row">
               <div className="count-info">
                 {isHomepageDefault ? (
                   homeSortMode === "db" ? (
                     <>
-                      Zobrazeno: <strong>{displayedBoxCount}</strong> z <strong>{totalBoxCount}</strong> posledních vložených emisí do katalogu (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)}).
+                      Zobrazeno: <strong>{displayedBoxCount}</strong> z <strong>{totalBoxCount}</strong> posledních vložených emisí do katalogu (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)})
                     </>
                   ) : (
                     <>
-                      Zobrazeno: <strong>{displayedBoxCount}</strong> z <strong>{totalBoxCount}</strong> emisí do katalogu (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)}).
+                      Zobrazeno: <strong>{displayedBoxCount}</strong> z <strong>{totalBoxCount}</strong> emisí do katalogu (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)})
                     </>
                   )
                 ) : (
                   <>
-                    Obsahuje: <strong>{totalBoxCount}</strong> {sklonujEmise(totalBoxCount)} (<strong>{filtered.length}</strong> {sklonujZnamek(filtered.length)}).
+                    Obsahuje: <strong>{totalBoxCount}</strong> {sklonujEmise(totalBoxCount)} (<strong>{filtered.length}</strong> {sklonujZnamek(filtered.length)})
                   </>
                 )}
               </div>
@@ -528,6 +573,16 @@ export default function StampCatalog(props) {
                     <option value="alpha">emise (A-Z)</option>
                     <option value="num">katalog (0-9)</option>
                   </select>
+                  <button
+                    type="button"
+                    className="count-control-toggle"
+                    onClick={handleToggleVisibleBoxes}
+                    disabled={visibleExpandableKeys.length === 0}
+                    title={areAllVisibleExpanded ? "Zavřít všechny rozbalené emise" : "Otevřít všechny sbalené emise"}
+                    aria-label={areAllVisibleExpanded ? "Zavřít všechny rozbalené emise" : "Otevřít všechny sbalené emise"}
+                  >
+                    {areAllVisibleExpanded ? "⤡" : "⤢"}
+                  </button>
                 </div>
               )}
             </div>

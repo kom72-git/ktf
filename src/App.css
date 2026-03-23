@@ -1255,6 +1255,35 @@ textarea.resize-corner {
   border: 1px solid #ccc;
   font-size: 1rem;
 }
+.search-row button {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: linear-gradient(180deg, #ffffff 0%, #eef3f9 100%);
+  color: #334155;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+  transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.08s;
+}
+.search-row button:hover {
+  background: linear-gradient(180deg, #f8fbff 0%, #e9f1ff 100%);
+  border-color: #c7d2e3;
+  color: #1e3a8a;
+  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.16);
+}
+.search-row button:focus {
+  outline: none;
+  border-color: #c7d2e3;
+  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.28);
+}
+.search-row button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
 .search-row input {
   flex: 1;
   min-width: 160px;
@@ -1316,6 +1345,41 @@ textarea.resize-corner {
 .count-control-select:focus {
   outline: none;
   border-color: #93c5fd;
+}
+.count-control-toggle {
+  width: 26px;
+  height: 26px;
+  border: 1px solid #d8dee8;
+  background: linear-gradient(180deg, #edf3ff 0%, #dbe7ff 100%);
+  color: #475569;
+  border-radius: 5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.08s;
+}
+.count-control-toggle:hover:not(:disabled) {
+  background: linear-gradient(180deg, #eaf2ff 0%, #d3e1ff 100%);
+  border-color: #c7d2e3;
+  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.16);
+}
+.count-control-toggle:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.count-control-toggle:focus {
+  outline: none;
+  border-color: #c7d2e3;
+  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.28);
+}
+.count-control-toggle:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
 }
 .main {
   max-width: 1200px;
