@@ -17,11 +17,17 @@ import "./App.css";
 
 
 export default function StampCatalog(props) {
-  const HOMEPAGE_BOX_LIMIT = 8; // 👈 zde měň počet zobrazených boxů/emisí na HomePage 
+  const HOMEPAGE_BOX_LIMIT = 12; // 👈 zde měň výchozí počet zobrazených boxů/emisí na HomePage
+  const HOME_BOX_LIMIT_OPTIONS = [4, HOMEPAGE_BOX_LIMIT, 10, 20, 40]; // 👈 zde měň výchozí počty v rozevíracím seznamu na HomePage
+  const homeBoxLimitOptions = Array.from(new Set(HOME_BOX_LIMIT_OPTIONS)).sort((a, b) => a - b);
   // Stav pro rozbalené boxy (klíč: emise|rok)
   const [expandedBoxes, setExpandedBoxes] = useState([]);
-  const [showAllHome, setShowAllHome] = useState(false);
-  const [homeSortMode, setHomeSortMode] = useState("db");
+  const [homeBoxLimit, setHomeBoxLimit] = useState(
+    () => localStorage.getItem("ktf_home_box_limit") || String(HOMEPAGE_BOX_LIMIT)
+  );
+  const [homeSortMode, setHomeSortMode] = useState(
+    () => localStorage.getItem("ktf_home_sort_mode") || "db"
+  );
   const location = typeof useLocation === 'function' ? useLocation() : {};
 
   // Automatické rozbalení boxu po příchodu z hlavní stránky
@@ -136,6 +142,14 @@ export default function StampCatalog(props) {
       window.removeEventListener('ktf-admin-open-login', openLogin);
     };
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("ktf_home_box_limit", homeBoxLimit);
+  }, [homeBoxLimit]);
+
+  useEffect(() => {
+    localStorage.setItem("ktf_home_sort_mode", homeSortMode);
+  }, [homeSortMode]);
 
   useEffect(() => {
     if (detailId) {
@@ -289,7 +303,7 @@ export default function StampCatalog(props) {
       const itemB = b[1][0];
 
       if (isHomepageDefault) {
-        if (!showAllHome || homeSortMode === "db") {
+        if (homeSortMode === "db") {
           return itemB._id.localeCompare(itemA._id);
         }
 
@@ -325,28 +339,30 @@ export default function StampCatalog(props) {
 
       return itemB._id.localeCompare(itemA._id);
     });
-  }, [filtered, isHomepageDefault, homeSortMode, showAllHome]);
+  }, [filtered, isHomepageDefault, homeSortMode]);
 
   const boxesToRender = useMemo(() => {
-    if (isHomepageDefault && !showAllHome) {
+    if (!isHomepageDefault) {
+      return groupedBoxes;
+    }
+
+    if (homeBoxLimit === "all") {
+      return groupedBoxes;
+    }
+
+    const parsedLimit = Number(homeBoxLimit);
+    if (!Number.isFinite(parsedLimit) || parsedLimit <= 0) {
       return groupedBoxes.slice(0, HOMEPAGE_BOX_LIMIT);
     }
-    return groupedBoxes;
-  }, [groupedBoxes, isHomepageDefault, showAllHome]);
+
+    return groupedBoxes.slice(0, parsedLimit);
+  }, [groupedBoxes, isHomepageDefault, homeBoxLimit, HOMEPAGE_BOX_LIMIT]);
 
   const displayedBoxCount = boxesToRender.length;
 
   const displayedStampCount = useMemo(() => {
     return boxesToRender.reduce((sum, [, items]) => sum + items.length, 0);
   }, [boxesToRender]);
-
-  useEffect(() => {
-    if (!isHomepageDefault) {
-      setShowAllHome(false);
-      setHomeSortMode("db");
-    }
-  }, [isHomepageDefault]);
-
 
   return (
     <div className="page-bg">
@@ -463,61 +479,57 @@ export default function StampCatalog(props) {
             <div className="count-info-row">
               <div className="count-info">
                 {isHomepageDefault ? (
-                  <>
-                    Zobrazeno: <strong>{displayedBoxCount}</strong> {sklonujPosledniVlozeneEmise(displayedBoxCount)} (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)}) z celkových <strong>{totalBoxCount}</strong> v katalogu
-                  </>
+                  homeSortMode === "db" ? (
+                    <>
+                      Zobrazeno: <strong>{displayedBoxCount}</strong> z <strong>{totalBoxCount}</strong> posledních vložených emisí do katalogu (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)}).
+                    </>
+                  ) : (
+                    <>
+                      Zobrazeno: <strong>{displayedBoxCount}</strong> z <strong>{totalBoxCount}</strong> emisí do katalogu (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)}).
+                    </>
+                  )
                 ) : (
                   <>
-                    Obsahuje: <strong>{totalBoxCount}</strong> {sklonujEmise(totalBoxCount)} (<strong>{filtered.length}</strong> {sklonujZnamek(filtered.length)})
+                    Obsahuje: <strong>{totalBoxCount}</strong> {sklonujEmise(totalBoxCount)} (<strong>{filtered.length}</strong> {sklonujZnamek(filtered.length)}).
                   </>
                 )}
               </div>
-              <div className="count-controls">
-                {isHomepageDefault && (
-                  <>
-                    <button
-                      type="button"
-                      className={`count-control-link ${showAllHome ? "active" : ""}`}
-                      onClick={() => {
-                        setShowAllHome((prev) => {
-                          const next = !prev;
-                          if (!next) setHomeSortMode("db");
-                          return next;
-                        });
-                      }}
-                    >
-                      {showAllHome ? "Zobrazit méně" : "Zobrazit vše"}
-                    </button>
-                    {showAllHome && (
-                      <>
-                        <span className="count-controls-divider">|</span>
-                        <span className="count-controls-label">Řazení:</span>
-                        <button
-                          type="button"
-                          className={`count-control-link ${homeSortMode === "alpha" ? "active" : ""}`}
-                          onClick={() => setHomeSortMode("alpha")}
-                        >
-                          emise
-                        </button>
-                        <button
-                          type="button"
-                          className={`count-control-link ${homeSortMode === "num" ? "active" : ""}`}
-                          onClick={() => setHomeSortMode("num")}
-                        >
-                          katalog
-                        </button>
-                        <button
-                          type="button"
-                          className={`count-control-link ${homeSortMode === "db" ? "active" : ""}`}
-                          onClick={() => setHomeSortMode("db")}
-                        >
-                          nové
-                        </button>
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
+              {isHomepageDefault && (
+                <div className="count-controls">
+                  <span className="count-controls-hint">Zobrazit:</span>
+                  <select
+                    className="count-control-select count-control-select--count"
+                    value={homeBoxLimit}
+                    onChange={(e) => setHomeBoxLimit(e.target.value)}
+                    title="Počet emisí"
+                    aria-label="Počet boxů na homepage"
+                  >
+                    <option value="__count_label" disabled>-- Počet --</option>
+                    <option value={String(HOMEPAGE_BOX_LIMIT)} hidden>{HOMEPAGE_BOX_LIMIT}</option>
+                    {homeBoxLimitOptions.map((limit) => (
+                      <option key={limit} value={String(limit)}>
+                        {limit === HOMEPAGE_BOX_LIMIT ? `${limit} (výchozí)` : limit}
+                      </option>
+                    ))}
+                    <option value="all">vše</option>
+                  </select>
+                  <select
+                    className="count-control-select count-control-select--sort"
+                    value={homeSortMode}
+                    onChange={(e) => setHomeSortMode(e.target.value)}
+                    title="Řazení emisí"
+                    aria-label="Řazení boxů na homepage"
+                  >
+                    <option value="__sort_label" disabled>-- Řadit --</option>
+                    <option value="db" hidden>nové</option>
+                    <option value="alpha" hidden>emise</option>
+                    <option value="num" hidden>katalog</option>
+                    <option value="db">nové (výchozí)</option>
+                    <option value="alpha">emise (A-Z)</option>
+                    <option value="num">katalog (0-9)</option>
+                  </select>
+                </div>
+              )}
             </div>
             <div className="stamp-list-layout">
               {(() => {

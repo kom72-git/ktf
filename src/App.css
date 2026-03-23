@@ -1263,7 +1263,8 @@ textarea.resize-corner {
   font-size: 0.95rem;
   color: #666;
   margin-bottom: 0;
-  padding-left: 0.5rem;
+  /* Zarovnani vlevo: bez dalsiho odsazeni, aby text sedel na stejnou levou hranu jako filtry nad nim. */
+  padding-left: 0;
 }
 .count-info-row {
   display: flex;
@@ -1276,38 +1277,45 @@ textarea.resize-corner {
 .count-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  gap: 5px;
+  flex-shrink: 0;
+  /* Zarovnani vpravo: jemny pixelovy posun ven, aby pravy select sedel na hranu s tlacitkem Vyčistit. */
+  margin-right: -7px;
 }
-.count-control-link {
-  border: none;
-  background: transparent;
-  color: #64748b;
-  padding: 0;
-  font-size: 0.88rem;
-  line-height: 1.2;
+.count-controls-hint {
+  font-size: 0.95rem;
+  color: #666;
+  margin-right: 2px;
+}
+.count-control-select {
+  border: 1px solid #d1d5db;
+  background: #f8fafc;
+  color: #475569;
+  border-radius: 5px;
+  padding: 1px;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  height: 26px;
   cursor: pointer;
-  text-decoration: none;
+  text-align: center;
+  text-align-last: center;
 }
-.count-control-link:hover:not(:disabled) {
-  color: #334155;
-  text-decoration: underline;
+.count-control-select option,
+.count-control-select optgroup {
+  text-align: left;
+  direction: ltr;
 }
-.count-control-link.active {
-  color: #2563eb;
-  font-weight: 600;
-  text-decoration: underline;
+.count-control-select--count {
+  width: 54px;
+  min-width: 54px;
 }
-.count-control-link:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  text-decoration: none;
+.count-control-select--sort {
+  width: 78px;
+  min-width: 78px;
 }
-.count-controls-divider,
-.count-controls-label {
-  color: #64748b;
-  font-size: 0.88rem;
+.count-control-select:focus {
+  outline: none;
+  border-color: #93c5fd;
 }
 .main {
   max-width: 1200px;
@@ -1525,7 +1533,6 @@ textarea.resize-corner {
     width: 100%;
   }
   .count-controls {
-    width: 100%;
     justify-content: flex-start;
   }
 }
