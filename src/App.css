@@ -320,6 +320,10 @@
   margin-top: 4px;
   display: block;
 }
+.ktf-edit-tip {
+  margin-bottom: 10px;
+  line-height: 1.35;
+}
 /* Input pro editaci roku */
 .edit-year-input {
   padding: 4px 6px;

@@ -255,6 +255,9 @@ export default function AdminPanel({
         <div className="ktf-modal-bg">
           <div className="ktf-modal">
             <h2>Přidat novou známku</h2>
+            <p className="ktf-edit-hint ktf-edit-tip">
+              Tip: pokud nechceš u zkratky tooltip, napiš před ni hvězdičku (např. *HT).
+            </p>
             <form onSubmit={e => { e.preventDefault(); if (onAddStamp) onAddStamp(newStampData); }}>
               <div className="label-top-input">
                 <label>Rok vydání</label>

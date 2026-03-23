@@ -21,6 +21,20 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const [editStampData, setEditStampData] = useState({});
   const [savedCaption, setSavedCaption] = useState(false);
   const [isSavingHidden, setIsSavingHidden] = useState(false);
+  const technicalTooltipExcludedFields = new Set([]);
+
+  const renderTechnicalValue = (field, value) => {
+    if (value === null || value === undefined || value === "") {
+      return "";
+    }
+
+    if (technicalTooltipExcludedFields.has(field)) {
+      return value;
+    }
+
+    return typeof value === "string" ? replaceAbbreviations(value) : value;
+  };
+
   useEffect(() => {
     const API_BASE =
       import.meta.env.VITE_API_BASE ||
@@ -839,6 +853,11 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         </div>
         <section className="stamp-spec stamp-detail-spec-col" aria-labelledby={specHeadingId}>
           <h2 id={specHeadingId} className="sr-only">Technické údaje</h2>
+          {isEditingAll && (
+            <p className="ktf-edit-hint ktf-edit-tip">
+              Tip: pokud nechceš u zkratky tooltip, napiš před ni hvězdičku (např. *HT).
+            </p>
+          )}
 
           <div className="stamp-spec-row">
             <span className="stamp-spec-label">Datum vydání</span>
@@ -859,7 +878,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                item.datumVydani
+                renderTechnicalValue('datumVydani', item.datumVydani)
               )}
             </span>
           </div>
@@ -886,7 +905,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                isEditingAll ? editStampData.navrh : item.navrh
+                renderTechnicalValue('navrh', isEditingAll ? editStampData.navrh : item.navrh)
               )}
             </span>
           </div>
@@ -913,7 +932,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                isEditingAll ? editStampData.rytec : item.rytec
+                renderTechnicalValue('rytec', isEditingAll ? editStampData.rytec : item.rytec)
               )}
             </span>
           </div>
@@ -941,7 +960,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                item.druhTisku ? replaceAbbreviations(item.druhTisku) : ''
+                renderTechnicalValue('druhTisku', item.druhTisku)
               )}
             </span>
           </div>
@@ -968,7 +987,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                isEditingAll ? editStampData.tiskovaForma : item.tiskovaForma
+                renderTechnicalValue('tiskovaForma', isEditingAll ? editStampData.tiskovaForma : item.tiskovaForma)
               )}
             </span>
           </div>
@@ -995,7 +1014,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                isEditingAll ? editStampData.zoubkovani : item.zoubkovani
+                renderTechnicalValue('zoubkovani', isEditingAll ? editStampData.zoubkovani : item.zoubkovani)
               )}
             </span>
           </div>
@@ -1023,7 +1042,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                item.papir ? replaceAbbreviations(item.papir) : ''
+                renderTechnicalValue('papir', item.papir)
               )}
             </span>
           </div>
@@ -1050,7 +1069,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                isEditingAll ? editStampData.rozmer : item.rozmer
+                renderTechnicalValue('rozmer', isEditingAll ? editStampData.rozmer : item.rozmer)
               )}
             </span>
           </div>
@@ -1077,7 +1096,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                isEditingAll ? editStampData.naklad : item.naklad
+                renderTechnicalValue('naklad', isEditingAll ? editStampData.naklad : item.naklad)
               )}
             </span>
           </div>
@@ -1163,7 +1182,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         ✓
                       </button>
                     </div>
-                    <span className="ktf-edit-hint">Klikací část uzavři mezi %text%.</span>
+                    <span className="ktf-edit-hint ktf-edit-tip">Tip: klikací část uzavři mezi %text%.</span>
                   </div>
                   <div className="ktf-edit-study-col label-top-input study-input-secondary-col">
                     <label htmlFor="edit-study-url">URL pro část za čárkou:</label>
