@@ -10,6 +10,7 @@ import {
   naturalVariantSort,
   compareVariantsWithBracket
 } from "./utils/katalog.js";
+import { normalizeStampImagePath } from "./utils/obrazekCesta.js";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import "./fancybox-responsive.css";
 import ImageSources from "./components/ImageSources.jsx";
@@ -147,7 +148,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   // Funkce pro uložení změn známky
   const saveStampEdit = async () => {
     try {
-      console.log('Saving stamp:', id, editStampData);
+      const normalizedEditStampData = {
+        ...editStampData,
+        obrazek: normalizeStampImagePath(editStampData.obrazek, editStampData.rok || item?.rok),
+        obrazekStudie: normalizeStampImagePath(editStampData.obrazekStudie, editStampData.rok || item?.rok),
+      };
+      console.log('Saving stamp:', id, normalizedEditStampData);
       
       const API_BASE =
         import.meta.env.VITE_API_BASE ||
@@ -167,7 +173,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       const response = await fetch(apiUrl, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editStampData)
+        body: JSON.stringify(normalizedEditStampData)
       });
 
       const responseData = await response.json();
@@ -192,6 +198,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   // Funkce pro uložení technických údajů
   const saveTechnicalField = async (field, value) => {
     try {
+      const normalizedValue =
+        field === 'obrazek' || field === 'obrazekStudie'
+          ? normalizeStampImagePath(value, editStampData.rok || item?.rok)
+          : value;
       const API_BASE =
         import.meta.env.VITE_API_BASE ||
         (window.location.hostname.endsWith("app.github.dev")
@@ -203,7 +213,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       const response = await fetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: value })
+        body: JSON.stringify({ [field]: normalizedValue })
       });
 
       if (response.ok) {
@@ -750,7 +760,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   value={editStampData.obrazek || ''}
                   onChange={(e) => setEditStampData({...editStampData, obrazek: e.target.value})}
                   className="ktf-edit-input-tech ktf-edit-input-long"
-                  placeholder="img/rok/obrazek.jpg"
+                  placeholder="A2273A-1-1 nebo A2273A-1-1.png"
                 />
                 <button
                   onClick={() => {
@@ -772,7 +782,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   value={editStampData.obrazekStudie || ''}
                   onChange={(e) => setEditStampData({...editStampData, obrazekStudie: e.target.value})}
                   className="ktf-edit-input-tech ktf-edit-input-long"
-                  placeholder="img/rok/studie.jpg"
+                  placeholder="A2273A-1-1-studie nebo studie.webp"
                 />
                 <button
                   onClick={() => {
@@ -1225,6 +1235,11 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       className="ktf-btn-check"
                     >✓</button>
                   </div>
+                  <span className="ktf-edit-hint ktf-edit-tip" style={{marginTop: 6}}>
+                    Podporované formátování: <code>&apos;text&apos;</code> → šedé zvýraznění · <code>*</code> → zneviditelnění tooltipu
+                    <br />
+                    HTML: <code>&lt;b&gt;&lt;/b&gt;</code> · <code>&lt;em&gt;&lt;/em&gt;</code> kurzíva · <code>&lt;u&gt;&lt;/u&gt;</code> podtržení · <code>&lt;br&gt;</code> · <code>&lt;sup&gt;&lt;/sup&gt;</code> horní index · <code>&lt;sub&gt;&lt;/sub&gt;</code> dolní index
+                  </span>
                 </div>
               </div>
             </>
@@ -1640,6 +1655,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     className="ktf-btn-check"
                   >✓</button>
                 </div>
+                <span className="ktf-edit-hint ktf-edit-tip">Tip: odkaz vložíš např. jako <code>&lt;a href=&quot;https://example.com&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer&quot;&gt;Text odkazu&lt;/a&gt;</code></span>
                 <div className="edit-field-row study-authors-row">
                   <label htmlFor="edit-obrazek-autor" className="ktf-edit-inline-label">Zdroj obrázků:</label>
                   <input

@@ -11,6 +11,7 @@ export default function AdminPanel({
   onAddStamp,
   fieldSuggestions = {},
 }) {
+  const DEFAULT_DEFECT_DESCRIPTION = "[] ";
   const [newStampData, setNewStampData] = useState({
     emise: '',
     rok: '',
@@ -42,9 +43,13 @@ export default function AdminPanel({
     variantaVady: '',
     umisteniVady: '',
     obrazekVady: '',
-    popisVady: ''
+    popisVady: DEFAULT_DEFECT_DESCRIPTION
   });
   const [isSubmittingVariant, setIsSubmittingVariant] = useState(false);
+  const [variantSuggestions, setVariantSuggestions] = useState({
+    variantaVady: [],
+    umisteniVady: []
+  });
   const getSuggestionValues = (field) => {
     const values = fieldSuggestions?.[field];
     return Array.isArray(values) ? values : [];
@@ -54,6 +59,39 @@ export default function AdminPanel({
   const suggestionEntries = Object.entries(fieldSuggestions || {}).filter(
     ([, values]) => Array.isArray(values) && values.length > 0
   );
+
+  useEffect(() => {
+    async function loadVariantSuggestions() {
+      try {
+        const API_BASE =
+          import.meta.env.VITE_API_BASE ||
+          (window.location.hostname.endsWith("app.github.dev")
+            ? `https://${window.location.hostname}`
+            : window.location.hostname.endsWith("vercel.app")
+            ? ""
+            : "http://localhost:3001");
+        const response = await fetch(`${API_BASE}/api/defects`);
+        if (!response.ok) return;
+        const defects = await response.json();
+        const collect = (field) => Array.from(
+          new Set(
+            (Array.isArray(defects) ? defects : [])
+              .map((item) => String(item?.[field] || "").trim())
+              .filter(Boolean)
+          )
+        ).sort((a, b) => a.localeCompare(b, "cs", { sensitivity: "base", numeric: true }));
+        setVariantSuggestions({
+          variantaVady: collect("variantaVady"),
+          umisteniVady: collect("umisteniVady")
+        });
+      } catch (err) {
+        // Nápovědy jsou nepovinné, při chybě jen zůstanou prázdné.
+      }
+    }
+
+    loadVariantSuggestions();
+  }, []);
+
   useEffect(() => {
     if (!showAddModal) {
       return undefined;
@@ -100,7 +138,7 @@ export default function AdminPanel({
         variantaVady: '',
         umisteniVady: '',
         obrazekVady,
-        popisVady: ''
+        popisVady: DEFAULT_DEFECT_DESCRIPTION
       });
       setShowAddVariantModal(true);
     }
@@ -130,7 +168,7 @@ export default function AdminPanel({
         variantaVady: '',
         umisteniVady: '',
         obrazekVady,
-        popisVady: ''
+        popisVady: DEFAULT_DEFECT_DESCRIPTION
       });
       setShowAddVariantModal(true);
     };
@@ -163,7 +201,7 @@ export default function AdminPanel({
           variantaVady: '',
           umisteniVady: '',
           obrazekVady: '',
-          popisVady: ''
+          popisVady: DEFAULT_DEFECT_DESCRIPTION
         });
         window.location.reload();
       } else {
@@ -296,7 +334,7 @@ export default function AdminPanel({
                   type="text"
                   value={newStampData.obrazek}
                   onChange={e => setNewStampData({ ...newStampData, obrazek: e.target.value })}
-                  placeholder="img/rok/obrazek.jpg"
+                  placeholder="stačí vyplnit např. PL1800 či PL1800.png (pokud není koncovka .jpg)"
                   list={hasSuggestions('obrazek') ? getSuggestionListId('obrazek') : undefined}
                   autoComplete="off"
                 />
@@ -307,7 +345,7 @@ export default function AdminPanel({
                   type="text"
                   value={newStampData.obrazekStudie}
                   onChange={e => setNewStampData({ ...newStampData, obrazekStudie: e.target.value })}
-                  placeholder="img/rok/studie.jpg"
+                  placeholder="stačí vyplnit např. PL1800s či PL1800s.png (pokud není koncovka .jpg)"
                   list={hasSuggestions('obrazekStudie') ? getSuggestionListId('obrazekStudie') : undefined}
                   autoComplete="off"
                 />
@@ -419,6 +457,7 @@ export default function AdminPanel({
                   type="text"
                   value={newStampData.schemaTF}
                   onChange={e => setNewStampData({ ...newStampData, schemaTF: e.target.value })}
+                  placeholder="stačí vyplnit např. PL1800-TF či PL1800-TF.png (pokud není koncovka .jpg)"
                   list={hasSuggestions('schemaTF') ? getSuggestionListId('schemaTF') : undefined}
                   autoComplete="off"
                 />
@@ -544,20 +583,50 @@ export default function AdminPanel({
               </div>
               <div className="label-top-input">
                 <label>Varianta</label>
-                <input type="text" value={newVariantData.variantaVady} onChange={e => setNewVariantData(v => ({ ...v, variantaVady: e.target.value }))} className="ktf-edit-input-tech" required />
+                <input
+                  type="text"
+                  value={newVariantData.variantaVady}
+                  onChange={e => setNewVariantData(v => ({ ...v, variantaVady: e.target.value }))}
+                  className="ktf-edit-input-tech"
+                  list={variantSuggestions.variantaVady.length ? "variant-varianta-options" : undefined}
+                  autoComplete="off"
+                  required
+                />
               </div>
               <div className="label-top-input">
                 <label>Umístění</label>
-                <input type="text" value={newVariantData.umisteniVady} onChange={e => setNewVariantData(v => ({ ...v, umisteniVady: e.target.value }))} className="ktf-edit-input-tech" />
+                <input
+                  type="text"
+                  value={newVariantData.umisteniVady}
+                  onChange={e => setNewVariantData(v => ({ ...v, umisteniVady: e.target.value }))}
+                  className="ktf-edit-input-tech"
+                  list={variantSuggestions.umisteniVady.length ? "variant-umisteni-options" : undefined}
+                  autoComplete="off"
+                />
               </div>
               <div className="label-top-input">
                 <label>Obrázek vady</label>
-                <input type="text" value={newVariantData.obrazekVady} onChange={e => setNewVariantData(v => ({ ...v, obrazekVady: e.target.value }))} className="ktf-edit-input-tech" placeholder="img/rok/vada.jpg" />
+                <input type="text" value={newVariantData.obrazekVady} onChange={e => setNewVariantData(v => ({ ...v, obrazekVady: e.target.value }))} className="ktf-edit-input-tech" placeholder="automaticky předvyplneno" />
               </div>
               <div className="label-top-input">
                 <label>Popis vady</label>
                 <textarea value={newVariantData.popisVady} onChange={e => setNewVariantData(v => ({ ...v, popisVady: e.target.value }))} className="ktf-edit-input-tech" rows={3} />
+                 <span className="ktf-edit-hint ktf-edit-tip">Tip: vlož <code>[[...]]</code> kde chceš schovat text. Před ní bude vidět hned, text za ní se zobrazí jen po přejetí myší (…).</span>
               </div>
+              {variantSuggestions.variantaVady.length > 0 && (
+                <datalist id="variant-varianta-options">
+                  {variantSuggestions.variantaVady.map((value) => (
+                    <option key={value} value={value} />
+                  ))}
+                </datalist>
+              )}
+              {variantSuggestions.umisteniVady.length > 0 && (
+                <datalist id="variant-umisteni-options">
+                  {variantSuggestions.umisteniVady.map((value) => (
+                    <option key={value} value={value} />
+                  ))}
+                </datalist>
+              )}
               <div style={{ display: 'flex', gap: 12, marginTop: 18 }}>
                 <button type="submit" className="ktf-btn-confirm" disabled={isSubmittingVariant}>
                   {isSubmittingVariant ? 'Ukládám…' : 'Přidat variantu'}

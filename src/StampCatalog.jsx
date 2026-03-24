@@ -13,6 +13,7 @@ import {
   sklonujPosledniVlozeneEmise
 } from './utils/formatovaniTextu.jsx';
 import { katalogSort, emissionToSlug, slugToEmission } from './utils/katalog.js';
+import { normalizeStampImagePath } from "./utils/obrazekCesta.js";
 import "./App.css";
 
 
@@ -510,14 +511,17 @@ export default function StampCatalog(props) {
                 title="Vyčistit filtry"
                 aria-label="Vyčistit filtry"
                 onClick={() => {
-                setQuery("");
-                setCatalog("all");
-                if (navigate) {
-                  navigate(`/`);
-                } else {
-                  window.location.href = `/`;
-                }
-              }}>
+                  setQuery("");
+                  setCatalog("all");
+                  setHomeBoxLimit(String(HOMEPAGE_BOX_LIMIT));
+                  setHomeSortMode("db");
+                  setExpandedBoxes([]);
+                  if (navigate) {
+                    navigate(`/`);
+                  } else {
+                    window.location.href = `/`;
+                  }
+                }}>
                 Vyčistit
               </button>
             </section>
@@ -756,6 +760,11 @@ export default function StampCatalog(props) {
         showAddModal={showAddModal}
         setShowAddModal={setShowAddModal}
         onAddStamp={async (stampData) => {
+          const normalizedStampData = {
+            ...stampData,
+            obrazek: normalizeStampImagePath(stampData.obrazek, stampData.rok),
+            obrazekStudie: normalizeStampImagePath(stampData.obrazekStudie, stampData.rok)
+          };
           // Odeslání na backend
           const API_BASE =
             import.meta.env.VITE_API_BASE ||
@@ -768,7 +777,7 @@ export default function StampCatalog(props) {
             const response = await fetch(`${API_BASE}/api/stamps`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(stampData)
+              body: JSON.stringify(normalizedStampData)
             });
             if (response.ok) {
               const newStamp = await response.json();
