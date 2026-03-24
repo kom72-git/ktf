@@ -66,14 +66,27 @@ function parseLiteratureEntries(rawValue) {
     .filter(Boolean);
 }
 
-export default function DetailPage({ id, onBack, defects, isAdmin = false, fieldSuggestions = {} }) {
+export default function DetailPage({ id, onBack, defects, isAdmin = false, fieldSuggestions = {}, allStamps = [] }) {
   const [item, setItem] = useState(null);
+  const [localDefects, setLocalDefects] = useState(defects || []);
   const [isEditingAll, setIsEditingAll] = useState(false);
   const [editingDefect, setEditingDefect] = useState(null);
   const [editStampData, setEditStampData] = useState({});
   const [savedCaption, setSavedCaption] = useState(false);
   const [isSavingHidden, setIsSavingHidden] = useState(false);
+  const [hoverPreviewId, setHoverPreviewId] = useState(null);
   const technicalTooltipExcludedFields = new Set([]);
+
+  const parseCatalogAB = (catalogValue) => {
+    const text = String(catalogValue || "").trim();
+    const match = text.match(/^([A-ZČŘŽŠĚÚŮ]+)\s*(\d+)([A-Z])$/i);
+    if (!match) return null;
+    return {
+      prefix: (match[1] || "").trim().toUpperCase(),
+      number: match[2],
+      suffix: (match[3] || "").trim().toUpperCase(),
+    };
+  };
 
   const renderTechnicalValue = (field, value) => {
     if (value === null || value === undefined || value === "") {
@@ -132,7 +145,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           popisStudie2: data.popisStudie2 || '',
           literatura: data.literatura || '',
           obrazekAutor: data.obrazekAutor || '',
-          isHidden: Boolean(data.isHidden)
+          isHidden: Boolean(data.isHidden),
+          variantyVylouceneZA: data.variantyVylouceneZA || []
         });
       })
       .catch(err => {
@@ -142,6 +156,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         }
       });
   }, [id, onBack]);
+
+  useEffect(() => {
+    setLocalDefects(defects || []);
+  }, [defects]);
 
   // Funkce pro editaci vady
   const saveDefectEdit = async (defectId, updatedData) => {
@@ -182,6 +200,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       if (response.ok) {
         console.log('Vada úspěšně aktualizována');
+        setLocalDefects((prev) => prev.map((defect) => {
+          const currentId = defect._id?.toString() || defect.idVady;
+          return currentId === actualId.toString() ? responseData : defect;
+        }));
         // Zobraz dočasnou hlášku
         const notification = document.createElement('div');
         notification.textContent = 'Uloženo';
@@ -195,6 +217,44 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     } catch (error) {
       console.error('Chyba při ukládání:', error);
       alert('Chyba při ukládání vady: ' + error.message);
+    }
+  };
+
+  const deleteDefect = async (defectId) => {
+    if (!window.confirm('Opravdu smazat tuto variantu z databáze?')) return;
+    try {
+      const API_BASE =
+        import.meta.env.VITE_API_BASE ||
+        (window.location.hostname.endsWith("app.github.dev")
+          ? `https://${window.location.hostname}`
+          : window.location.hostname.endsWith("vercel.app")
+          ? ""
+          : "http://localhost:3001");
+      const actualId = defectId._id || defectId.idVady || defectId;
+      const isVercel = window.location.hostname.endsWith('vercel.app');
+      const apiUrl = isVercel
+        ? `/api/defects/${actualId}`
+        : `${API_BASE}/api/defects/${actualId}`;
+      const response = await fetch(apiUrl, { method: 'DELETE' });
+      if (response.ok) {
+        // Odstraníme z lokálního stavu
+        setLocalDefects(prev => prev.filter(d => {
+          const dId = d._id?.toString() || d.idVady;
+          return dId !== actualId.toString();
+        }));
+      } else {
+        const raw = await response.text();
+        let errorMessage = 'Neznámá chyba';
+        try {
+          const parsed = JSON.parse(raw);
+          errorMessage = parsed.error || errorMessage;
+        } catch {
+          errorMessage = raw?.trim() ? `HTTP ${response.status}` : errorMessage;
+        }
+        alert(`Chyba při mazání: ${errorMessage}`);
+      }
+    } catch (error) {
+      alert('Chyba při mazání: ' + error.message);
     }
   };
 
@@ -411,13 +471,93 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   }
 
   // Vady pro tuto známku
-  const itemDefects = defects.filter(d => d.idZnamky === item.idZnamky);
-  const popisStudie2Raw = typeof item?.popisStudie2 === "string" ? item.popisStudie2 : "";
+  const itemDefects = localDefects.filter(d => d.idZnamky === item.idZnamky);
+  const thisCatalogAB = parseCatalogAB(item?.katalogCislo);
+  const oppositeSuffix = thisCatalogAB?.suffix === "A" ? "B" : thisCatalogAB?.suffix === "B" ? "A" : null;
+  const companionStamp = (allStamps || []).find((stamp) => {
+    if (!stamp || stamp.idZnamky === item.idZnamky) return false;
+    if (stamp.rok !== item.rok) return false;
+    if ((stamp.emise || "") !== (item.emise || "")) return false;
+    const parsed = parseCatalogAB(stamp.katalogCislo);
+    if (!parsed || !thisCatalogAB || !oppositeSuffix) return false;
+    return (
+      parsed.prefix === thisCatalogAB.prefix
+      && parsed.number === thisCatalogAB.number
+      && parsed.suffix === oppositeSuffix
+    );
+  }) || null;
+  const companionCatalogAB = companionStamp ? parseCatalogAB(companionStamp.katalogCislo) : null;
+  const hasABPair = Boolean(thisCatalogAB && companionCatalogAB);
+  const currentIsA = thisCatalogAB?.suffix === "A";
+  const aStamp = hasABPair ? (currentIsA ? item : companionStamp) : null;
+  const bStamp = hasABPair ? (currentIsA ? companionStamp : item) : null;
+  const isViewingBVariant = Boolean(hasABPair && !currentIsA && aStamp);
+  const getInheritedDefectKey = (defect) => (
+    defect?._id?.toString()
+    || defect?.idVady
+    || `${defect?.variantaVady || ""}||${defect?.umisteniVady || ""}`
+  );
+  const isExcludedInheritedDefect = (defect, excludedList) => {
+    const defectKey = getInheritedDefectKey(defect);
+    const legacyVariantKey = defect?.variantaVady || "";
+    return excludedList.includes(defectKey) || (legacyVariantKey && excludedList.includes(legacyVariantKey));
+  };
+  // U B kombinujeme vlastní vady s fallbackem z A (po odfiltrování vyloučených).
+  const excludedFromA = isViewingBVariant ? (item.variantyVylouceneZA || []) : [];
+  const inheritedDefectsFromA = (isViewingBVariant && aStamp)
+    ? localDefects.filter(d => d.idZnamky === aStamp.idZnamky && !isExcludedInheritedDefect(d, excludedFromA))
+    : [];
+  const effectiveDefects = isViewingBVariant
+    ? [...itemDefects, ...inheritedDefectsFromA]
+    : itemDefects;
+
+  const HIDE_TOKEN = "NE";
+  const hasNonEmptyValue = (value) => {
+    if (value === null || value === undefined) return false;
+    if (typeof value === "string") return value.trim() !== "";
+    return true;
+  };
+  const isHiddenByToken = (value) => (
+    typeof value === "string" && value.trim().toUpperCase() === HIDE_TOKEN
+  );
+  const getResolvedFromA = (fieldName, options = {}) => {
+    const { inheritFromA = true } = options;
+    const currentValue = item?.[fieldName];
+    if (isHiddenByToken(currentValue)) return "";
+    if (!isViewingBVariant) return currentValue;
+    if (hasNonEmptyValue(currentValue)) return currentValue;
+    if (!inheritFromA) return "";
+    const sourceValue = aStamp?.[fieldName];
+    if (isHiddenByToken(sourceValue)) return "";
+    return sourceValue;
+  };
+
+  const resolvedObrazek = getResolvedFromA("obrazek") || "";
+  const resolvedObrazekStudie = getResolvedFromA("obrazekStudie", { inheritFromA: false }) || "";
+  const resolvedPopisObrazkuStudie = getResolvedFromA("popisObrazkuStudie", { inheritFromA: false }) || "";
+  const resolvedDatumVydani = getResolvedFromA("datumVydani") || "";
+  const resolvedNavrh = getResolvedFromA("navrh") || "";
+  const resolvedRytec = getResolvedFromA("rytec") || "";
+  const resolvedDruhTisku = getResolvedFromA("druhTisku") || "";
+  const resolvedTiskovaForma = getResolvedFromA("tiskovaForma") || "";
+  const resolvedZoubkovani = getResolvedFromA("zoubkovani") || "";
+  const resolvedPapir = getResolvedFromA("papir") || "";
+  const resolvedRozmer = getResolvedFromA("rozmer") || "";
+  const resolvedNaklad = getResolvedFromA("naklad") || "";
+  const resolvedSchemaTF = getResolvedFromA("schemaTF") || "";
+  const resolvedStudie = getResolvedFromA("Studie") || "";
+  const resolvedStudieUrl = getResolvedFromA("studieUrl") || "";
+  const resolvedPopisStudie = getResolvedFromA("popisStudie") || "";
+  const resolvedPopisStudie2 = getResolvedFromA("popisStudie2") || "";
+  const resolvedObrazekAutor = getResolvedFromA("obrazekAutor") || "";
+  const resolvedLiteratura = getResolvedFromA("literatura") || "";
+
+  const popisStudie2Raw = typeof resolvedPopisStudie2 === "string" ? resolvedPopisStudie2 : "";
   const hasPopisStudie2Content = /[^\s,]/.test(popisStudie2Raw);
   const popisStudie2Display = hasPopisStudie2Content ? popisStudie2Raw.trim() : "";
-  const authorsRaw = typeof item?.obrazekAutor === "string" ? item.obrazekAutor.trim() : "";
+  const authorsRaw = typeof resolvedObrazekAutor === "string" ? resolvedObrazekAutor.trim() : "";
   const hasAuthors = authorsRaw.length > 0;
-  const literatureRaw = typeof item?.literatura === "string" ? item.literatura : "";
+  const literatureRaw = typeof resolvedLiteratura === "string" ? resolvedLiteratura : "";
   const literatureEntries = parseLiteratureEntries(literatureRaw);
   const hasLiteratureEntries = literatureEntries.length > 0;
   const renderAbbrevContent = (value, keyPrefix) => {
@@ -437,7 +577,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     ? `detail-authors-options-${item.idZnamky || id || "default"}`
     : undefined;
   const studyReferenceBlock = (() => {
-    if (!item?.Studie) return null;
+    if (!resolvedStudie) return null;
 
     const renderWrapper = (content) => (
       <div className="study-note-reference-wrapper">
@@ -463,7 +603,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       });
     };
 
-    const rawStudie = item.Studie || "";
+    const rawStudie = resolvedStudie || "";
     const LINK_MARK = "%";
     const commaIdx = rawStudie.indexOf(",");
     const authorRaw = commaIdx !== -1 ? rawStudie.slice(0, commaIdx) : rawStudie;
@@ -474,7 +614,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     const authorContent = authorRaw ? replaceAbbreviations(authorRaw) : null;
     const authorNode = authorContent ? renderEmphasizedWithConj(authorContent, "study-author") : null;
 
-    if (item.studieUrl) {
+    if (resolvedStudieUrl) {
       if (hasRemainder) {
         const firstMark = remainderRaw.indexOf(LINK_MARK);
         if (firstMark !== -1) {
@@ -495,7 +635,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 {authorNode && (preLinkContent || linkContent || postLinkContent) ? ", " : null}
                 {preLinkContent ? renderAbbrevContent(preLinkContent, "study-prelink") : null}
                 <a
-                  href={item.studieUrl}
+                  href={resolvedStudieUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="study-note-reference-link"
@@ -515,7 +655,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             {authorNode && remainderContent ? ", " : null}
             {remainderContent ? (
               <a
-                href={item.studieUrl}
+                href={resolvedStudieUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="study-note-reference-link"
@@ -555,7 +695,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   // Rozdělení na běžné a plus varianty
   const grouped = {};
   const plusVariants = [];
-  itemDefects.forEach(def => {
+  // V editačním módu zobrazujeme jen vlastní varianty B (ne fallback z A),
+  // aby editace neupravovala záznamy patřící A.
+  const renderDefects = isEditingAll ? itemDefects : effectiveDefects;
+  renderDefects.forEach(def => {
     if (!def.variantaVady) return;
     if (def.variantaVady.includes(',')) {
       plusVariants.push(def);
@@ -602,6 +745,41 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const normalizeImageSrc = (src) => {
     if (!src || typeof src !== "string") return "";
     return src[0] !== "/" && !src.startsWith("http") ? `/${src}` : src;
+  };
+
+  const getPreviewImageSrc = (stamp) => {
+    if (!stamp) return "/img/no-image.png";
+    const normalizedPath = normalizeStampImagePath(stamp.obrazek || "", stamp.rok);
+    const src = normalizeImageSrc(normalizedPath);
+    return src || "/img/no-image.png";
+  };
+
+  const renderCatalogLinkWithPreview = (stamp, text) => {
+    if (!stamp) return null;
+    const key = stamp.idZnamky || text;
+    const isOpen = hoverPreviewId === key;
+    return (
+      <span
+        className="catalog-preview-link-wrap"
+        onMouseEnter={() => setHoverPreviewId(key)}
+        onMouseLeave={() => setHoverPreviewId((current) => (current === key ? null : current))}
+      >
+        <a href={`#/detail/${stamp.idZnamky}`}>{text}</a>
+        {isOpen && (
+          <span className="catalog-preview-popover" aria-hidden="true">
+            <img
+              src={getPreviewImageSrc(stamp)}
+              alt={text}
+              className="catalog-preview-image"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = "/img/no-image.png";
+              }}
+            />
+          </span>
+        )}
+      </span>
+    );
   };
 
   const openSingleImageLightbox = (src, caption = "") => {
@@ -817,7 +995,31 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         ) : (
           <>
             <span>Katalogové číslo: </span>
-            <strong>{item.katalogCislo}</strong>
+            {hasABPair && aStamp && bStamp ? (
+              <>
+                {currentIsA ? (
+                  <strong>{aStamp.katalogCislo}</strong>
+                ) : (
+                  renderCatalogLinkWithPreview(aStamp, aStamp.katalogCislo)
+                )}
+                <span style={{ display: 'inline-block', margin: '0 12px', color: '#6b7280' }}>|</span>
+                {currentIsA ? (
+                  renderCatalogLinkWithPreview(bStamp, bStamp.katalogCislo)
+                ) : (
+                  <strong>{bStamp.katalogCislo}</strong>
+                )}
+              </>
+            ) : (
+              <>
+                <strong>{item.katalogCislo}</strong>
+                {companionStamp && companionStamp.katalogCislo && (
+                  <>
+                    <span style={{ display: 'inline-block', margin: '0 12px', color: '#6b7280' }}>|</span>
+                    {renderCatalogLinkWithPreview(companionStamp, companionStamp.katalogCislo)}
+                  </>
+                )}
+              </>
+            )}
           </>
         )}
       </div>
@@ -881,12 +1083,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           <div className="stamp-detail-img-bg stamp-detail-img-bg-none stamp-detail-img-bg-pointer" onClick={e => {
             // Zabránit otevření Fancyboxu při kliknutí na popisek pod obrázkem
             if (e.target.classList.contains('study-img-caption') || e.target.closest('.study-img-caption')) return;
-            // Normalizace cesty pro obrázekStudie i hlavní obrázek
-            let src = '';
-            if (item.obrazekStudie) {
-              src = item.obrazekStudie[0] !== '/' && !item.obrazekStudie.startsWith('http') ? '/' + item.obrazekStudie : item.obrazekStudie;
-            } else if (item.obrazek) {
-              src = item.obrazek[0] !== '/' && !item.obrazek.startsWith('http') ? '/' + item.obrazek : item.obrazek;
+            // V detailu preferujeme pouze obrázek studie; když chybí, použijeme no-image.
+            let src = '/img/no-image.png';
+            if (resolvedObrazekStudie) {
+              src = resolvedObrazekStudie[0] !== '/' && !resolvedObrazekStudie.startsWith('http') ? '/' + resolvedObrazekStudie : resolvedObrazekStudie;
             }
             Fancybox.show([
               {
@@ -906,7 +1106,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           }}>
             <figure style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
               <img
-                src={(item.obrazekStudie && item.obrazekStudie[0] !== '/' ? '/' + item.obrazekStudie : item.obrazekStudie) || (item.obrazek && item.obrazek[0] !== '/' ? '/' + item.obrazek : item.obrazek)}
+                src={(resolvedObrazekStudie && resolvedObrazekStudie[0] !== '/' ? '/' + resolvedObrazekStudie : resolvedObrazekStudie) || '/img/no-image.png'}
                 alt={item.emise}
                 className="stamp-detail-img stamp-detail-img-main"
                 onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
@@ -932,7 +1132,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     >✓</button>
                   </div>
                 ) : (
-                  <span className="study-img-caption-text" style={{pointerEvents: 'none'}} dangerouslySetInnerHTML={{__html: item.popisObrazkuStudie || ''}} />
+                  <span className="study-img-caption-text" style={{pointerEvents: 'none'}} dangerouslySetInnerHTML={{__html: resolvedPopisObrazkuStudie || ''}} />
                 )}
               </figcaption>
             </figure>
@@ -965,7 +1165,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                renderTechnicalValue('datumVydani', item.datumVydani)
+                renderTechnicalValue('datumVydani', resolvedDatumVydani)
               )}
             </span>
           </div>
@@ -992,7 +1192,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                renderTechnicalValue('navrh', isEditingAll ? editStampData.navrh : item.navrh)
+                renderTechnicalValue('navrh', isEditingAll ? editStampData.navrh : resolvedNavrh)
               )}
             </span>
           </div>
@@ -1019,7 +1219,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                renderTechnicalValue('rytec', isEditingAll ? editStampData.rytec : item.rytec)
+                renderTechnicalValue('rytec', isEditingAll ? editStampData.rytec : resolvedRytec)
               )}
             </span>
           </div>
@@ -1047,7 +1247,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                renderTechnicalValue('druhTisku', item.druhTisku)
+                renderTechnicalValue('druhTisku', resolvedDruhTisku)
               )}
             </span>
           </div>
@@ -1074,7 +1274,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                renderTechnicalValue('tiskovaForma', isEditingAll ? editStampData.tiskovaForma : item.tiskovaForma)
+                renderTechnicalValue('tiskovaForma', isEditingAll ? editStampData.tiskovaForma : resolvedTiskovaForma)
               )}
             </span>
           </div>
@@ -1101,7 +1301,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                renderTechnicalValue('zoubkovani', isEditingAll ? editStampData.zoubkovani : item.zoubkovani)
+                renderTechnicalValue('zoubkovani', isEditingAll ? editStampData.zoubkovani : resolvedZoubkovani)
               )}
             </span>
           </div>
@@ -1129,7 +1329,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                renderTechnicalValue('papir', item.papir)
+                renderTechnicalValue('papir', resolvedPapir)
               )}
             </span>
           </div>
@@ -1156,7 +1356,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                renderTechnicalValue('rozmer', isEditingAll ? editStampData.rozmer : item.rozmer)
+                renderTechnicalValue('rozmer', isEditingAll ? editStampData.rozmer : resolvedRozmer)
               )}
             </span>
           </div>
@@ -1183,7 +1383,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </button>
                 </div>
               ) : (
-                renderTechnicalValue('naklad', isEditingAll ? editStampData.naklad : item.naklad)
+                renderTechnicalValue('naklad', isEditingAll ? editStampData.naklad : resolvedNaklad)
               )}
             </span>
           </div>
@@ -1225,12 +1425,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </div>
                 </div>
               ) : (
-                item.schemaTF && (
+                resolvedSchemaTF && (
                   <img
-                    src={normalizeImageSrc(item.schemaTF)}
+                    src={normalizeImageSrc(resolvedSchemaTF)}
                     alt="Schéma TF"
                     className="tf-img tf-img-clickable"
-                    onClick={() => openSingleImageLightbox(item.schemaTF, "Schéma TF")}
+                    onClick={() => openSingleImageLightbox(resolvedSchemaTF, "Schéma TF")}
                     onError={e => {
                       e.target.onerror = null;
                       e.target.src = '/img/no-image.png';
@@ -1242,7 +1442,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           </div>
         </section>
       </div>
-  {(isEditingAll || itemDefects.length > 0 || item.Studie || item.popisStudie || item.obrazekAutor || hasPopisStudie2Content || hasLiteratureEntries) && (
+  {(isEditingAll || effectiveDefects.length > 0 || resolvedStudie || resolvedPopisStudie || resolvedObrazekAutor || hasPopisStudie2Content || hasLiteratureEntries) && (
         <section aria-labelledby={studyHeadingId}>
           <h2 id={studyHeadingId} className="sr-only">Studie a varianty</h2>
           {isEditingAll ? (
@@ -1325,8 +1525,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
               {studyReferenceBlock}
               {/* --- POPIS STUDIE --- */}
               <div className="study-note-section">
-                {item.popisStudie ? (
-                  <span className="study-note" dangerouslySetInnerHTML={{__html: formatPopisWithAll(item.popisStudie)}} />
+                {resolvedPopisStudie ? (
+                  <span className="study-note" dangerouslySetInnerHTML={{__html: formatPopisWithAll(resolvedPopisStudie)}} />
                 ) : (
                   <span className="study-note-placeholder">–</span>
                 )}
@@ -1334,6 +1534,35 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             </>
           )}
           <div className="study-clear" />
+          {isEditingAll && isViewingBVariant && aStamp && (() => {
+            const aDefects = localDefects.filter(d => d.idZnamky === aStamp.idZnamky);
+            if (aDefects.length === 0) return null;
+            const excluded = item.variantyVylouceneZA || [];
+            return (
+              <div className="ktf-exclude-variants-box">
+                <strong>Varianty zděděné z A</strong> — odškrtni ty, které se u B nezobrazí:
+                <div className="ktf-exclude-variants-list">
+                  {aDefects.map(def => (
+                    <label key={getInheritedDefectKey(def)} className="ktf-exclude-variant-item">
+                      <input
+                        type="checkbox"
+                        checked={!isExcludedInheritedDefect(def, excluded)}
+                        onChange={(e) => {
+                          const defectKey = getInheritedDefectKey(def);
+                          const newExcluded = e.target.checked
+                            ? excluded.filter(v => v !== defectKey && v !== def.variantaVady)
+                            : [...excluded, defectKey];
+                          setItem(prev => ({ ...prev, variantyVylouceneZA: newExcluded }));
+                          saveTechnicalField('variantyVylouceneZA', newExcluded);
+                        }}
+                      />
+                      {def.variantaVady}{def.umisteniVady ? ` – ${def.umisteniVady}` : ''}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
           {/* Seskupení variant podle hlavní varianty (A, B, ...) */}
           {groupedKeysSorted.map(group => {
             const defs = grouped[group];
@@ -1496,6 +1725,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                 ✓
                               </button>
                               <span className="edit-variant-help">Uloží vše</span>
+                              <button
+                                onClick={() => deleteDefect(def._id)}
+                                className="ktf-btn-delete"
+                                title="Smazat variantu z databáze"
+                              >
+                                🗑
+                              </button>
                             </div>
                           </div>
                         ) : (
@@ -1657,6 +1893,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                             ✓
                           </button>
                           <span className="edit-variant-help">Uloží vše</span>
+                          <button
+                            onClick={() => deleteDefect(def._id)}
+                            className="ktf-btn-delete"
+                            title="Smazat variantu z databáze"
+                          >
+                            🗑
+                          </button>
                         </div>
                       </div>
                     ) : (

@@ -258,6 +258,28 @@ app.put("/api/defects/:id", async (req, res) => {
   }
 });
 
+app.delete("/api/defects/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    let result;
+    try {
+      result = await mongoose.connection.db.collection("defects").deleteOne({ _id: new mongoose.Types.ObjectId(id) });
+    } catch (idError) {
+      result = await mongoose.connection.db.collection("defects").deleteOne({ idVady: id });
+    }
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: "Vada nenalezena nebo již smazána" });
+    }
+
+    console.log("Successfully deleted defect:", id);
+    res.status(200).json({ success: true, deletedId: id });
+  } catch (err) {
+    console.error("Chyba při mazání vady:", err);
+    res.status(500).json({ error: "Chyba při mazání vady", details: err.message });
+  }
+});
+
 // Endpoint pro výpis všech idZnamky
 app.get("/api/stamps-ids", async (req, res) => {
   try {

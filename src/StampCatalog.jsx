@@ -16,6 +16,73 @@ import { katalogSort, emissionToSlug, slugToEmission } from './utils/katalog.js'
 import { normalizeStampImagePath } from "./utils/obrazekCesta.js";
 import "./App.css";
 
+function getCatalogDisplayParts(stamp) {
+  const katalogCislo = String(stamp?.katalogCislo || "").trim();
+  const idZnamky = String(stamp?.idZnamky || "").trim();
+  const catalogMatch = katalogCislo.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*(\d+)([A-ZČŘŽŠĚÚŮ]*)$/i);
+
+  if (!catalogMatch) {
+    return {
+      prefix: "",
+      number: katalogCislo,
+      suffix: "",
+      value: katalogCislo,
+    };
+  }
+
+  const prefix = (catalogMatch[1] || "").trim();
+  const number = catalogMatch[2];
+  let suffix = (catalogMatch[3] || "").trim();
+
+  if (!suffix) {
+    const idMatch = idZnamky.match(new RegExp(`${number}([A-ZČŘŽŠĚÚŮ]+)$`, "i"));
+    if (idMatch) {
+      suffix = (idMatch[1] || "").trim().toUpperCase();
+    }
+  }
+
+  return {
+    prefix,
+    number,
+    suffix,
+    value: `${number}${suffix}`,
+  };
+}
+
+function getCatalogBaseKey(stamp) {
+  const katalogCislo = String(stamp?.katalogCislo || "").trim();
+  const idZnamky = String(stamp?.idZnamky || "").trim();
+  const match = katalogCislo.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*(\d+)([A-ZČŘŽŠĚÚŮ]*)$/i);
+  if (match) {
+    const prefix = (match[1] || "").trim().toUpperCase();
+    const number = match[2];
+    return `${prefix}|${number}`;
+  }
+  return `__single__|${idZnamky || katalogCislo}`;
+}
+
+function formatGroupedCatalogText(groupItems) {
+  const parsed = groupItems.map(getCatalogDisplayParts).filter(p => p.value);
+  if (parsed.length === 0) return "";
+  const allSamePrefix = parsed.every(p => p.prefix === parsed[0].prefix);
+  if (allSamePrefix && parsed[0].prefix) {
+    // Special case: only A/B pair for the same catalog number -> "A 2273A/B"
+    if (
+      parsed.length === 2
+      && parsed[0].number === parsed[1].number
+    ) {
+      const suffixes = parsed.map(p => (p.suffix || "").toUpperCase()).sort();
+      if (suffixes[0] === "A" && suffixes[1] === "B") {
+        return `${parsed[0].prefix} ${parsed[0].number}A/B`;
+      }
+    }
+
+    const numbers = parsed.map(p => (p.suffix ? p.value : p.number));
+    return `${parsed[0].prefix} ${numbers.join(", ")}`;
+  }
+  return groupItems.map(s => s?.katalogCislo).filter(Boolean).join(", ");
+}
+
 
 export default function StampCatalog(props) {
   const HOMEPAGE_BOX_LIMIT = 12; // 👈 zde měň výchozí počet zobrazených boxů/emisí na HomePage
@@ -424,6 +491,7 @@ export default function StampCatalog(props) {
             defects={defects}
             isAdmin={isAdmin}
             fieldSuggestions={fieldSuggestions}
+            allStamps={stamps}
           />
         ) : (
           <>
@@ -611,51 +679,32 @@ export default function StampCatalog(props) {
                       if (!expanded) {
                         // SLOUČENÝ BOX
                         // Výpis katalogových čísel všech známek v boxu
-                        const katalogCisla = sortedItems.map(z => z.katalogCislo).filter(Boolean);
-                        // Rozparsovat prefixy, čísla a variantní sufixy
-                        const parsed = katalogCisla.map(kat => {
-                          const m = kat.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*(\d+)([A-ZČŘŽŠĚÚŮ]*)$/i);
-                          if (!m) {
-                            return { prefix: '', number: kat, suffix: '', value: kat };
-                          }
-                          return {
-                            prefix: (m[1] || '').trim(),
-                            number: m[2],
-                            suffix: (m[3] || '').trim(),
-                            value: `${m[2]}${(m[3] || '').trim()}`,
-                          };
-                        });
-                        const allSamePrefix = parsed.length > 0 && parsed.every(p => p.prefix === parsed[0].prefix);
-                        let katalogText = '';
-                        if (allSamePrefix && parsed[0].prefix) {
-                          const hasVariantSuffix = parsed.some(p => p.suffix);
-                          if (hasVariantSuffix) {
-                            const groups = parsed.reduce((acc, p) => {
-                              const key = p.suffix || '';
-                              if (!acc[key]) acc[key] = [];
-                              acc[key].push(p);
-                              return acc;
-                            }, {});
-                            const groupKeys = Object.keys(groups).sort((a, b) => {
-                              if (a === '') return -1;
-                              if (b === '') return 1;
-                              return a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true });
-                            });
-                            katalogText = groupKeys
-                              .map((key, index) => {
-                                const numbers = groups[key].map(item => item.value);
-                                if (index === 0) {
-                                  return `${parsed[0].prefix} ${numbers.join(', ')}`;
-                                }
-                                return numbers.join(', ');
-                              })
-                              .join('; ');
+                        const groupedForCollapsed = new Map();
+                        sortedItems.forEach((entry) => {
+                          const groupKey = getCatalogBaseKey(entry);
+                          if (!groupedForCollapsed.has(groupKey)) {
+                            groupedForCollapsed.set(groupKey, [entry]);
                           } else {
-                            const numbers = parsed.map(p => p.number);
-                            katalogText = `${parsed[0].prefix} ${numbers.join(', ')}`;
+                            groupedForCollapsed.get(groupKey).push(entry);
                           }
-                        } else {
-                          katalogText = katalogCisla.join(', ');
+                        });
+
+                        const groupedTexts = Array.from(groupedForCollapsed.values())
+                          .map((group) => formatGroupedCatalogText([...group].sort(katalogSort)))
+                          .filter(Boolean);
+
+                        let katalogText = groupedTexts.join(', ');
+                        if (groupedTexts.length > 1) {
+                          const firstParts = groupedTexts[0].match(/^([A-ZČŘŽŠĚÚŮ]+)\s+(.+)$/i);
+                          if (firstParts) {
+                            const sharedPrefix = firstParts[1];
+                            const hasAllSamePrefix = groupedTexts.every((text) => text.startsWith(`${sharedPrefix} `));
+                            if (hasAllSamePrefix) {
+                              katalogText = groupedTexts
+                                .map((text, index) => (index === 0 ? text : text.replace(new RegExp(`^${sharedPrefix}\\s+`), '')))
+                                .join(', ');
+                            }
+                          }
                         }
                         return (
                           <div key={key} className="stamp-card stamp-card-pointer"
@@ -707,7 +756,24 @@ export default function StampCatalog(props) {
                         );
                       } else {
                         // ROZBALENÉ BOXy – zvýraznění pouze zde
-                        return sortedItems.map((item, idx) => (
+                        const groupedForExpanded = new Map();
+                        sortedItems.forEach((entry) => {
+                          const groupKey = getCatalogBaseKey(entry);
+                          if (!groupedForExpanded.has(groupKey)) {
+                            groupedForExpanded.set(groupKey, [entry]);
+                          } else {
+                            groupedForExpanded.get(groupKey).push(entry);
+                          }
+                        });
+                        const expandedCards = Array.from(groupedForExpanded.values()).map((group) => {
+                          const groupSorted = [...group].sort(katalogSort);
+                          return {
+                            item: groupSorted[0],
+                            katalogText: formatGroupedCatalogText(groupSorted),
+                          };
+                        });
+
+                        return expandedCards.map(({ item, katalogText }, idx) => (
                           <div key={key + '-' + idx} className="stamp-card stamp-card-grouped stamp-card-pointer"
                             style={{position: 'relative'}}
                             onClick={() => {
@@ -739,7 +805,7 @@ export default function StampCatalog(props) {
                               <EmissionTitleAbbr>{replaceAbbreviations(`${item.emise} (${item.rok})`)}</EmissionTitleAbbr>
                             </div>
                             <div className="stamp-bottom">
-                              <div>Katalog: <span className="catalog">{item.katalogCislo}</span></div>
+                              <div>Katalog: <span className="catalog">{katalogText || item.katalogCislo}</span></div>
                               <span className="details-link" style={{marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer'}}>detaily</span>
                             </div>
                           </div>
