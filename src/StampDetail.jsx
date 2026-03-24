@@ -110,6 +110,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         // Inicializace editačních dat pro známku
         setEditStampData({
           emise: data.emise || '',
+          emiseSkupina: data.emiseSkupina || '',
           rok: data.rok || '',
           katalogCislo: data.katalogCislo || '',
           datumVydani: data.datumVydani || '',
@@ -673,6 +674,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   // Obnovit editStampData podle aktuálního item
                   setEditStampData({
                     emise: item.emise || '',
+                    emiseSkupina: item.emiseSkupina || '',
                     rok: item.rok || '',
                     katalogCislo: item.katalogCislo || '',
                     datumVydani: item.datumVydani || '',
@@ -766,6 +768,25 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 ✓
               </button>
               <span>)</span>
+            </div>
+            <div className="label-top-input edit-title-subfield" style={{ marginTop: 8 }}>
+              <label htmlFor="edit-emise-skupina">Skupina emise (jen pro filtr)</label>
+              <div className="edit-field-row">
+                <input
+                  id="edit-emise-skupina"
+                  type="text"
+                  value={editStampData.emiseSkupina || ''}
+                  onChange={(e) => setEditStampData({...editStampData, emiseSkupina: e.target.value})}
+                  className="ktf-edit-input-tech ktf-edit-input-long"
+                  placeholder="Např. Interkosmos"
+                />
+                <button
+                  onClick={() => saveTechnicalField('emiseSkupina', (editStampData.emiseSkupina || '').trim())}
+                  className="ktf-btn-check"
+                >
+                  ✓
+                </button>
+              </div>
             </div>
           </>
         ) : (

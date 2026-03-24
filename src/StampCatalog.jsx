@@ -163,6 +163,12 @@ export default function StampCatalog(props) {
     }
   }, [detailId, stamps, emission]);
 
+  const getEmissionFilterName = (stamp) => {
+    const group = typeof stamp?.emiseSkupina === "string" ? stamp.emiseSkupina.trim() : "";
+    if (group) return group;
+    return stamp?.emise || "";
+  };
+
   const years = useMemo(() => {
     const s = new Set(stamps.map((d) => d.rok));
     return ["all", ...Array.from(s).sort((a, b) => a - b)]; // od nejstaršího nahoru
@@ -173,14 +179,14 @@ export default function StampCatalog(props) {
     if (year !== "all") {
       filtered = filtered.filter((d) => d.rok === Number(year));
     }
-    const s = new Set(filtered.map((d) => d.emise));
+    const s = new Set(filtered.map((d) => getEmissionFilterName(d)).filter(Boolean));
     return ["all", ...Array.from(s).sort()];
   }, [year, stamps]);
 
   const filteredYears = useMemo(() => {
     let filtered = stamps;
     if (emission !== "all") {
-      filtered = filtered.filter((d) => d.emise === emission);
+      filtered = filtered.filter((d) => getEmissionFilterName(d) === emission);
     }
     const s = new Set(filtered.map((d) => d.rok));
     return ["all", ...Array.from(s).sort((a, b) => a - b)];
@@ -199,7 +205,7 @@ export default function StampCatalog(props) {
       filtered = filtered.filter((d) => d.rok === Number(year));
     }
     if (emission !== "all") {
-      filtered = filtered.filter((d) => d.emise === emission);
+      filtered = filtered.filter((d) => getEmissionFilterName(d) === emission);
     }
     const s = new Set(filtered.map((d) => d.katalogCislo));
     return ["all", ...Array.from(s).sort((a, b) => {
@@ -257,12 +263,13 @@ export default function StampCatalog(props) {
     let arr = stamps
       .filter((d) => {
         if (year !== "all" && d.rok !== Number(year)) return false;
-        if (emission !== "all" && d.emise !== emission) return false;
+        if (emission !== "all" && getEmissionFilterName(d) !== emission) return false;
         if (catalog !== "all" && d.katalogCislo !== catalog) return false;
         if (query) {
           const q = query.toLowerCase();
           return (
             (d.emise && d.emise.toLowerCase().includes(q)) ||
+            (d.emiseSkupina && d.emiseSkupina.toLowerCase().includes(q)) ||
             (d.katalogCislo && d.katalogCislo.toLowerCase().includes(q)) ||
             (d.rok && String(d.rok).includes(q))
           );
@@ -479,11 +486,12 @@ export default function StampCatalog(props) {
                   const matches = stamps.filter((s) => {
                     if (s.katalogCislo !== newCatalog) return false;
                     if (year !== "all" && s.rok !== Number(year)) return false;
-                    if (emission !== "all" && s.emise !== emission) return false;
+                    if (emission !== "all" && getEmissionFilterName(s) !== emission) return false;
                     if (query) {
                       const q = query.toLowerCase();
                       const matchesQuery =
                         (s.emise && s.emise.toLowerCase().includes(q)) ||
+                        (s.emiseSkupina && s.emiseSkupina.toLowerCase().includes(q)) ||
                         (s.katalogCislo && s.katalogCislo.toLowerCase().includes(q)) ||
                         (s.rok && String(s.rok).includes(q));
                       if (!matchesQuery) return false;

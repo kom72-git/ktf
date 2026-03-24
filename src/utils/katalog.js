@@ -165,7 +165,11 @@ export function slugToEmission(slug, items = []) {
     .map(item => {
       if (!item) return null;
       if (typeof item === "string") return item;
-      if (typeof item === "object" && item.emise) return item.emise;
+      if (typeof item === "object") {
+        const group = typeof item.emiseSkupina === "string" ? item.emiseSkupina.trim() : "";
+        if (group) return group;
+        if (item.emise) return item.emise;
+      }
       return null;
     })
     .filter(Boolean);

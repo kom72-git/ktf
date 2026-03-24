@@ -364,6 +364,10 @@ textarea.resize-corner {
   gap: 8px;
   align-items: center;
 }
+.edit-title-subfield {
+  font-size: 1rem;
+  font-weight: 400;
+}
 /* Třída pro input editace názvu emise */
 .edit-title-input {
   border: 1px solid #d1d5db;

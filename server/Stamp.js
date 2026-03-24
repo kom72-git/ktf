@@ -18,6 +18,7 @@ const StampSchema = new mongoose.Schema({
   rok: Number,
   katalogCislo: String,
   emise: String,
+  emiseSkupina: String,
   obrazek: String,
   datumVydani: String,
   navrh: String,
