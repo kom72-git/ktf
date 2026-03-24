@@ -15,6 +15,57 @@ import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import "./fancybox-responsive.css";
 import ImageSources from "./components/ImageSources.jsx";
 
+const LITERATURE_PREFIX_REGEX = /^\s*(?:\[(\d+)\]|(\d+)([.)]))\s*(.*)$/;
+const LITERATURE_URL_REGEX = /(https?:\/\/[^\s]+)/i;
+
+function parseLiteratureEntries(rawValue) {
+  if (typeof rawValue !== "string" || rawValue.trim() === "") {
+    return [];
+  }
+
+  return rawValue
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const prefixMatch = line.match(LITERATURE_PREFIX_REGEX);
+      if (!prefixMatch) {
+        return null;
+      }
+
+      const bracketNumber = prefixMatch[1] || "";
+      const plainNumber = prefixMatch[2] || "";
+      const plainSuffix = prefixMatch[3] || "";
+      const textWithOptionalUrl = (prefixMatch[4] || "").trim();
+      const prefix = bracketNumber ? `[${bracketNumber}]` : `${plainNumber}${plainSuffix}`;
+      const number = bracketNumber || plainNumber;
+      const urlMatch = textWithOptionalUrl.match(LITERATURE_URL_REGEX);
+      const url = urlMatch ? urlMatch[1] : "";
+      const cleanText = url
+        ? textWithOptionalUrl.replace(url, "").trim().replace(/[\s,;]+$/, "")
+        : textWithOptionalUrl;
+      const firstMark = cleanText.indexOf("%");
+      const secondMark = firstMark !== -1 ? cleanText.indexOf("%", firstMark + 1) : -1;
+      const hasMarkedLink = firstMark !== -1 && secondMark !== -1 && secondMark > firstMark + 1;
+      const beforeText = hasMarkedLink ? cleanText.slice(0, firstMark) : "";
+      const markedLinkText = hasMarkedLink ? cleanText.slice(firstMark + 1, secondMark) : "";
+      const afterText = hasMarkedLink ? cleanText.slice(secondMark + 1) : "";
+
+      return {
+        line,
+        number,
+        prefix,
+        text: cleanText || textWithOptionalUrl,
+        url,
+        beforeText,
+        markedLinkText,
+        afterText,
+        hasMarkedLink,
+      };
+    })
+    .filter(Boolean);
+}
+
 export default function DetailPage({ id, onBack, defects, isAdmin = false, fieldSuggestions = {} }) {
   const [item, setItem] = useState(null);
   const [isEditingAll, setIsEditingAll] = useState(false);
@@ -78,6 +129,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           popisObrazkuStudie: data.popisObrazkuStudie || '',
           popisStudie: data.popisStudie || '',
           popisStudie2: data.popisStudie2 || '',
+          literatura: data.literatura || '',
           obrazekAutor: data.obrazekAutor || '',
           isHidden: Boolean(data.isHidden)
         });
@@ -364,6 +416,9 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const popisStudie2Display = hasPopisStudie2Content ? popisStudie2Raw.trim() : "";
   const authorsRaw = typeof item?.obrazekAutor === "string" ? item.obrazekAutor.trim() : "";
   const hasAuthors = authorsRaw.length > 0;
+  const literatureRaw = typeof item?.literatura === "string" ? item.literatura : "";
+  const literatureEntries = parseLiteratureEntries(literatureRaw);
+  const hasLiteratureEntries = literatureEntries.length > 0;
   const renderAbbrevContent = (value, keyPrefix) => {
     if (Array.isArray(value)) {
       return value.map((part, idx) => (
@@ -638,6 +693,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     popisObrazkuStudie: item.popisObrazkuStudie || '',
                     popisStudie: item.popisStudie || '',
                     popisStudie2: item.popisStudie2 || '',
+                    literatura: item.literatura || '',
                     isHidden: Boolean(item.isHidden)
                   });
                   setIsEditingAll(false);
@@ -1165,7 +1221,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           </div>
         </section>
       </div>
-  {(isEditingAll || itemDefects.length > 0 || item.Studie || item.popisStudie || item.obrazekAutor || hasPopisStudie2Content) && (
+  {(isEditingAll || itemDefects.length > 0 || item.Studie || item.popisStudie || item.obrazekAutor || hasPopisStudie2Content || hasLiteratureEntries) && (
         <section aria-labelledby={studyHeadingId}>
           <h2 id={studyHeadingId} className="sr-only">Studie a varianty</h2>
           {isEditingAll ? (
@@ -1655,7 +1711,6 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     className="ktf-btn-check"
                   >✓</button>
                 </div>
-                <span className="ktf-edit-hint ktf-edit-tip">Tip: odkaz vložíš např. jako <code>&lt;a href=&quot;https://example.com&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer&quot;&gt;Text odkazu&lt;/a&gt;</code></span>
                 <div className="edit-field-row study-authors-row">
                   <label htmlFor="edit-obrazek-autor" className="ktf-edit-inline-label">Zdroj obrázků:</label>
                   <input
@@ -1680,6 +1735,28 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     className="ktf-btn-check"
                   >✓</button>
                 </div>
+                <div className="label-top-input ktf-edit-row-full" style={{ marginTop: 18 }}>
+                  <label htmlFor="edit-literatura">Literatura</label>
+                  <div className="edit-field-row ktf-edit-row-full">
+                    <textarea
+                      id="edit-literatura"
+                      value={typeof editStampData.literatura === 'string' ? editStampData.literatura : (item.literatura || '')}
+                      onChange={e => setEditStampData({ ...editStampData, literatura: e.target.value })}
+                      className="ktf-edit-textarea-long ktf-edit-textarea-study"
+                      placeholder="[1] Autor: Název ...\n[2] Autor: Název ... https://..."
+                      rows={5}
+                    />
+                    <button
+                      onClick={() => saveTechnicalField('literatura', editStampData.literatura || '')}
+                      className="ktf-btn-check"
+                    >✓</button>
+                  </div>
+                  <span className="ktf-edit-hint ktf-edit-tip">Tip: každou položku dej na nový řádek a začni <code>1)</code> (možno i např. <code>[1]</code> či <code>1.</code>) a klikací část vymezuj mezi <code>%...%</code>.</span>
+                  <span className="ktf-edit-hint ktf-edit-tip">Příklad:<br />
+                    <code>[1] Pavel Hankovec: Dvě varianty aršíku INTERKOSMOS, Filatelie 1980/14 str. 440</code><br />
+                    <code>[2] Stanislav Pilař: Ještě k aršíku INTERKOSMOS 80, <strong>%</strong>Filatelie 1984/12 str. 361<strong>%</strong> https://example.com</code>
+                  </span>
+                </div>
               </div>
             ) : (
               <>
@@ -1689,15 +1766,85 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     dangerouslySetInnerHTML={{ __html: formatPopisWithAll(popisStudie2Display) }}
                   />
                 )}
-                {hasAuthors && authorsRaw && (
+                {(hasAuthors || hasLiteratureEntries) && (
                   <>
                     <div className="study-clear" />
-                    <div className="study-note-authors-wrapper">
-                      <div className="study-note-authors-shell">
-                        <span className="study-note-authors-icon" aria-hidden="true" />
-                        <ImageSources value={authorsRaw} />
+                    {hasAuthors && authorsRaw && (
+                      <div className="study-note-authors-wrapper">
+                        <div className="study-note-authors-shell">
+                          <span className="study-note-authors-icon" aria-hidden="true" />
+                          <ImageSources value={authorsRaw} />
+                        </div>
                       </div>
-                    </div>
+                    )}
+                    {hasLiteratureEntries && (
+                      <div className="study-note-authors-wrapper">
+                        <div className="study-note-authors-shell">
+                          <span className="study-note-literature-icon" aria-hidden="true" />
+                          <div className="study-note study-note-authors study-note-literature">
+                            <div className="study-note-authors-heading">
+                              <span>Literatura</span>
+                              <span className="study-note-authors-count">({literatureEntries.length})</span>
+                            </div>
+                            <div className="study-note-literature-list">
+                              {literatureEntries.map((entry, idx) => {
+                                const shouldShowPrefix = literatureEntries.length > 1;
+                                const textNode = renderAbbrevContent(
+                                  replaceAbbreviations(entry.text || entry.line),
+                                  `literature-${idx}`
+                                );
+                                const beforeNode = renderAbbrevContent(
+                                  replaceAbbreviations(entry.beforeText || ""),
+                                  `literature-before-${idx}`
+                                );
+                                const markedNode = renderAbbrevContent(
+                                  replaceAbbreviations(entry.markedLinkText || ""),
+                                  `literature-marked-${idx}`
+                                );
+                                const afterNode = renderAbbrevContent(
+                                  replaceAbbreviations(entry.afterText || ""),
+                                  `literature-after-${idx}`
+                                );
+                                return (
+                                  <div key={`${entry.prefix || entry.number}-${idx}`} className="study-note-literature-item">
+                                    {shouldShowPrefix ? (
+                                      <>
+                                        <span className="study-note-authors-highlight">{entry.prefix}</span>{" "}
+                                      </>
+                                    ) : null}
+                                    {entry.url && entry.hasMarkedLink ? (
+                                      <>
+                                        {beforeNode ? <span>{beforeNode}</span> : null}
+                                        <a
+                                          href={entry.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="study-note-reference-link"
+                                        >
+                                          {markedNode}
+                                        </a>
+                                        {afterNode ? <span>{afterNode}</span> : null}
+                                      </>
+                                    ) : entry.url ? (
+                                      <a
+                                        href={entry.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="study-note-reference-link"
+                                      >
+                                        {textNode}
+                                      </a>
+                                    ) : (
+                                      <span>{textNode}</span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </>

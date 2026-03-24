@@ -33,6 +33,7 @@ export default function AdminPanel({
     popisObrazkuStudie: '',
     popisStudie: '',
     popisStudie2: '',
+    literatura: '',
     obrazekAutor: ''
   });
 
@@ -554,6 +555,16 @@ export default function AdminPanel({
                   placeholder="Např. Jana Nováková, Petr Dvořák"
                   list={hasSuggestions('obrazekAutor') ? getSuggestionListId('obrazekAutor') : undefined}
                   autoComplete="off"
+                />
+              </div>
+              <div className="label-top-input">
+                <label>Literatura</label>
+                <textarea
+                  value={newStampData.literatura}
+                  onChange={e => setNewStampData({ ...newStampData, literatura: e.target.value })}
+                  placeholder="1) Autor: Název...\n2) Autor: Název..."
+                  rows={4}
+                  style={{ minHeight: 120 }}
                 />
               </div>
               <div style={{marginTop: '16px', display: 'flex', gap: '12px'}}>

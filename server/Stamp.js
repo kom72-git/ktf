@@ -34,6 +34,7 @@ const StampSchema = new mongoose.Schema({
   popisObrazkuStudie: String,
   popisStudie: String,
   popisStudie2: String,
+  literatura: String,
   obrazekAutor: String
 });
 
