@@ -516,16 +516,22 @@ textarea.resize-corner {
   gap: 6px;
   cursor: pointer;
   white-space: nowrap;
-  background: rgba(255, 255, 255, 0.75);
-  border: 1px solid #cfe8f6;
-  border-radius: 999px;
-  padding: 4px 10px;
+  background: #f8fafc;
+  border: 1px solid #b6d4ef;
+  border-radius: 4px;
+  padding: 4px 8px;
   line-height: 1.2;
   max-width: 100%;
+  transition: background 0.15s, border-color 0.15s;
 }
-.ktf-exclude-variant-item input {
+.ktf-exclude-variant-item input[type="checkbox"] {
   margin: 0 5px 0 0;
-  flex: 0 0 auto;
+  flex: 0 0 18px;
+  width: 18px;
+  min-width: 18px;
+  max-width: 18px;
+  height: 18px;
+  box-sizing: border-box;
   vertical-align: middle;
 }
 /* Delší input pro studijní pole */
