@@ -40,7 +40,7 @@ export function formatPopisWithAll(text) {
     .map(a => a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   if (abbrs.length > 0) {
     const regex = new RegExp(
-      `((?<=^|[\\s\\(\\[\\{{,;:])\\*?(${abbrs.join("|")})(?=[\\s\\)\\]\\}},;:.!?]|$))|\\b\\*?(${abbrs.join("|")})\\b`,
+      `((?<=^|[\\s\\(\\[\\{{,;:>])\\*?(${abbrs.join("|")})(?=[\\s\\)\\]\\}},;:.!?<]|$))|\\b\\*?(${abbrs.join("|")})\\b`,
       "g"
     );
     // Marker `*` před zkratkou potlačí tooltip a marker se odstraní
@@ -67,7 +67,7 @@ export function replaceAbbreviationsWithHtml(text) {
     .map(a => a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   if (abbrs.length === 0) return text;
   const regex = new RegExp(
-    `((?<=^|[\\s\\(\\[\\{{,;:])\\*?(${abbrs.join("|")})(?=[\\s\\)\\]\\}},;:.!?]|$))|\\b\\*?(${abbrs.join("|")})\\b`,
+    `((?<=^|[\\s\\(\\[\\{{,;:>])\\*?(${abbrs.join("|")})(?=[\\s\\)\\]\\}},;:.!?<]|$))|\\b\\*?(${abbrs.join("|")})\\b`,
     "g"
   );
   // Marker `*` před zkratkou potlačí tooltip i v HTML reprezentaci
@@ -92,7 +92,7 @@ export function replaceAbbreviations(text) {
     .map(a => a.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   if (abbrs.length === 0) return text;
   const regex = new RegExp(
-    `((?<=^|[\\s\\(\\[\\{{,;:])\\*?(${abbrs.join("|")})(?=[\\s\\)\\]\\}},;:.!?]|$))|\\b\\*?(${abbrs.join("|")})\\b`,
+    `((?<=^|[\\s\\(\\[\\{{,;:>])\\*?(${abbrs.join("|")})(?=[\\s\\)\\]\\}},;:.!?<]|$))|\\b\\*?(${abbrs.join("|")})\\b`,
     "g"
   );
   const result = [];

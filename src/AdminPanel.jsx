@@ -11,7 +11,7 @@ export default function AdminPanel({
   onAddStamp,
   fieldSuggestions = {},
 }) {
-  const DEFAULT_DEFECT_DESCRIPTION = "[] ";
+  const DEFAULT_DEFECT_DESCRIPTION = "";
   const [newStampData, setNewStampData] = useState({
     emise: '',
     rok: '',
@@ -603,18 +603,6 @@ export default function AdminPanel({
                 <input type="text" value={newVariantData.idZnamky} disabled className="ktf-edit-input-tech" />
               </div>
               <div className="label-top-input">
-                <label>Varianta</label>
-                <input
-                  type="text"
-                  value={newVariantData.variantaVady}
-                  onChange={e => setNewVariantData(v => ({ ...v, variantaVady: e.target.value }))}
-                  className="ktf-edit-input-tech"
-                  list={variantSuggestions.variantaVady.length ? "variant-varianta-options" : undefined}
-                  autoComplete="off"
-                  required
-                />
-              </div>
-              <div className="label-top-input">
                 <label>Umístění</label>
                 <input
                   type="text"
@@ -626,20 +614,33 @@ export default function AdminPanel({
                 />
               </div>
               <div className="label-top-input">
-                <label>Pořadí varianty</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={newVariantData.poradiVady}
-                  onChange={e => setNewVariantData(v => ({ ...v, poradiVady: e.target.value }))}
-                  className="ktf-edit-input-tech"
-                  style={{ maxWidth: 110 }}
-                />
-              </div>
-              <div className="label-top-input">
                 <label>Obrázek vady</label>
                 <input type="text" value={newVariantData.obrazekVady} onChange={e => setNewVariantData(v => ({ ...v, obrazekVady: e.target.value }))} className="ktf-edit-input-tech" placeholder="automaticky předvyplneno" />
+              </div>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <div className="label-top-input" style={{ flex: 1, marginBottom: 0 }}>
+                  <label>Varianta</label>
+                  <input
+                    type="text"
+                    value={newVariantData.variantaVady}
+                    onChange={e => setNewVariantData(v => ({ ...v, variantaVady: e.target.value }))}
+                    className="ktf-edit-input-tech"
+                    list={variantSuggestions.variantaVady.length ? "variant-varianta-options" : undefined}
+                    autoComplete="off"
+                    required
+                  />
+                </div>
+                <div className="label-top-input" style={{ width: 120, marginBottom: 0 }}>
+                  <label>Pořadí varianty</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={newVariantData.poradiVady}
+                    onChange={e => setNewVariantData(v => ({ ...v, poradiVady: e.target.value }))}
+                    className="ktf-edit-input-tech"
+                  />
+                </div>
               </div>
               <div className="label-top-input">
                 <label>Popis vady</label>

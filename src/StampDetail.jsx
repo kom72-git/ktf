@@ -70,6 +70,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const [item, setItem] = useState(null);
   const [localDefects, setLocalDefects] = useState(defects || []);
   const [isEditingAll, setIsEditingAll] = useState(false);
+  const [showScrollTopButton, setShowScrollTopButton] = useState(false);
   const [editingDefect, setEditingDefect] = useState(null);
   const [editStampData, setEditStampData] = useState({});
   const [savedCaption, setSavedCaption] = useState(false);
@@ -160,6 +161,23 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   useEffect(() => {
     setLocalDefects(defects || []);
   }, [defects]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTopButton(window.scrollY > 320);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // Funkce pro editaci vady
   const saveDefectEdit = async (defectId, updatedData) => {
@@ -855,7 +873,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         caption:
           `<div class='fancybox-caption-center'>`
           + `<span class='fancybox-caption-variant'>${def.umisteniVady || ''}</span>`
-          + (displayDescription ? `<br><span class='fancybox-caption-desc'>${displayDescription.replace(/\[\[\.\.\.\]\]/g, '')}</span>` : '')
+          + (displayDescription ? `<br /><span class='fancybox-caption-desc'>${displayDescription.replace(/\[\[\.\.\.\]\]/g, '')}</span>` : '')
           + `</div>`
       };
     });
@@ -1558,7 +1576,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   <span className="ktf-edit-hint ktf-edit-tip" style={{marginTop: 6}}>
                     Podporované formátování: <code>&apos;text&apos;</code> → šedé zvýraznění · <code>*</code> → zneviditelnění tooltipu
                     <br />
-                    HTML: <code>&lt;b&gt;&lt;/b&gt;</code> · <code>&lt;em&gt;&lt;/em&gt;</code> kurzíva · <code>&lt;u&gt;&lt;/u&gt;</code> podtržení · <code>&lt;br&gt;</code> · <code>&lt;sup&gt;&lt;/sup&gt;</code> horní index · <code>&lt;sub&gt;&lt;/sub&gt;</code> dolní index
+                    HTML: <code>&lt;b&gt;&lt;/b&gt;</code> · <code>&lt;em&gt;&lt;/em&gt;</code> kurzíva · <code>&lt;u&gt;&lt;/u&gt;</code> podtržení · <code>&lt;br /&gt;</code> · <code>&lt;sup&gt;&lt;/sup&gt;</code> horní index · <code>&lt;sub&gt;&lt;/sub&gt;</code> dolní index
                   </span>
                 </div>
               </div>
@@ -1631,7 +1649,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 if (seen.has(def.variantaVady)) return false;
                 seen.add(def.variantaVady);
                 return true;
-              }).map(d => d.variantaVady);
+              }).map(d => ({ label: d.variantaVady, bold: !!d.tucneVSeznamu }));
             })();
             const isNumericGroup = group === '__numeric__';
             const numericNums = isNumericGroup
@@ -1658,7 +1676,9 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     <span className="variant-group-info-icon" title="Obsahuje podvarianty">
                       <img src="/img/ico_podvarianty.png" alt="info" className="variant-group-info-icon" />
                     </span>
-                    <span className="variant-group-info-text">Obsahuje podvarianty: {subvariantLabels.join(", ")}</span>
+                    <span className="variant-group-info-text">Obsahuje podvarianty: {subvariantLabels.map((item, i) => (
+                      <span key={item.label + i}>{i > 0 && ', '}{item.bold ? <strong>{item.label}</strong> : item.label}</span>
+                    ))}</span>
                   </div>
                 )}
                 <div className="variants">
@@ -1670,20 +1690,11 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       <div key={def.idVady || `var-${i}`} className="variant" >
                         <div className="variant-popis">
                           {isEditingAll ? (
-                            <div className="edit-variant-row">
-                              <input
-                                type="text"
-                                placeholder="Varianta"
-                                defaultValue={def.variantaVady || ''}
-                                className="edit-variant-input"
-                              />
-                              <span>–</span>
-                              <textarea
-                                placeholder="Umístění"
-                                defaultValue={def.umisteniVady || ''}
-                                className="edit-variant-textarea"
-                              />
-                            </div>
+                            <textarea
+                              placeholder="Umístění"
+                              defaultValue={def.umisteniVady || ''}
+                              className="edit-variant-textarea"
+                            />
                           ) : (
                             <>
                               <span className="variant-popis-hlavni">{def.umisteniVady || ''}</span>
@@ -1738,6 +1749,28 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         {/* Editace nebo zobrazení popisu vady */}
                         {isEditingAll ? (
                           <div >
+                            <div className="edit-field-row" style={{marginBottom: '4px'}}>
+                              <label title="Tučně v seznamu podvariant" style={{cursor:'pointer',display:'flex',alignItems:'center',gap:'2px',fontSize:'11px',flexShrink:0}}>
+                                <b>{'<b>'}</b>
+                                <input type="checkbox" data-field="tucneVSeznamu" defaultChecked={!!def.tucneVSeznamu} style={{width:'13px',height:'13px',cursor:'pointer'}} />
+                              </label>
+                              <span style={{fontSize:'12px',color:'#000',flexShrink:0,fontWeight:'bold'}}>[</span>
+                              <input
+                                type="text"
+                                placeholder="Varianta"
+                                defaultValue={def.variantaVady || ''}
+                                style={{
+                                  flex: 1,
+                                  minWidth: 0,
+                                  padding: '3px 5px',
+                                  border: '1px solid #d1d5db',
+                                  borderRadius: '3px',
+                                  fontSize: '11px',
+                                  background: '#fff'
+                                }}
+                              />
+                              <span style={{fontSize:'12px',color:'#000',flexShrink:0,fontWeight:'bold'}}>]</span>
+                            </div>
                             <textarea
                               defaultValue={def.popisVady || ''}
                               rows={5}
@@ -1763,6 +1796,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                   const popisTextarea = container.querySelector('textarea:not([placeholder="Umístění"])');
                                   const imageInput = container.querySelector('input[placeholder="https://example.com/obrazek.jpg"]');
                                   const orderInput = container.querySelector('input[data-field="poradiVady"]');
+                                  const boldCheckbox = container.querySelector('input[data-field="tucneVSeznamu"]');
                                   // Uložíme všechny hodnoty najednou
                                   saveDefectEdit(def._id, { 
                                     ...def, 
@@ -1770,7 +1804,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                     umisteniVady: umisteniInput?.value || '',
                                     popisVady: popisTextarea?.value || '',
                                     obrazekVady: imageInput?.value || '',
-                                    poradiVady: normalizeDefectOrderForSave(orderInput?.value)
+                                    poradiVady: normalizeDefectOrderForSave(orderInput?.value),
+                                    tucneVSeznamu: boldCheckbox?.checked ?? !!def.tucneVSeznamu
                                   });
                                 }}
                                 className="ktf-btn-check"
@@ -1849,20 +1884,11 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     <div key={def.idVady || def._id || `plusvar-${idx}`} className="variant">
                     <div className="variant-popis">
                       {isEditingAll ? (
-                        <div className="edit-variant-row">
-                          <input
-                            type="text"
-                            placeholder="Varianta"
-                            defaultValue={def.variantaVady || ''}
-                            className="edit-variant-input"
-                          />
-                          <span>–</span>
-                          <textarea
-                            placeholder="Umístění"
-                            defaultValue={def.umisteniVady || ''}
-                            className="edit-variant-textarea"
-                          />
-                        </div>
+                        <textarea
+                          placeholder="Umístění"
+                          defaultValue={def.umisteniVady || ''}
+                          className="edit-variant-textarea"
+                        />
                       ) : (
                         <>
                           <span className="variant-popis-hlavni">{def.umisteniVady || ''}</span>
@@ -1917,6 +1943,28 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     {/* Editace nebo zobrazení popisu vady */}
                     {isEditingAll ? (
                       <div >
+                        <div className="edit-field-row" style={{marginBottom: '4px'}}>
+                          <label title="Tučně v seznamu podvariant" style={{cursor:'pointer',display:'flex',alignItems:'center',gap:'2px',fontSize:'11px',flexShrink:0}}>
+                            <b>{'<b>'}</b>
+                            <input type="checkbox" data-field="tucneVSeznamu" defaultChecked={!!def.tucneVSeznamu} style={{width:'13px',height:'13px',cursor:'pointer'}} />
+                          </label>
+                          <span style={{fontSize:'12px',color:'#000',flexShrink:0,fontWeight:'bold'}}>[</span>
+                          <input
+                            type="text"
+                            placeholder="Varianta"
+                            defaultValue={def.variantaVady || ''}
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              padding: '3px 5px',
+                              border: '1px solid #d1d5db',
+                              borderRadius: '3px',
+                              fontSize: '11px',
+                              background: '#fff'
+                            }}
+                          />
+                          <span style={{fontSize:'12px',color:'#000',flexShrink:0,fontWeight:'bold'}}>]</span>
+                        </div>
                         <textarea
                           defaultValue={def.popisVady || ''}
                           rows={5}
@@ -1942,6 +1990,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                               const popisTextarea = container.querySelector('textarea:not([placeholder=\"Umístění\"])');
                               const imageInput = container.querySelector('input[placeholder=\"https://example.com/obrazek.jpg\"]');
                               const orderInput = container.querySelector('input[data-field=\"poradiVady\"]');
+                              const boldCheckbox = container.querySelector('input[data-field=\"tucneVSeznamu\"]');
                               // Uložíme všechny hodnoty najednou
                               saveDefectEdit(def._id, { 
                                 ...def, 
@@ -1949,7 +1998,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                 umisteniVady: umisteniInput?.value || '',
                                 popisVady: popisTextarea?.value || '',
                                 obrazekVady: imageInput?.value || '',
-                                poradiVady: normalizeDefectOrderForSave(orderInput?.value)
+                                poradiVady: normalizeDefectOrderForSave(orderInput?.value),
+                                tucneVSeznamu: boldCheckbox?.checked ?? !!def.tucneVSeznamu
                               });
                             }}
                             className="ktf-btn-check"
@@ -2180,6 +2230,17 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             )}
           </section>
         </section>
+      )}
+      {showScrollTopButton && (
+        <button
+          type="button"
+          className="scroll-top-button"
+          onClick={scrollToTop}
+          aria-label="Zpět na začátek stránky"
+          title="Zpět nahoru"
+        >
+          ↑
+        </button>
       )}
     </article>
   );

@@ -405,6 +405,34 @@ textarea.resize-corner {
   align-items: center;
   flex-wrap: wrap;
 }
+.scroll-top-button {
+  position: fixed;
+  right: max(22px, calc((100vw - 1200px) / 2 + 22px));
+  bottom: 22px;
+  width: 46px;
+  height: 46px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.88);
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  z-index: 1200;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.scroll-top-button:hover {
+  background: rgba(17, 24, 39, 1);
+  transform: translateY(-2px);
+}
+.scroll-top-button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
 .hide-stamp-toggle {
   margin-left: auto;
   display: inline-flex;
@@ -1671,6 +1699,13 @@ textarea.resize-corner {
   }
 }
 @media (max-width: 600px) {
+  .scroll-top-button {
+    right: 14px;
+    bottom: 14px;
+    width: 42px;
+    height: 42px;
+    font-size: 22px;
+  }
   .stamp-detail-img-main {
     display: block !important;
     width: 100% !important;
