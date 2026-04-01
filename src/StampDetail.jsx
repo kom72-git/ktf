@@ -1651,6 +1651,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 return true;
               }).map(d => ({ label: d.variantaVady, bold: !!d.tucneVSeznamu }));
             })();
+            const hasSubvariants = subvariantLabels.some(item => item.label.includes('.'));
+            const subvariantTitle = hasSubvariants ? 'Obsahuje podvarianty a subvarianty' : 'Obsahuje podvarianty';
             const isNumericGroup = group === '__numeric__';
             const numericNums = isNumericGroup
               ? sortedDefs.map(d => parseInt(d.variantaVady, 10)).filter(n => !isNaN(n)).sort((a,b) => a-b)
@@ -1673,10 +1675,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 </h3>
                 {subvariantLabels.length > 0 && (
                   <div className="variant-group-info">
-                    <span className="variant-group-info-icon" title="Obsahuje podvarianty">
+                    <span className="variant-group-info-icon" title={subvariantTitle}>
                       <img src="/img/ico_podvarianty.png" alt="info" className="variant-group-info-icon" />
                     </span>
-                    <span className="variant-group-info-text">Obsahuje podvarianty: {subvariantLabels.map((item, i) => (
+                    <span className="variant-group-info-text">{subvariantTitle}: {subvariantLabels.map((item, i) => (
                       <span key={item.label + i}>{i > 0 && ', '}{item.bold ? <strong>{item.label}</strong> : item.label}</span>
                     ))}</span>
                   </div>
@@ -1843,15 +1845,15 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                 // split parts prepared (no debug logs)
                                 return (
                                   <div className="variant-popis-detail" style={{position: 'relative'}}>
-                                    <span className="variant-popis-short">{formatDefectDescription(before)}</span>
-                                    <VariantTooltip tooltip={<span style={{fontSize: '13px'}}>{formatDefectDescription(after)}</span>}>
+                                    <span className="variant-popis-short">{formatDefectDescription(before, { boldBracket: !!def.tucneVSeznamu })}</span>
+                                    <VariantTooltip tooltip={<span style={{fontSize: '13px'}}>{formatDefectDescription(after, { boldBracket: !!def.tucneVSeznamu })}</span>}>
                                       …
                                     </VariantTooltip>
                                   </div>
                                 );
                               }
                               return (
-                                <div className="variant-popis-detail">{formatDefectDescription(displayDescription)}</div>
+                                <div className="variant-popis-detail">{formatDefectDescription(displayDescription, { boldBracket: !!def.tucneVSeznamu })}</div>
                               );
                             })()}
                             {isEditingAll && !def.popisVady && (
@@ -2033,15 +2035,15 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                             const after = parts.slice(1).join('').replace(SPLIT_REGEX, '');
                             return (
                               <div className="variant-popis-detail" style={{position: 'relative'}}>
-                                <span className="variant-popis-short">{formatDefectDescription(before)}</span>
-                                <VariantTooltip tooltip={<span style={{fontSize: '13px'}}>{formatDefectDescription(after)}</span>}>
+                                <span className="variant-popis-short">{formatDefectDescription(before, { boldBracket: !!def.tucneVSeznamu })}</span>
+                                <VariantTooltip tooltip={<span style={{fontSize: '13px'}}>{formatDefectDescription(after, { boldBracket: !!def.tucneVSeznamu })}</span>}>
                                   …
                                 </VariantTooltip>
                               </div>
                             );
                           }
                           // If text is long, show clamped 5 lines and a tooltip with full text
-                          const renderedFull2 = formatDefectDescription(displayDescription);
+                          const renderedFull2 = formatDefectDescription(displayDescription, { boldBracket: !!def.tucneVSeznamu });
                           const isLong2 = typeof displayDescription === 'string' && displayDescription.length > 500;
                           if (isLong2) {
                             return (

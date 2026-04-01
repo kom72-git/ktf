@@ -127,7 +127,8 @@ export function replaceAbbreviations(text) {
 }
 
 // Formátování popisu vady včetně hranatých závorek a apostrofů, vrací React fragment
-export function formatDefectDescription(text) {
+export function formatDefectDescription(text, options = {}) {
+  const { boldBracket = true } = options;
   if (!text) return text;
   const regex = /^\[([^\]]+)\](.*)/i;
   const match = text.match(regex);
@@ -137,6 +138,11 @@ export function formatDefectDescription(text) {
     const withApostrophes = str.replace(/'([^']+)'/g, '<span class="variant-popis-apostrof">$1</span>');
     const withItalics = italicizeCastNakladu(withApostrophes);
     return replaceAbbreviationsWithHtml(withItalics);
+  };
+
+  const renderBracket = (content) => {
+    if (boldBracket) return <strong>[{content}]</strong>;
+    return <span>[{content}]</span>;
   };
 
   if (match) {
@@ -153,9 +159,9 @@ export function formatDefectDescription(text) {
         const suffixText = formatInnerHtml(restRaw);
         return (
           <>
-            <strong>[{mainPart}</strong>
+            {boldBracket ? <strong>[{mainPart}</strong> : <span>[{mainPart}</span>}
             <span>{suffixInBracket}</span>
-            <strong>]</strong>
+            {boldBracket ? <strong>]</strong> : <span>]</span>}
             <span dangerouslySetInnerHTML={{ __html: suffixText }} />
           </>
         );
@@ -166,7 +172,7 @@ export function formatDefectDescription(text) {
         const afterHtml = formatInnerHtml(after.trimStart());
         return (
           <>
-            <strong>[{mainPart}]</strong>
+            {renderBracket(mainPart)}
             <span className="variant-suffix">{suffix}</span>
             {after && <span dangerouslySetInnerHTML={{ __html: ' ' + afterHtml }} />}
           </>
@@ -176,7 +182,7 @@ export function formatDefectDescription(text) {
       const suffixText = formatInnerHtml(restRaw);
       return (
         <>
-          <strong>[{mainPart}]</strong>
+          {renderBracket(mainPart)}
           <span dangerouslySetInnerHTML={{ __html: suffixText }} />
         </>
       );
@@ -188,7 +194,7 @@ export function formatDefectDescription(text) {
       const afterHtml = formatInnerHtml(after.trimStart());
       return (
         <>
-          <strong>[{bracketContent}]</strong>
+          {renderBracket(bracketContent)}
           <span className="variant-suffix">{suffix}</span>
           {after && <span dangerouslySetInnerHTML={{ __html: ' ' + afterHtml }} />}
         </>
@@ -197,7 +203,7 @@ export function formatDefectDescription(text) {
     const suffixText = formatInnerHtml(restRaw);
     return (
       <>
-        <strong>[{bracketContent}]</strong>
+        {renderBracket(bracketContent)}
         <span dangerouslySetInnerHTML={{ __html: suffixText }} />
       </>
     );
