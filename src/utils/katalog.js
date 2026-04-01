@@ -98,50 +98,41 @@ export function naturalVariantSort(a, b) {
   return 0;
 }
 
-// Vrací hodnotu z hranatých závorek na začátku popisu (pokud existuje)
-export function extractBracketOrder(defect) {
-  const popis = defect?.popisVady;
-  if (!popis) return null;
-  const match = popis.match(/^\s*\[([^\]]+)\]/);
-  return match ? match[1] : null;
-}
+const parseOrderValue = (value) => {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return null;
+  return parsed;
+};
 
-// Komparátor variant – nejprve přirozené řazení, poté fallback podle hodnoty v hranatých závorkách
+const compareObjectIdLike = (a, b) => {
+  const idA = String(a?._id || "").trim();
+  const idB = String(b?._id || "").trim();
+  if (!idA && !idB) return 0;
+  if (!idA) return 1;
+  if (!idB) return -1;
+  return idA.localeCompare(idB, undefined, { sensitivity: "base", numeric: true });
+};
+
+// Komparátor variant: nejprve přirozené řazení podle variantaVady,
+// při shodě poradiVady (pokud je vyplněné), jinak fallback na pořadí vložení (_id).
 export function compareVariantsWithBracket(a, b) {
   const base = naturalVariantSort(a, b);
   if (base !== 0) return base;
-  const orderA = extractBracketOrder(a);
-  const orderB = extractBracketOrder(b);
-  if (orderA === null && orderB !== null) return 1;
-  if (orderA !== null && orderB === null) return -1;
-  if (orderA === null && orderB === null) return 0;
-  const tokenize = (value) => (
-    String(value)
-      .match(/[A-Za-z]+|\d+|[^A-Za-z0-9]+/g)
-      || []
-  );
-  const tokensA = tokenize(orderA);
-  const tokensB = tokenize(orderB);
-  const maxLength = Math.max(tokensA.length, tokensB.length);
-  for (let i = 0; i < maxLength; i += 1) {
-    const partA = tokensA[i];
-    const partB = tokensB[i];
-    if (partA === undefined) return -1;
-    if (partB === undefined) return 1;
-    if (partA === partB) continue;
-    const isNumA = /^\d+$/.test(partA);
-    const isNumB = /^\d+$/.test(partB);
-    if (isNumA && isNumB) {
-      const diff = Number(partA) - Number(partB);
-      if (diff !== 0) return diff;
-      continue;
-    }
-    const diff = partA.localeCompare(partB, undefined, { sensitivity: "base" });
-    if (diff !== 0) return diff;
-  }
-  return tokensA.length - tokensB.length;
-}
 
+  const orderA = parseOrderValue(a?.poradiVady);
+  const orderB = parseOrderValue(b?.poradiVady);
+
+  if (orderA !== null && orderB !== null) {
+    if (orderA !== orderB) return orderA - orderB;
+  } else if (orderA !== null) {
+    return -1;
+  } else if (orderB !== null) {
+    return 1;
+  }
+
+  return compareObjectIdLike(a, b);
+}
 
 // DALŠÍ BLOKY
 

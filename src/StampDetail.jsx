@@ -736,6 +736,19 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     const idx = allVariantsOrdered.indexOf(def);
     return idx === -1 ? '?' : idx + 1;
   };
+  const buildDefectDescriptionWithVariant = (def) => {
+    const variant = String(def?.variantaVady || "").trim();
+    const description = String(def?.popisVady || "").trim();
+    if (!variant) return description;
+    if (!description) return `[${variant}]`;
+    return `[${variant}] ${description}`;
+  };
+  const normalizeDefectOrderForSave = (value) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return "";
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : "";
+  };
   const secondStudyBlockClass = isEditingAll ? 'study-note-block editing' : 'study-note-block';
   const detailHeadingId = `stamp-detail-${item.idZnamky || id}-title`;
   const specHeadingId = `${detailHeadingId}-spec`;
@@ -745,6 +758,33 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const normalizeImageSrc = (src) => {
     if (!src || typeof src !== "string") return "";
     return src[0] !== "/" && !src.startsWith("http") ? `/${src}` : src;
+  };
+
+  const normalizeDefectImageSrc = (src) => {
+    const value = String(src ?? "").trim();
+    if (!value) return "";
+    if (/^(https?:|data:)/i.test(value)) return value;
+
+    const withoutLeadingSlash = value.replace(/^\/+/, "");
+    const withImgPrefix = withoutLeadingSlash.startsWith("img/")
+      ? withoutLeadingSlash
+      : `img/${withoutLeadingSlash}`;
+
+    const parts = withImgPrefix.split("/");
+    const lastPart = parts[parts.length - 1] || "";
+    const hasExtension = /\.[a-z0-9]{2,5}$/i.test(lastPart);
+    let normalized = withImgPrefix;
+    if (!hasExtension) {
+      const typoExtMatch = lastPart.match(/^(.*?)(jpe?g|png|webp|gif)$/i);
+      if (typoExtMatch && typoExtMatch[1]) {
+        const fixedLast = `${typoExtMatch[1]}.${typoExtMatch[2]}`;
+        parts[parts.length - 1] = fixedLast;
+        normalized = parts.join("/");
+      } else {
+        normalized = `${withImgPrefix}.jpg`;
+      }
+    }
+    return `/${normalized}`;
   };
 
   const getPreviewImageSrc = (stamp) => {
@@ -808,14 +848,17 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   // Fancybox galerie pro skupinu
   const openFancybox = (flatIndex = 0) => {
     if (!allVariantsOrdered || allVariantsOrdered.length === 0) return;
-    const slides = allVariantsOrdered.map(def => ({
-      src: def.obrazekVady && def.obrazekVady[0] !== '/' && !def.obrazekVady.startsWith('http') ? '/' + def.obrazekVady : def.obrazekVady,
+    const slides = allVariantsOrdered.map(def => {
+      const displayDescription = buildDefectDescriptionWithVariant(def);
+      return {
+        src: normalizeDefectImageSrc(def.obrazekVady) || '/img/no-image.png',
         caption:
           `<div class='fancybox-caption-center'>`
-          + `<span class='fancybox-caption-variant'>${def.variantaVady || ''}${def.variantaVady && def.umisteniVady ? ' – ' : ''}${def.umisteniVady || ''}</span>`
-          + (def.popisVady ? `<br><span class='fancybox-caption-desc'>${def.popisVady.replace(/\[\[\.\.\.\]\]/g, '')}</span>` : '')
+          + `<span class='fancybox-caption-variant'>${def.umisteniVady || ''}</span>`
+          + (displayDescription ? `<br><span class='fancybox-caption-desc'>${displayDescription.replace(/\[\[\.\.\.\]\]/g, '')}</span>` : '')
           + `</div>`
-    }));
+      };
+    });
     Fancybox.show(slides, {
       startIndex: flatIndex,
       Toolbar: [ 'thumbs', 'zoom', 'close' ],
@@ -1643,14 +1686,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                             </div>
                           ) : (
                             <>
-                              <span className="variant-popis-hlavni">{def.variantaVady}</span>
-                              {def.umisteniVady && <><span className="variant-dash">–</span><span className="variant-popis-hlavni">{def.umisteniVady}</span></>}
+                              <span className="variant-popis-hlavni">{def.umisteniVady || ''}</span>
                             </>
                           )}
                         </div>
                         <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(flatIndex)}>
                           <img
-                            src={def.obrazekVady && def.obrazekVady[0] !== '/' && !def.obrazekVady.startsWith('http') ? '/' + def.obrazekVady : def.obrazekVady}
+                            src={normalizeDefectImageSrc(def.obrazekVady) || NO_IMAGE}
                             alt={def.idVady}
                             className={isSpecial ? 'variant-img-special' : ''}
                             onError={e => { e.target.onerror = null; e.target.src = NO_IMAGE; }}
@@ -1664,7 +1706,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                 type="text"
                                 defaultValue={def.obrazekVady || ''}
                                 style={{
-                                  width: '200px',
+                                  flex: 1,
+                                  minWidth: 0,
                                   padding: '3px 5px',
                                   border: '1px solid #d1d5db',
                                   borderRadius: '3px',
@@ -1679,6 +1722,14 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                     saveDefectEdit(def._id, { ...def, obrazekVady: val });
                                   }
                                 }}
+                              />
+                              <input
+                                type="number"
+                                data-field="poradiVady"
+                                defaultValue={def.poradiVady ?? ''}
+                                style={{ width: '26px', height: '26px', flexShrink: 0, borderRadius: '2px', textAlign: 'center', padding: '0', border: '1px solid #d1d5db', fontSize: '11px' }}
+                                min="0"
+                                step="1"
                               />
                             </div>
                           </div>
@@ -1711,13 +1762,15 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                   const umisteniInput = container.querySelector('textarea[placeholder="Umístění"]');
                                   const popisTextarea = container.querySelector('textarea:not([placeholder="Umístění"])');
                                   const imageInput = container.querySelector('input[placeholder="https://example.com/obrazek.jpg"]');
+                                  const orderInput = container.querySelector('input[data-field="poradiVady"]');
                                   // Uložíme všechny hodnoty najednou
                                   saveDefectEdit(def._id, { 
                                     ...def, 
                                     variantaVady: variantInput?.value || '',
                                     umisteniVady: umisteniInput?.value || '',
                                     popisVady: popisTextarea?.value || '',
-                                    obrazekVady: imageInput?.value || ''
+                                    obrazekVady: imageInput?.value || '',
+                                    poradiVady: normalizeDefectOrderForSave(orderInput?.value)
                                   });
                                 }}
                                 className="ktf-btn-check"
@@ -1736,15 +1789,16 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                           </div>
                         ) : (
                           <>
-                            {def.popisVady && (() => {
+                            {(def.popisVady || def.variantaVady) && (() => {
+                              const displayDescription = buildDefectDescriptionWithVariant(def);
                               const SPLIT_MARK = '[[...]]';
                               const SPLIT_REGEX = /\[\[\s*\.{3}\s*\]\]/;
-                              let parts = typeof def.popisVady === 'string' ? def.popisVady.split(SPLIT_REGEX) : [def.popisVady];
+                              let parts = typeof displayDescription === 'string' ? displayDescription.split(SPLIT_REGEX) : [displayDescription];
                               // Fallback: if split didn't match but exact literal exists, use indexOf split
-                              if (parts.length === 1 && typeof def.popisVady === 'string') {
-                                const idxExact = def.popisVady.indexOf('[[...]]');
+                              if (parts.length === 1 && typeof displayDescription === 'string') {
+                                const idxExact = displayDescription.indexOf('[[...]]');
                                 if (idxExact !== -1) {
-                                  parts = [def.popisVady.slice(0, idxExact), def.popisVady.slice(idxExact + '[[...]]'.length)];
+                                  parts = [displayDescription.slice(0, idxExact), displayDescription.slice(idxExact + '[[...]]'.length)];
                                 }
                               }
                               if (parts.length > 1) {
@@ -1762,7 +1816,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                 );
                               }
                               return (
-                                <div className="variant-popis-detail">{formatDefectDescription(def.popisVady)}</div>
+                                <div className="variant-popis-detail">{formatDefectDescription(displayDescription)}</div>
                               );
                             })()}
                             {isEditingAll && !def.popisVady && (
@@ -1811,14 +1865,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         </div>
                       ) : (
                         <>
-                          <span className="variant-popis-hlavni">{def.variantaVady}</span>
-                          {def.umisteniVady && <><span className="variant-dash">–</span><span className="variant-popis-hlavni">{def.umisteniVady}</span></>}
+                          <span className="variant-popis-hlavni">{def.umisteniVady || ''}</span>
                         </>
                       )}
                     </div>
                     <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(flatIndex)}>
                       <img
-                        src={def.obrazekVady && def.obrazekVady[0] !== '/' && !def.obrazekVady.startsWith('http') ? '/' + def.obrazekVady : def.obrazekVady}
+                        src={normalizeDefectImageSrc(def.obrazekVady) || '/img/no-image.png'}
                         alt={def.idVady}
                         className={isSpecial ? 'variant-img-special' : ''}
                         onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
@@ -1832,7 +1885,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                             type="text"
                             defaultValue={def.obrazekVady || ''}
                             style={{
-                              width: '200px',
+                              flex: 1,
+                              minWidth: 0,
                               padding: '3px 5px',
                               border: '1px solid #d1d5db',
                               borderRadius: '3px',
@@ -1847,6 +1901,14 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                 saveDefectEdit(def._id, { ...def, obrazekVady: val });
                               }
                             }}
+                          />
+                          <input
+                            type="number"
+                            data-field="poradiVady"
+                            defaultValue={def.poradiVady ?? ''}
+                            style={{ width: '26px', height: '26px', flexShrink: 0, borderRadius: '2px', textAlign: 'center', padding: '0', border: '1px solid #d1d5db', fontSize: '11px' }}
+                            min="0"
+                            step="1"
                           />
                         </div>
                       </div>
@@ -1879,13 +1941,15 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                               const umisteniInput = container.querySelector('textarea[placeholder=\"Umístění\"]');
                               const popisTextarea = container.querySelector('textarea:not([placeholder=\"Umístění\"])');
                               const imageInput = container.querySelector('input[placeholder=\"https://example.com/obrazek.jpg\"]');
+                              const orderInput = container.querySelector('input[data-field=\"poradiVady\"]');
                               // Uložíme všechny hodnoty najednou
                               saveDefectEdit(def._id, { 
                                 ...def, 
                                 variantaVady: variantInput?.value || '',
                                 umisteniVady: umisteniInput?.value || '',
                                 popisVady: popisTextarea?.value || '',
-                                obrazekVady: imageInput?.value || ''
+                                obrazekVady: imageInput?.value || '',
+                                poradiVady: normalizeDefectOrderForSave(orderInput?.value)
                               });
                             }}
                             className="ktf-btn-check"
@@ -1904,13 +1968,14 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       </div>
                     ) : (
                       <>
-                        {def.popisVady && (() => {
+                        {(def.popisVady || def.variantaVady) && (() => {
+                          const displayDescription = buildDefectDescriptionWithVariant(def);
                           const SPLIT_REGEX = /\[\[\s*\.{3}\s*\]\]/;
-                          let parts = typeof def.popisVady === 'string' ? def.popisVady.split(SPLIT_REGEX) : [def.popisVady];
-                          if (parts.length === 1 && typeof def.popisVady === 'string') {
-                            const idxExact = def.popisVady.indexOf('[[...]]');
+                          let parts = typeof displayDescription === 'string' ? displayDescription.split(SPLIT_REGEX) : [displayDescription];
+                          if (parts.length === 1 && typeof displayDescription === 'string') {
+                            const idxExact = displayDescription.indexOf('[[...]]');
                             if (idxExact !== -1) {
-                              parts = [def.popisVady.slice(0, idxExact), def.popisVady.slice(idxExact + '[[...]]'.length)];
+                              parts = [displayDescription.slice(0, idxExact), displayDescription.slice(idxExact + '[[...]]'.length)];
                             }
                           }
                           if (parts.length > 1) {
@@ -1926,8 +1991,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                             );
                           }
                           // If text is long, show clamped 5 lines and a tooltip with full text
-                          const renderedFull2 = formatDefectDescription(def.popisVady);
-                          const isLong2 = typeof def.popisVady === 'string' && def.popisVady.length > 500;
+                          const renderedFull2 = formatDefectDescription(displayDescription);
+                          const isLong2 = typeof displayDescription === 'string' && displayDescription.length > 500;
                           if (isLong2) {
                             return (
                               <div className="variant-popis-detail" style={{position: 'relative'}}>

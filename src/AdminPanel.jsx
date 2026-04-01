@@ -43,6 +43,7 @@ export default function AdminPanel({
     idZnamky: '',
     variantaVady: '',
     umisteniVady: '',
+    poradiVady: '',
     obrazekVady: '',
     popisVady: DEFAULT_DEFECT_DESCRIPTION
   });
@@ -138,6 +139,7 @@ export default function AdminPanel({
         idZnamky,
         variantaVady: '',
         umisteniVady: '',
+        poradiVady: '',
         obrazekVady,
         popisVady: DEFAULT_DEFECT_DESCRIPTION
       });
@@ -168,6 +170,7 @@ export default function AdminPanel({
         idZnamky,
         variantaVady: '',
         umisteniVady: '',
+        poradiVady: '',
         obrazekVady,
         popisVady: DEFAULT_DEFECT_DESCRIPTION
       });
@@ -183,6 +186,12 @@ export default function AdminPanel({
   const handleAddVariant = async () => {
     setIsSubmittingVariant(true);
     try {
+      const normalizedOrderRaw = String(newVariantData.poradiVady ?? '').trim();
+      const normalizedOrder = normalizedOrderRaw === '' ? '' : Number(normalizedOrderRaw);
+      const payload = {
+        ...newVariantData,
+        poradiVady: Number.isFinite(normalizedOrder) ? normalizedOrder : ''
+      };
       const API_BASE =
         import.meta.env.VITE_API_BASE ||
         (window.location.hostname.endsWith("app.github.dev")
@@ -193,7 +202,7 @@ export default function AdminPanel({
       const response = await fetch(`${API_BASE}/api/defects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newVariantData)
+        body: JSON.stringify(payload)
       });
       if (response.ok) {
         setShowAddVariantModal(false);
@@ -201,6 +210,7 @@ export default function AdminPanel({
           idZnamky: '',
           variantaVady: '',
           umisteniVady: '',
+          poradiVady: '',
           obrazekVady: '',
           popisVady: DEFAULT_DEFECT_DESCRIPTION
         });
@@ -613,6 +623,18 @@ export default function AdminPanel({
                   className="ktf-edit-input-tech"
                   list={variantSuggestions.umisteniVady.length ? "variant-umisteni-options" : undefined}
                   autoComplete="off"
+                />
+              </div>
+              <div className="label-top-input">
+                <label>Pořadí varianty</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={newVariantData.poradiVady}
+                  onChange={e => setNewVariantData(v => ({ ...v, poradiVady: e.target.value }))}
+                  className="ktf-edit-input-tech"
+                  style={{ maxWidth: 110 }}
                 />
               </div>
               <div className="label-top-input">
