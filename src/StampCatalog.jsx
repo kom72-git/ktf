@@ -660,7 +660,32 @@ export default function StampCatalog(props) {
                     title={areAllVisibleExpanded ? "Zavřít všechny rozbalené emise" : "Otevřít všechny sbalené emise"}
                     aria-label={areAllVisibleExpanded ? "Zavřít všechny rozbalené emise" : "Otevřít všechny sbalené emise"}
                   >
-                    {areAllVisibleExpanded ? "⤡" : "⤢"}
+                    <svg
+                      className="count-control-diag-icon"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      focusable="false"
+                    >
+                      {areAllVisibleExpanded ? (
+                        <>
+                          <path d="M19 5 L14 10" />
+                          <path d="M14 10 L18 10" />
+                          <path d="M14 10 L14 6" />
+                          <path d="M5 19 L10 14" />
+                          <path d="M10 14 L6 14" />
+                          <path d="M10 14 L10 18" />
+                        </>
+                      ) : (
+                        <>
+                          <path d="M10 14 L5 19" />
+                          <path d="M5 19 L9 19" />
+                          <path d="M5 19 L5 15" />
+                          <path d="M14 10 L19 5" />
+                          <path d="M19 5 L15 5" />
+                          <path d="M19 5 L19 9" />
+                        </>
+                      )}
+                    </svg>
                   </button>
                 </div>
               )}
@@ -671,11 +696,15 @@ export default function StampCatalog(props) {
                   return boxesToRender.flatMap(([key, items]) => {
                       const sortedItems = [...items].sort(katalogSort);
                       const item = sortedItems[0];
-                      const isSingle = sortedItems.length === 1;
+                      // Pokud mají všechny známky v boxu stejný základ katalogu (liší se jen sufixem A/B/C...),
+                      // chovej se jako isSingle – jeden sloučený box, přímý proklik na detail, zobrazit "detaily".
+                      const allSameBaseKey = sortedItems.length > 1 &&
+                        sortedItems.every(s => getCatalogBaseKey(s) === getCatalogBaseKey(sortedItems[0]));
+                      const isSingle = sortedItems.length === 1 || allSameBaseKey;
                       const [emise, rok] = key.split('|');
                       const slug = emissionToSlug(emise);
                       const expanded = expandedBoxes.includes(key);
-                      if (!expanded) {
+                      if (!expanded || allSameBaseKey) {
                         // SLOUČENÝ BOX
                         // Výpis katalogových čísel všech známek v boxu
                         const groupedForCollapsed = new Map();
