@@ -28,7 +28,8 @@ function parseCatalogNumber(katalogCislo) {
 }
 
 // ŘAZENÍ KATALOGOVÝCH ČÍSEL A VARIANT
-// Řadí podle prefixu (před číslem), pak varianty (sufix za číslem: A/B etc.), a potom čísla.
+// Řadí primárně podle čísla katalogu (v praxi 3-4 cifry),
+// potom podle prefixu (před číslem) a následně podle sufixu (za číslem: A/B ...).
 export function katalogSort(a, b) {
   const getKat = (x) => {
     if (typeof x === "string") return x;
@@ -40,6 +41,17 @@ export function katalogSort(a, b) {
   const katB = getKat(b);
   const parsedA = parseCatalogNumber(katA);
   const parsedB = parseCatalogNumber(katB);
+
+  const hasNumberA = Number.isFinite(parsedA.number);
+  const hasNumberB = Number.isFinite(parsedB.number);
+
+  if (hasNumberA !== hasNumberB) {
+    return hasNumberA ? -1 : 1;
+  }
+
+  if (hasNumberA && hasNumberB && parsedA.number !== parsedB.number) {
+    return parsedA.number - parsedB.number;
+  }
 
   const prefixCompare = parsedA.prefix.localeCompare(parsedB.prefix, undefined, {
     sensitivity: "base",
@@ -62,11 +74,6 @@ export function katalogSort(a, b) {
       numeric: true,
     });
     if (suffixCompare !== 0) return suffixCompare;
-  }
-
-  if (parsedA.number !== parsedB.number) {
-    // Pokud chceme, aby varianty zůstaly seskupeny: součet se pochytá v sufixu, pak teprve v čísle.
-    return parsedA.number - parsedB.number;
   }
 
   // Fallback přes celý text

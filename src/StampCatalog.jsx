@@ -260,13 +260,6 @@ export default function StampCatalog(props) {
   }, [emission, stamps]);
 
   const filteredCatalogs = useMemo(() => {
-    const extractCatalogSerial = (value = "") => {
-      const text = String(value || "");
-      const match = text.match(/(\d{3,4})/);
-      if (!match) return Number.POSITIVE_INFINITY;
-      return Number(match[1]);
-    };
-
     let filtered = stamps;
     if (year !== "all") {
       filtered = filtered.filter((d) => d.rok === Number(year));
@@ -275,12 +268,7 @@ export default function StampCatalog(props) {
       filtered = filtered.filter((d) => getEmissionFilterName(d) === emission);
     }
     const s = new Set(filtered.map((d) => d.katalogCislo));
-    return ["all", ...Array.from(s).sort((a, b) => {
-      const serialA = extractCatalogSerial(a);
-      const serialB = extractCatalogSerial(b);
-      if (serialA !== serialB) return serialA - serialB;
-      return String(a).localeCompare(String(b), "cs", { sensitivity: "base", numeric: true });
-    })];
+    return ["all", ...Array.from(s).sort(katalogSort)];
   }, [year, emission, stamps]);
 
   const fieldSuggestions = useMemo(() => {
@@ -343,8 +331,13 @@ export default function StampCatalog(props) {
         }
         return true;
       });
-    if (year !== "all") {
-      arr = [...arr].sort(katalogSort);
+    const isAnyFilterActive = year !== "all" || emission !== "all" || catalog !== "all" || !!query;
+    if (isAnyFilterActive) {
+      arr = [...arr].sort((a, b) => {
+        const yearCmp = Number(a.rok) - Number(b.rok);
+        if (yearCmp !== 0) return yearCmp;
+        return katalogSort(a, b);
+      });
     }
     // Pokud nejsou použity žádné filtry, řadíme podle posledního přidání, bez omezení počtu položek.
     if (
@@ -424,7 +417,13 @@ export default function StampCatalog(props) {
         return itemB._id.localeCompare(itemA._id);
       }
 
-      return itemB._id.localeCompare(itemA._id);
+      const yearCmp = Number(itemA.rok) - Number(itemB.rok);
+      if (yearCmp !== 0) {
+        return yearCmp;
+      }
+      const firstCatalogA = [...a[1]].sort(katalogSort)[0];
+      const firstCatalogB = [...b[1]].sort(katalogSort)[0];
+      return katalogSort(firstCatalogA, firstCatalogB);
     });
   }, [filtered, isHomepageDefault, homeSortMode]);
 
