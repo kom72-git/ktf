@@ -147,7 +147,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           literatura: data.literatura || '',
           obrazekAutor: data.obrazekAutor || '',
           isHidden: Boolean(data.isHidden),
-          variantyVylouceneZA: data.variantyVylouceneZA || []
+          variantyVylouceneZA: data.variantyVylouceneZA || [],
+          variantyMamZA: data.variantyMamZA || {}
         });
       })
       .catch(err => {
@@ -520,14 +521,47 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     const legacyVariantKey = defect?.variantaVady || "";
     return excludedList.includes(defectKey) || (legacyVariantKey && excludedList.includes(legacyVariantKey));
   };
+  const inheritedMamMap = (isViewingBVariant && item?.variantyMamZA && typeof item.variantyMamZA === "object")
+    ? item.variantyMamZA
+    : {};
+  const resolveInheritedMam = (defect) => {
+    const defectKey = getInheritedDefectKey(defect);
+    if (Object.prototype.hasOwnProperty.call(inheritedMamMap, defectKey)) {
+      return !!inheritedMamMap[defectKey];
+    }
+    const legacyVariantKey = defect?.variantaVady || "";
+    if (legacyVariantKey && Object.prototype.hasOwnProperty.call(inheritedMamMap, legacyVariantKey)) {
+      return !!inheritedMamMap[legacyVariantKey];
+    }
+    return false;
+  };
   // U B kombinujeme vlastní vady s fallbackem z A (po odfiltrování vyloučených).
   const excludedFromA = isViewingBVariant ? (item.variantyVylouceneZA || []) : [];
   const inheritedDefectsFromA = (isViewingBVariant && aStamp)
-    ? localDefects.filter(d => d.idZnamky === aStamp.idZnamky && !isExcludedInheritedDefect(d, excludedFromA))
+    ? localDefects
+      .filter(d => d.idZnamky === aStamp.idZnamky && !isExcludedInheritedDefect(d, excludedFromA))
+      .map((d) => ({
+        ...d,
+        __inheritedFromA: true,
+        __inheritedKey: getInheritedDefectKey(d),
+        mam: resolveInheritedMam(d),
+      }))
     : [];
   const effectiveDefects = isViewingBVariant
     ? [...itemDefects, ...inheritedDefectsFromA]
     : itemDefects;
+
+  const saveInheritedMamForB = async (defect, mamValue) => {
+    if (!isViewingBVariant) return false;
+    const defectKey = defect?.__inheritedKey || getInheritedDefectKey(defect);
+    const nextMap = { ...(item?.variantyMamZA || {}), [defectKey]: !!mamValue };
+    const legacyVariantKey = defect?.variantaVady || "";
+    if (legacyVariantKey && Object.prototype.hasOwnProperty.call(nextMap, legacyVariantKey)) {
+      delete nextMap[legacyVariantKey];
+    }
+    setItem((prev) => ({ ...prev, variantyMamZA: nextMap }));
+    return saveTechnicalField('variantyMamZA', nextMap);
+  };
 
   const HIDE_TOKEN = "NE";
   const hasNonEmptyValue = (value) => {
@@ -713,9 +747,9 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   // Rozdělení na běžné a plus varianty
   const grouped = {};
   const plusVariants = [];
-  // V editačním módu zobrazujeme jen vlastní varianty B (ne fallback z A),
-  // aby editace neupravovala záznamy patřící A.
-  const renderDefects = isEditingAll ? itemDefects : effectiveDefects;
+  // Pro B zobrazuje i zděděné varianty z A také v edit módu,
+  // aby bylo možné nastavovat checkbox "Mám/Nemám" i pro ně.
+  const renderDefects = effectiveDefects;
   renderDefects.forEach(def => {
     if (!def.variantaVady) return;
     if (def.variantaVady.includes(',')) {
@@ -1775,7 +1809,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                               <label title="Mám tuto variantu" style={{cursor:'pointer',display:'flex',alignItems:'center',gap:'2px',fontSize:'11px',flexShrink:0}}>
                                 <span style={{color:'#16a34a',fontWeight:'bold'}}>✓</span>
                                 <input type="checkbox" data-field="mam" defaultChecked={!!def.mam} style={{width:'13px',height:'13px',cursor:'pointer'}}
-                                  onChange={e => saveDefectEdit(def._id, { ...def, mam: e.target.checked })}
+                                  onChange={e => {
+                                    if (isViewingBVariant && def.__inheritedFromA) {
+                                      saveInheritedMamForB(def, e.target.checked);
+                                      return;
+                                    }
+                                    saveDefectEdit(def._id || def.idVady, { ...def, mam: e.target.checked });
+                                  }}
                                 />
                               </label>
                             </div>
@@ -1806,8 +1846,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                   const orderInput = container.querySelector('input[data-field="poradiVady"]');
                                   const boldCheckbox = container.querySelector('input[data-field="tucneVSeznamu"]');
                                   const mamCheckbox = container.querySelector('input[data-field="mam"]');
+                                  if (isViewingBVariant && def.__inheritedFromA) {
+                                    saveInheritedMamForB(def, mamCheckbox?.checked ?? !!def.mam);
+                                    return;
+                                  }
                                   // Uložíme všechny hodnoty najednou
-                                  saveDefectEdit(def._id, { 
+                                  saveDefectEdit(def._id || def.idVady, { 
                                     ...def, 
                                     variantaVady: variantInput?.value || '',
                                     umisteniVady: umisteniInput?.value || '',
