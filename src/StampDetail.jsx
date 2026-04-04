@@ -1723,7 +1723,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     const flatIndex = allVariantsOrdered.indexOf(def);
                     const isSpecial = /\/_[^/]+$/.test(def.obrazekVady || '');
                     return (
-                      <div key={def.idVady || `var-${i}`} className="variant" style={{ borderBottom: `2px solid ${def.mam ? '#16a34a' : '#dc2626'}` }}>
+                      <div key={def.idVady || `var-${i}`} className="variant" style={isAdmin ? { borderBottom: `2px solid ${def.mam ? '#16a34a' : '#dc2626'}` } : {}}>
                         <div className="variant-popis">
                           {isEditingAll ? (
                             <textarea
@@ -1935,7 +1935,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   const flatIndex = allVariantsOrdered.indexOf(def);
                   const isSpecial = /\/_[^/]+$/.test(def.obrazekVady || '');
                   return (
-                    <div key={def.idVady || def._id || `plusvar-${idx}`} className="variant" style={{ borderBottom: `2px solid ${def.mam ? '#16a34a' : '#dc2626'}` }}>
+                    <div key={def.idVady || def._id || `plusvar-${idx}`} className="variant" style={isAdmin ? { borderBottom: `2px solid ${def.mam ? '#16a34a' : '#dc2626'}` } : {}}>
                     <div className="variant-popis">
                       {isEditingAll ? (
                         <textarea
