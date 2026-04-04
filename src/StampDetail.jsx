@@ -1689,7 +1689,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     const flatIndex = allVariantsOrdered.indexOf(def);
                     const isSpecial = /\/_[^/]+$/.test(def.obrazekVady || '');
                     return (
-                      <div key={def.idVady || `var-${i}`} className="variant" >
+                      <div key={def.idVady || `var-${i}`} className="variant" style={{ borderBottom: `2px solid ${def.mam ? '#16a34a' : '#dc2626'}` }}>
                         <div className="variant-popis">
                           {isEditingAll ? (
                             <textarea
@@ -1751,7 +1751,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         {/* Editace nebo zobrazení popisu vady */}
                         {isEditingAll ? (
                           <div >
-                            <div className="edit-field-row" style={{marginBottom: '4px'}}>
+                            <div className="edit-field-row" style={{marginBottom: '4px', display: 'flex', gap: '8px', alignItems: 'center'}}>
                               <label title="Tučně v seznamu podvariant" style={{cursor:'pointer',display:'flex',alignItems:'center',gap:'2px',fontSize:'11px',flexShrink:0}}>
                                 <b>{'<b>'}</b>
                                 <input type="checkbox" data-field="tucneVSeznamu" defaultChecked={!!def.tucneVSeznamu} style={{width:'13px',height:'13px',cursor:'pointer'}} />
@@ -1772,6 +1772,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                 }}
                               />
                               <span style={{fontSize:'12px',color:'#000',flexShrink:0,fontWeight:'bold'}}>]</span>
+                              <label title="Mám tuto variantu" style={{cursor:'pointer',display:'flex',alignItems:'center',gap:'2px',fontSize:'11px',flexShrink:0}}>
+                                <span style={{color:'#16a34a',fontWeight:'bold'}}>✓</span>
+                                <input type="checkbox" data-field="mam" defaultChecked={!!def.mam} style={{width:'13px',height:'13px',cursor:'pointer'}}
+                                  onChange={e => saveDefectEdit(def._id, { ...def, mam: e.target.checked })}
+                                />
+                              </label>
                             </div>
                             <textarea
                               defaultValue={def.popisVady || ''}
@@ -1799,6 +1805,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                   const imageInput = container.querySelector('input[placeholder="https://example.com/obrazek.jpg"]');
                                   const orderInput = container.querySelector('input[data-field="poradiVady"]');
                                   const boldCheckbox = container.querySelector('input[data-field="tucneVSeznamu"]');
+                                  const mamCheckbox = container.querySelector('input[data-field="mam"]');
                                   // Uložíme všechny hodnoty najednou
                                   saveDefectEdit(def._id, { 
                                     ...def, 
@@ -1807,7 +1814,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                     popisVady: popisTextarea?.value || '',
                                     obrazekVady: imageInput?.value || '',
                                     poradiVady: normalizeDefectOrderForSave(orderInput?.value),
-                                    tucneVSeznamu: boldCheckbox?.checked ?? !!def.tucneVSeznamu
+                                    tucneVSeznamu: boldCheckbox?.checked ?? !!def.tucneVSeznamu,
+                                    mam: mamCheckbox?.checked ?? !!def.mam
                                   });
                                 }}
                                 className="ktf-btn-check"
@@ -1883,7 +1891,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   const flatIndex = allVariantsOrdered.indexOf(def);
                   const isSpecial = /\/_[^/]+$/.test(def.obrazekVady || '');
                   return (
-                    <div key={def.idVady || def._id || `plusvar-${idx}`} className="variant">
+                    <div key={def.idVady || def._id || `plusvar-${idx}`} className="variant" style={{ borderBottom: `2px solid ${def.mam ? '#16a34a' : '#dc2626'}` }}>
                     <div className="variant-popis">
                       {isEditingAll ? (
                         <textarea

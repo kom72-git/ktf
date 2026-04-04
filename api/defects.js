@@ -47,7 +47,8 @@ export default async function handler(req, res) {
         variantaVady,
         umisteniVady: umisteniVady || '',
         obrazekVady: obrazekVady || '',
-        popisVady: popisVady || ''
+        popisVady: popisVady || '',
+        mam: false
       };
       const result = await mongoose.connection.db.collection("defects").insertOne(defect);
       if (result.insertedId) {
@@ -55,6 +56,23 @@ export default async function handler(req, res) {
         return res.status(201).json(newDefect);
       } else {
         return res.status(500).json({ error: "Nepodařilo se uložit vadu" });
+      }
+    }
+    if (req.method === 'PUT') {
+      // Aktualizace varianty/vady
+      const { idVady, ...updateFields } = req.body;
+      if (!idVady) {
+        return res.status(400).json({ error: "Chybí povinné pole idVady" });
+      }
+      const result = await mongoose.connection.db.collection("defects").updateOne(
+        { idVady },
+        { $set: updateFields }
+      );
+      if (result.modifiedCount > 0) {
+        const updated = await mongoose.connection.db.collection("defects").findOne({ idVady });
+        return res.status(200).json(updated);
+      } else {
+        return res.status(404).json({ error: "Varianta nenalezena" });
       }
     }
     return res.status(405).json({ error: "Metoda není podporována" });

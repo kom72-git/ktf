@@ -45,7 +45,8 @@ export default function AdminPanel({
     umisteniVady: '',
     poradiVady: '',
     obrazekVady: '',
-    popisVady: DEFAULT_DEFECT_DESCRIPTION
+    popisVady: DEFAULT_DEFECT_DESCRIPTION,
+    mam: false
   });
   const [isSubmittingVariant, setIsSubmittingVariant] = useState(false);
   const [variantSuggestions, setVariantSuggestions] = useState({
@@ -172,7 +173,8 @@ export default function AdminPanel({
         umisteniVady: '',
         poradiVady: '',
         obrazekVady,
-        popisVady: DEFAULT_DEFECT_DESCRIPTION
+        popisVady: DEFAULT_DEFECT_DESCRIPTION,
+        mam: false
       });
       setShowAddVariantModal(true);
     };
@@ -212,7 +214,8 @@ export default function AdminPanel({
           umisteniVady: '',
           poradiVady: '',
           obrazekVady: '',
-          popisVady: DEFAULT_DEFECT_DESCRIPTION
+          popisVady: DEFAULT_DEFECT_DESCRIPTION,
+          mam: false
         });
         window.location.reload();
       } else {
@@ -640,6 +643,18 @@ export default function AdminPanel({
                     onChange={e => setNewVariantData(v => ({ ...v, poradiVady: e.target.value }))}
                     className="ktf-edit-input-tech"
                   />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', marginBottom: 4, gap: 6 }}>
+                  <input
+                    type="checkbox"
+                    id="variant-mam-checkbox"
+                    checked={newVariantData.mam}
+                    onChange={e => setNewVariantData(v => ({ ...v, mam: e.target.checked }))}
+                    style={{ width: 18, height: 18, cursor: 'pointer' }}
+                  />
+                  <label htmlFor="variant-mam-checkbox" style={{ cursor: 'pointer', marginBottom: 0, fontSize: '14px' }}>
+                    ✓ Mám
+                  </label>
                 </div>
               </div>
               <div className="label-top-input">

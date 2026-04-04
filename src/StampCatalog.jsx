@@ -693,6 +693,19 @@ export default function StampCatalog(props) {
             <div className="stamp-list-layout">
               {(() => {
                 {
+                  // Předpočítat střídající se pruhy pro sousedící rozbalené boxy
+                  const stripeMap = new Map();
+                  let stripeCounter = 0;
+                  boxesToRender.forEach(([key, items]) => {
+                    const anyExpanded = expandedBoxes.includes(key);
+                    const sameBase = items.length > 1 &&
+                      items.every(s => getCatalogBaseKey(s) === getCatalogBaseKey(items[0]));
+                    if (anyExpanded && !sameBase) {
+                      stripeMap.set(key, stripeCounter % 2);
+                      stripeCounter++;
+                    }
+                  });
+
                   return boxesToRender.flatMap(([key, items]) => {
                       const sortedItems = [...items].sort(katalogSort);
                       const item = sortedItems[0];
@@ -801,8 +814,9 @@ export default function StampCatalog(props) {
                           };
                         });
 
+                        const stripeClass = stripeMap.get(key) === 1 ? 'stamp-card-grouped-alt' : 'stamp-card-grouped';
                         return expandedCards.map(({ item, katalogText }, idx) => (
-                          <div key={key + '-' + idx} className="stamp-card stamp-card-grouped stamp-card-pointer"
+                          <div key={key + '-' + idx} className={`stamp-card ${stripeClass} stamp-card-pointer`}
                             style={{position: 'relative'}}
                             onClick={() => {
                               if (props && props.setDetailId) {

@@ -27,7 +27,8 @@ const DefectSchema = new mongoose.Schema({
   variantaVady: String,
   umisteniVady: String,
   popisVady: String,
-  obrazekVady: String
+  obrazekVady: String,
+  mam: { type: Boolean, default: false }
 });
 
 const Defect = mongoose.model("Defect", DefectSchema);
