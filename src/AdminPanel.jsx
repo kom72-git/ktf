@@ -132,7 +132,7 @@ export default function AdminPanel({
           const stamp = await response.json();
           if (stamp && stamp.rok && stamp.katalogCislo) {
             const katalogCisloNoSpace = String(stamp.katalogCislo).replace(/\s+/g, '');
-            obrazekVady = `img/${stamp.rok}/${katalogCisloNoSpace}`;
+            obrazekVady = `${stamp.rok}/${katalogCisloNoSpace}`;
           }
         }
       } catch (err) {}
@@ -163,7 +163,7 @@ export default function AdminPanel({
           const stamp = await response.json();
           if (stamp && stamp.rok && stamp.katalogCislo) {
             const katalogCisloNoSpace = String(stamp.katalogCislo).replace(/\s+/g, '');
-            obrazekVady = `img/${stamp.rok}/${katalogCisloNoSpace}`;
+            obrazekVady = `${stamp.rok}/${katalogCisloNoSpace}`;
           }
         }
       } catch (err) {}
