@@ -307,9 +307,12 @@ export default function AdminPanel({
         <div className="ktf-modal-bg">
           <div className="ktf-modal">
             <h2>Přidat novou známku</h2>
-            <p className="ktf-edit-hint ktf-edit-tip">
-              Tip: pokud nechceš u zkratky tooltip, napiš před ni hvězdičku (např. *HT).
-            </p>
+            <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
+              <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
+              <div className="ktf-tip-box">
+                <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Pokud nechceš u zkratky tooltip, napiš před ni hvězdičku (např. *HT)</span>
+              </div>
+            </div>
             <form onSubmit={e => { e.preventDefault(); if (onAddStamp) onAddStamp(newStampData); }}>
               <div className="label-top-input">
                 <label>Rok vydání</label>
@@ -660,7 +663,13 @@ export default function AdminPanel({
               <div className="label-top-input">
                 <label>Popis vady</label>
                 <textarea value={newVariantData.popisVady} onChange={e => setNewVariantData(v => ({ ...v, popisVady: e.target.value }))} className="ktf-edit-input-tech" rows={3} />
-                 <span className="ktf-edit-hint ktf-edit-tip">Tip: vlož <code>[[...]]</code> kde chceš schovat text. Před ní bude vidět hned, text za ní se zobrazí jen po přejetí myší (…).</span>
+                <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
+                  <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
+                  <div className="ktf-tip-box">
+                    <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Vlož <code>[[...]]</code> kde chceš schovat text, před ní bude text vidět hned a text za ní se zobrazí jen po přejetí myší (…)</span>
+                    <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Suffix varianty můžeš zadat i jako <code>A(a)</code>, zobrazí se jako <code>[A]a</code></span>
+                  </div>
+                </div>
               </div>
               {variantSuggestions.variantaVady.length > 0 && (
                 <datalist id="variant-varianta-options">

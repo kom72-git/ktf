@@ -233,9 +233,9 @@
 
 .variant-suffix {
   font-weight: 500;
-  margin-left: 2px;
-  margin-right: 10px;
-  display: inline-block;
+  margin-left: 0;
+  margin-right: 0;
+  display: inline;
   color: #2d2e35;
   font-size: 0.97em;
   line-height: 1.2;
@@ -336,6 +336,68 @@
   margin-bottom: 10px;
   line-height: 1.35;
 }
+
+.ktf-tip-box {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 14px 0 12px;
+  padding: 8px 10px;
+  border-left: 3px solid #cbd5e1;
+  border-right: 3px solid #cbd5e1;
+  background: #f8fafc;
+  border-radius: 4px;
+}
+
+.ktf-tip-box .ktf-tip-line {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.ktf-tip-box .ktf-tip-line + .ktf-tip-line {
+  margin-top: 2px;
+}
+
+.ktf-tip-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 10px 0 12px;
+}
+
+.ktf-tip-wrap .ktf-tip-box {
+  margin-top: 0;
+  width: 100%;
+}
+
+.ktf-tip-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #334155;
+  margin-bottom: 2px;
+}
+
+.ktf-tip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid #94a3b8;
+  font-size: 7px;
+  line-height: 1;
+  font-weight: 700;
+  color: #475569;
+  background: transparent;
+}
+
 /* Input pro editaci roku */
 .edit-year-input {
   padding: 4px 6px;
@@ -1215,6 +1277,22 @@ textarea.resize-corner {
   margin-top: 2px;
   margin-bottom: 14px;
 }
+
+.variant-label-token {
+  display: inline-block;
+  margin-right: 10px;
+  color: #111;
+}
+
+.variant-label-token strong,
+.variant-label-token .variant-suffix {
+  color: #111;
+}
+
+.variant-label-prefix {
+  font-size: 0.9em;
+}
+
 .variant {
   font-family: inherit !important;
   font-size: 1rem !important;

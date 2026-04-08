@@ -795,6 +795,68 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     if (!description) return `[${variant}]`;
     return `[${variant}] ${description}`;
   };
+  const splitLeadingVariantToken = (text) => {
+    const value = typeof text === "string" ? text : String(text ?? "");
+    const match = value.match(/^\s*\[([^\]]+)\]([A-Za-z]?)(.*)$/s);
+    if (!match) {
+      return { variantToken: null, descriptionText: value };
+    }
+
+    const contentRaw = (match[1] || "").trim();
+    const suffixRaw = (match[2] || "").trim();
+    const rest = (match[3] || "").trimStart();
+    if (!contentRaw) {
+      return { variantToken: null, descriptionText: value };
+    }
+
+    // Podpora alternativního zápisu suffixu: [A(a)] -> [A]a, [B1(a)] -> [B1]a.
+    let content = contentRaw;
+    let suffix = suffixRaw;
+    if (!suffix) {
+      const bracketSuffixMatch = contentRaw.match(/^(.*?)\s*\(([A-Za-z])\)$/);
+      if (bracketSuffixMatch && bracketSuffixMatch[1]) {
+        content = bracketSuffixMatch[1].trim();
+        suffix = bracketSuffixMatch[2];
+      }
+    }
+
+    return {
+      variantToken: { content, suffix },
+      descriptionText: rest,
+    };
+  };
+
+  const renderVariantToken = (token, boldBracket) => {
+    if (!token || !token.content) return null;
+    return (
+      <>
+        {boldBracket ? <strong>[{token.content}]</strong> : <span>[{token.content}]</span>}
+        {token.suffix ? <span className="variant-suffix">{token.suffix}</span> : null}
+      </>
+    );
+  };
+  const getSubvariantHeadingLabel = (rawVariant) => {
+    const value = String(rawVariant || "").trim();
+    if (!value) return "";
+
+    // Pro nadpis podvariant dočasně skrýváme suffix zápisy typu A(a),
+    // aby se zde nevypisovalo [A]a. Data i render pod obrázkem suffix zachovávají.
+    const match = value.match(/^(.*?)\s*\(([A-Za-z])\)$/);
+    if (match && match[1]) {
+      return match[1].trim();
+      // Výhledově lze vrátit plný formát se suffixem, např. `${match[1].trim()}(${match[2]})`.
+    }
+
+    return value;
+  };
+  const normalizeVariantTokenForCaption = (text) => {
+    const value = typeof text === "string" ? text : String(text ?? "");
+    const { variantToken, descriptionText } = splitLeadingVariantToken(value);
+    if (!variantToken || !variantToken.content) return value;
+
+    const token = `[${variantToken.content}]${variantToken.suffix || ""}`;
+    return descriptionText ? `${token} - ${descriptionText}` : token;
+  };
   const normalizeDefectOrderForSave = (value) => {
     const raw = String(value ?? "").trim();
     if (!raw) return "";
@@ -902,12 +964,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     if (!allVariantsOrdered || allVariantsOrdered.length === 0) return;
     const slides = allVariantsOrdered.map(def => {
       const displayDescription = buildDefectDescriptionWithVariant(def);
+      const captionDescription = normalizeVariantTokenForCaption(displayDescription);
       return {
         src: normalizeDefectImageSrc(def.obrazekVady) || '/img/no-image.png',
         caption:
           `<div class='fancybox-caption-center'>`
           + `<span class='fancybox-caption-variant'>${def.umisteniVady || ''}</span>`
-          + (displayDescription ? `<br /><span class='fancybox-caption-desc'>${displayDescription.replace(/\[\[\.\.\.\]\]/g, '')}</span>` : '')
+          + (captionDescription ? `<br /><span class='fancybox-caption-desc'>${captionDescription.replace(/\[\[\.\.\.\]\]/g, '')}</span>` : '')
           + `</div>`
       };
     });
@@ -1236,9 +1299,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         <section className="stamp-spec stamp-detail-spec-col" aria-labelledby={specHeadingId}>
           <h2 id={specHeadingId} className="sr-only">Technické údaje</h2>
           {isEditingAll && (
-            <p className="ktf-edit-hint ktf-edit-tip">
-              Tip: pokud nechceš u zkratky tooltip, napiš před ni hvězdičku (např. *HT).
-            </p>
+            <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
+              <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
+              <div className="ktf-tip-box">
+                <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Pokud nechceš u zkratky tooltip, napiš před ni hvězdičku (např. *HT)</span>
+              </div>
+            </div>
           )}
 
           <div className="stamp-spec-row">
@@ -1564,7 +1630,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         ✓
                       </button>
                     </div>
-                    <span className="ktf-edit-hint ktf-edit-tip">Tip: klikací část uzavři mezi %text%.</span>
+                    <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
+                      <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
+                      <div className="ktf-tip-box">
+                        <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Klikací část uzavři mezi %text%</span>
+                      </div>
+                    </div>
                   </div>
                   <div className="ktf-edit-study-col label-top-input study-input-secondary-col">
                     <label htmlFor="edit-study-url">URL pro část za čárkou:</label>
@@ -1607,11 +1678,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       className="ktf-btn-check"
                     >✓</button>
                   </div>
-                  <span className="ktf-edit-hint ktf-edit-tip" style={{marginTop: 6}}>
-                    Podporované formátování: <code>&apos;text&apos;</code> → šedé zvýraznění · <code>*</code> → zneviditelnění tooltipu
-                    <br />
-                    HTML: <code>&lt;b&gt;&lt;/b&gt;</code> · <code>&lt;em&gt;&lt;/em&gt;</code> kurzíva · <code>&lt;u&gt;&lt;/u&gt;</code> podtržení · <code>&lt;br /&gt;</code> · <code>&lt;sup&gt;&lt;/sup&gt;</code> horní index · <code>&lt;sub&gt;&lt;/sub&gt;</code> dolní index
-                  </span>
+                  <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
+                    <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
+                    <div className="ktf-tip-box">
+                      <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Podporované formátování: <code>&apos;text&apos;</code> → šedé zvýraznění · <code>*</code> → zneviditelnění tooltipu</span>
+                      <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">HTML: <code>&lt;b&gt;&lt;/b&gt;</code> · <code>&lt;em&gt;&lt;/em&gt;</code> kurzíva · <code>&lt;u&gt;&lt;/u&gt;</code> podtržení · <code>&lt;br /&gt;</code> · <code>&lt;sup&gt;&lt;/sup&gt;</code> horní index · <code>&lt;sub&gt;&lt;/sub&gt;</code> dolní index</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </>
@@ -1658,6 +1731,15 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
               </div>
             );
           })()}
+          {isEditingAll && (
+            <div className="ktf-tip-wrap" role="note" aria-label="Nápověda k editaci variant">
+              <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
+              <div className="ktf-tip-box">
+                <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Vlož <code>[[...]]</code> kde chceš schovat text, před ní bude text vidět hned a text za ní se zobrazí jen po přejetí myší (…)</span>
+                <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Suffix varianty můžeš zadat i jako <code>A(a)</code>, zobrazí se jako <code>[A]a</code></span>
+              </div>
+            </div>
+          )}
           {/* Seskupení variant podle hlavní varianty (A, B, ...) */}
           {groupedKeysSorted.map(group => {
             const defs = grouped[group];
@@ -1683,7 +1765,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 if (seen.has(def.variantaVady)) return false;
                 seen.add(def.variantaVady);
                 return true;
-              }).map(d => ({ label: d.variantaVady, bold: !!d.tucneVSeznamu }));
+              }).map(d => ({ label: getSubvariantHeadingLabel(d.variantaVady), bold: !!d.tucneVSeznamu }));
             })();
             const hasSubvariants = subvariantLabels.some(item => item.label.includes('.'));
             const subvariantTitle = hasSubvariants ? 'Obsahuje podvarianty a subvarianty' : 'Obsahuje podvarianty';
@@ -1722,6 +1804,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   {defs.slice().sort(compareVariantsWithBracket).map((def, i) => {
                     const flatIndex = allVariantsOrdered.indexOf(def);
                     const isSpecial = /\/_[^/]+$/.test(def.obrazekVady || '');
+                    const displayDescription = buildDefectDescriptionWithVariant(def);
+                    const { variantToken, descriptionText } = splitLeadingVariantToken(displayDescription);
                     return (
                       <div key={def.idVady || `var-${i}`} className="variant" style={isAdmin ? { borderBottom: `2px solid ${def.mam ? '#16a34a' : '#dc2626'}` } : {}}>
                         <div className="variant-popis">
@@ -1781,7 +1865,14 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                             </div>
                           </div>
                         )}
-                        <div className="variant-label">Obr. {getImageNumber(def)}</div>
+                        <div className="variant-label">
+                          {variantToken && (
+                            <span className="variant-label-token">
+                              {renderVariantToken(variantToken, !!def.tucneVSeznamu)}
+                            </span>
+                          )}
+                          <span className="variant-label-prefix">obr.</span>{' '}{getImageNumber(def)}
+                        </div>
                         {/* Editace nebo zobrazení popisu vady */}
                         {isEditingAll ? (
                           <div >
@@ -1878,16 +1969,14 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                           </div>
                         ) : (
                           <>
-                            {(def.popisVady || def.variantaVady) && (() => {
-                              const displayDescription = buildDefectDescriptionWithVariant(def);
-                              const SPLIT_MARK = '[[...]]';
+                            {descriptionText && (() => {
                               const SPLIT_REGEX = /\[\[\s*\.{3}\s*\]\]/;
-                              let parts = typeof displayDescription === 'string' ? displayDescription.split(SPLIT_REGEX) : [displayDescription];
+                              let parts = typeof descriptionText === 'string' ? descriptionText.split(SPLIT_REGEX) : [descriptionText];
                               // Fallback: if split didn't match but exact literal exists, use indexOf split
-                              if (parts.length === 1 && typeof displayDescription === 'string') {
-                                const idxExact = displayDescription.indexOf('[[...]]');
+                              if (parts.length === 1 && typeof descriptionText === 'string') {
+                                const idxExact = descriptionText.indexOf('[[...]]');
                                 if (idxExact !== -1) {
-                                  parts = [displayDescription.slice(0, idxExact), displayDescription.slice(idxExact + '[[...]]'.length)];
+                                  parts = [descriptionText.slice(0, idxExact), descriptionText.slice(idxExact + '[[...]]'.length)];
                                 }
                               }
                               if (parts.length > 1) {
@@ -1905,7 +1994,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                                 );
                               }
                               return (
-                                <div className="variant-popis-detail">{formatDefectDescription(displayDescription, { boldBracket: !!def.tucneVSeznamu })}</div>
+                                <div className="variant-popis-detail">{formatDefectDescription(descriptionText, { boldBracket: !!def.tucneVSeznamu })}</div>
                               );
                             })()}
                             {isEditingAll && !def.popisVady && (
@@ -1934,6 +2023,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 {plusVariantsOrdered.map((def, idx) => {
                   const flatIndex = allVariantsOrdered.indexOf(def);
                   const isSpecial = /\/_[^/]+$/.test(def.obrazekVady || '');
+                  const displayDescription = buildDefectDescriptionWithVariant(def);
+                  const { variantToken, descriptionText } = splitLeadingVariantToken(displayDescription);
                   return (
                     <div key={def.idVady || def._id || `plusvar-${idx}`} className="variant" style={isAdmin ? { borderBottom: `2px solid ${def.mam ? '#16a34a' : '#dc2626'}` } : {}}>
                     <div className="variant-popis">
@@ -1993,7 +2084,14 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         </div>
                       </div>
                     )}
-                    <div className="variant-label">Obr. {getImageNumber(def)}</div>
+                    <div className="variant-label">
+                      {variantToken && (
+                        <span className="variant-label-token">
+                          {renderVariantToken(variantToken, !!def.tucneVSeznamu)}
+                        </span>
+                      )}
+                      <span className="variant-label-prefix">obr.</span>{' '}{getImageNumber(def)}
+                    </div>
                     {/* Editace nebo zobrazení popisu vady */}
                     {isEditingAll ? (
                       <div >
@@ -2072,14 +2170,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       </div>
                     ) : (
                       <>
-                        {(def.popisVady || def.variantaVady) && (() => {
-                          const displayDescription = buildDefectDescriptionWithVariant(def);
+                        {descriptionText && (() => {
                           const SPLIT_REGEX = /\[\[\s*\.{3}\s*\]\]/;
-                          let parts = typeof displayDescription === 'string' ? displayDescription.split(SPLIT_REGEX) : [displayDescription];
-                          if (parts.length === 1 && typeof displayDescription === 'string') {
-                            const idxExact = displayDescription.indexOf('[[...]]');
+                          let parts = typeof descriptionText === 'string' ? descriptionText.split(SPLIT_REGEX) : [descriptionText];
+                          if (parts.length === 1 && typeof descriptionText === 'string') {
+                            const idxExact = descriptionText.indexOf('[[...]]');
                             if (idxExact !== -1) {
-                              parts = [displayDescription.slice(0, idxExact), displayDescription.slice(idxExact + '[[...]]'.length)];
+                              parts = [descriptionText.slice(0, idxExact), descriptionText.slice(idxExact + '[[...]]'.length)];
                             }
                           }
                           if (parts.length > 1) {
@@ -2095,8 +2192,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                             );
                           }
                           // If text is long, show clamped 5 lines and a tooltip with full text
-                          const renderedFull2 = formatDefectDescription(displayDescription, { boldBracket: !!def.tucneVSeznamu });
-                          const isLong2 = typeof displayDescription === 'string' && displayDescription.length > 500;
+                          const renderedFull2 = formatDefectDescription(descriptionText, { boldBracket: !!def.tucneVSeznamu });
+                          const isLong2 = typeof descriptionText === 'string' && descriptionText.length > 500;
                           if (isLong2) {
                             return (
                               <div className="variant-popis-detail" style={{position: 'relative'}}>
@@ -2184,11 +2281,16 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       className="ktf-btn-check"
                     >✓</button>
                   </div>
-                  <span className="ktf-edit-hint ktf-edit-tip">Tip: každou položku dej na nový řádek a začni <code>1)</code> (možno i např. <code>[1]</code> či <code>1.</code>) a klikací část vymezuj mezi <code>%...%</code>.</span>
-                  <span className="ktf-edit-hint ktf-edit-tip">Příklad:<br />
-                    <code>[1] Pavel Hankovec: Dvě varianty aršíku INTERKOSMOS, Filatelie 1980/14 str. 440</code><br />
-                    <code>[2] Stanislav Pilař: Ještě k aršíku INTERKOSMOS 80, <strong>%</strong>Filatelie 1984/12 str. 361<strong>%</strong> https://example.com</code>
-                  </span>
+                  <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
+                    <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
+                    <div className="ktf-tip-box">
+                      <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Každou položku dej na nový řádek a začni <code>1)</code> (možno i např. <code>[1]</code> či <code>1.</code>) a klikací část vymezuj mezi <code>%...%</code></span>
+                      <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Příklad:<br />
+                        <code>[1] Pavel Hankovec: Dvě varianty aršíku INTERKOSMOS, Filatelie 1980/14 str. 440</code><br />
+                        <code>[2] Stanislav Pilař: Ještě k aršíku INTERKOSMOS 80, <strong>%</strong>Filatelie 1984/12 str. 361<strong>%</strong> https://example.com</code>
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (
