@@ -874,9 +874,56 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     return src[0] !== "/" && !src.startsWith("http") ? `/${src}` : src;
   };
 
+  const parseDefectImagePathFlags = (src) => {
+    const raw = String(src ?? "").trim();
+    const isExplicitUnavailable = /\(n\/a\)\s*$/i.test(raw);
+    const value = raw.replace(/\(n\/a\)\s*$/i, "").trim();
+
+    if (!value) {
+      return {
+        normalizedPath: "",
+        hasImageDashedMarker: false,
+        hasBoxDashedMarker: false,
+        isExplicitNoImage: isExplicitUnavailable
+      };
+    }
+
+    if (/^(https?:|data:)/i.test(value)) {
+      return {
+        normalizedPath: value,
+        hasImageDashedMarker: false,
+        hasBoxDashedMarker: false,
+        isExplicitNoImage: isExplicitUnavailable
+      };
+    }
+
+    const parts = value.split("/");
+    const rawLastPart = parts[parts.length - 1] || "";
+    let lastPart = rawLastPart;
+    let hasBoxDashedMarker = false;
+
+    // Marker "!" na začátku názvu obrázku zapíná přerušované orámování celého boxu varianty.
+    if (lastPart.startsWith("!")) {
+      hasBoxDashedMarker = true;
+      lastPart = lastPart.slice(1);
+    }
+
+    const hasImageDashedMarker = lastPart.startsWith("_");
+    parts[parts.length - 1] = lastPart;
+
+    return {
+      normalizedPath: parts.join("/"),
+      hasImageDashedMarker,
+      hasBoxDashedMarker,
+      isExplicitNoImage: isExplicitUnavailable
+    };
+  };
+
   const normalizeDefectImageSrc = (src) => {
-    const value = String(src ?? "").trim();
+    const { normalizedPath, isExplicitNoImage } = parseDefectImagePathFlags(src);
+    const value = normalizedPath;
     if (!value) return "";
+    if (isExplicitNoImage) return "/img/no-img.png";
     if (/^(https?:|data:)/i.test(value)) return value;
 
     const withoutLeadingSlash = value.replace(/^\/+/, "");
@@ -1681,8 +1728,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
                     <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
                     <div className="ktf-tip-box">
-                      <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Podporované formátování: <code>&apos;text&apos;</code> → šedé zvýraznění · <code>*</code> → zneviditelnění tooltipu</span>
-                      <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">HTML: <code>&lt;b&gt;&lt;/b&gt;</code> · <code>&lt;em&gt;&lt;/em&gt;</code> kurzíva · <code>&lt;u&gt;&lt;/u&gt;</code> podtržení · <code>&lt;br /&gt;</code> · <code>&lt;sup&gt;&lt;/sup&gt;</code> horní index · <code>&lt;sub&gt;&lt;/sub&gt;</code> dolní index</span>
+                      <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Podporované formátování: <code>&apos;text&apos;</code> → šedé zvýraznění ✧ <code>*</code> → zneviditelnění tooltipu</span>
+                      <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">HTML: <code>&lt;b&gt;&lt;/b&gt;</code> → tučně ✧ <code>&lt;em&gt;&lt;/em&gt;</code> → kurzíva ✧ <code>&lt;u&gt;&lt;/u&gt;</code> → podtržení ✧ <code>&lt;br /&gt;</code> → nový řádek ✧ <code>&lt;sup&gt;&lt;/sup&gt;</code> → horní index ✧ <code>&lt;sub&gt;&lt;/sub&gt;</code> → dolní index</span>
                     </div>
                   </div>
                 </div>
@@ -1734,9 +1781,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           {isEditingAll && (
             <div className="ktf-tip-wrap" role="note" aria-label="Nápověda k editaci variant">
               <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
-              <div className="ktf-tip-box">
+              <div className="ktf-tip-box ktf-tip-box-bulleted">
                 <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Vlož <code>[[...]]</code> kde chceš schovat text, před ní bude text vidět hned a text za ní se zobrazí jen po přejetí myší (…)</span>
                 <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Suffix varianty můžeš zadat i jako <code>A(a)</code>, zobrazí se jako <code>[A]a</code></span>
+                <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">V adrese obrázku varianty: <code>_</code> na začátku názvu = čárkovaný obrázek ✧ <code>!</code> na začátku názvu = čárkovaný box varianty ✧ <code>!</code> je jen marker v adrese (soubor ukládej bez něj) ✧ <code>(n/a)</code> na konci adresy = trvale nedostupný obrázek</span>
               </div>
             </div>
           )}
@@ -1803,11 +1851,17 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   {/* Všechny výskyty variant včetně duplicit, v přirozeném pořadí */}
                   {defs.slice().sort(compareVariantsWithBracket).map((def, i) => {
                     const flatIndex = allVariantsOrdered.indexOf(def);
-                    const isSpecial = /\/_[^/]+$/.test(def.obrazekVady || '');
+                    const imagePathFlags = parseDefectImagePathFlags(def.obrazekVady);
+                    const isSpecial = imagePathFlags.hasImageDashedMarker;
+                    const isSpecialBox = imagePathFlags.hasBoxDashedMarker;
                     const displayDescription = buildDefectDescriptionWithVariant(def);
                     const { variantToken, descriptionText } = splitLeadingVariantToken(displayDescription);
                     return (
-                      <div key={def.idVady || `var-${i}`} className="variant" style={isAdmin ? { borderBottom: `2px solid ${def.mam ? '#16a34a' : '#dc2626'}` } : {}}>
+                      <div
+                        key={def.idVady || `var-${i}`}
+                        className={`variant${isSpecialBox ? ' variant-special-box' : ''}`}
+                        style={isAdmin ? { borderBottom: `2px solid ${def.mam ? '#16a34a' : '#dc2626'}` } : {}}
+                      >
                         <div className="variant-popis">
                           {isEditingAll ? (
                             <textarea
@@ -2022,11 +2076,17 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
               <div className="variants">
                 {plusVariantsOrdered.map((def, idx) => {
                   const flatIndex = allVariantsOrdered.indexOf(def);
-                  const isSpecial = /\/_[^/]+$/.test(def.obrazekVady || '');
+                  const imagePathFlags = parseDefectImagePathFlags(def.obrazekVady);
+                  const isSpecial = imagePathFlags.hasImageDashedMarker;
+                  const isSpecialBox = imagePathFlags.hasBoxDashedMarker;
                   const displayDescription = buildDefectDescriptionWithVariant(def);
                   const { variantToken, descriptionText } = splitLeadingVariantToken(displayDescription);
                   return (
-                    <div key={def.idVady || def._id || `plusvar-${idx}`} className="variant" style={isAdmin ? { borderBottom: `2px solid ${def.mam ? '#16a34a' : '#dc2626'}` } : {}}>
+                    <div
+                      key={def.idVady || def._id || `plusvar-${idx}`}
+                      className={`variant${isSpecialBox ? ' variant-special-box' : ''}`}
+                      style={isAdmin ? { borderBottom: `2px solid ${def.mam ? '#16a34a' : '#dc2626'}` } : {}}
+                    >
                     <div className="variant-popis">
                       {isEditingAll ? (
                         <textarea
@@ -2283,7 +2343,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </div>
                   <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
                     <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
-                    <div className="ktf-tip-box">
+                    <div className="ktf-tip-box ktf-tip-box-bulleted">
                       <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Každou položku dej na nový řádek a začni <code>1)</code> (možno i např. <code>[1]</code> či <code>1.</code>) a klikací část vymezuj mezi <code>%...%</code></span>
                       <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Příklad:<br />
                         <code>[1] Pavel Hankovec: Dvě varianty aršíku INTERKOSMOS, Filatelie 1980/14 str. 440</code><br />

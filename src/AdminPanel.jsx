@@ -665,9 +665,10 @@ export default function AdminPanel({
                 <textarea value={newVariantData.popisVady} onChange={e => setNewVariantData(v => ({ ...v, popisVady: e.target.value }))} className="ktf-edit-input-tech" rows={3} />
                 <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
                   <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
-                  <div className="ktf-tip-box">
+                  <div className="ktf-tip-box ktf-tip-box-bulleted">
                     <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Vlož <code>[[...]]</code> kde chceš schovat text, před ní bude text vidět hned a text za ní se zobrazí jen po přejetí myší (…)</span>
                     <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Suffix varianty můžeš zadat i jako <code>A(a)</code>, zobrazí se jako <code>[A]a</code></span>
+                    <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">V adrese obrázku varianty: <code>_</code> na začátku názvu = čárkovaný obrázek ✧ <code>!</code> na začátku názvu = čárkovaný box varianty ✧ <code>!</code> je jen marker v adrese (soubor ukládej bez něj) ✧ <code>(n/a)</code> na konci adresy = trvale nedostupný obrázek</span>
                   </div>
                 </div>
               </div>

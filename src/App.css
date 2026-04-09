@@ -358,6 +358,26 @@
   margin-top: 2px;
 }
 
+.ktf-tip-box-bulleted .ktf-tip-line {
+  display: block;
+  position: relative;
+  padding-left: 14px;
+}
+
+.ktf-tip-box-bulleted .ktf-tip-line::before {
+  content: "\00B7";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #94a3b8;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.ktf-tip-box-bulleted .ktf-tip-line + .ktf-tip-line {
+  margin-top: 4px;
+}
+
 .ktf-tip-wrap {
   display: flex;
   flex-direction: column;
@@ -1308,6 +1328,12 @@ textarea.resize-corner {
 .variant:hover {
   box-shadow: 0 4px 16px rgba(0,0,0,0.10);
 }
+
+.variant-special-box {
+  border: 1px dashed #94a3b8;
+  background: #f8fafc;
+}
+
 /* Podnadpis pro skupinu variant */
 .variant-group-title {
   font-size: 1.08rem;
