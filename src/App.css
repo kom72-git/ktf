@@ -5,11 +5,11 @@
   box-shadow: none;
 }
 .variant-img-no-image {
-  border: 1px dashed #ef4444 !important;
+  border: 1px dashed #d46a5c !important;
   border-radius: 8px !important;
-  background: #fff5f5 !important;
+  background: #fff3f1 !important;
   box-shadow: none;
-  opacity: 0.75;
+  opacity: 0.82;
 }
 .stamp-title-abbr {
   font-weight: 700;
@@ -691,7 +691,7 @@ textarea.resize-corner {
   padding: 10px 16px;
   border: 1px solid #f8f8f8;
   border-radius: 12px;
-  background: #fafbfc;
+  background: #f4f6f8;
   box-shadow: 0 1px 2px rgba(17, 24, 39, 0.04);
 }
 .study-note-reference-wrapper {
@@ -1246,6 +1246,30 @@ textarea.resize-corner {
   display: block;
   padding-bottom: 20px;
 }
+
+.study-editor-note {
+  margin: 12px 0;
+  padding: 10px 12px;
+  border-left: 3px solid #d46a5c;
+  border-right: 3px solid #d46a5c;
+  background: #fafbfc;
+  border-radius: 6px;
+}
+
+.study-editor-note-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #4e5864;
+  margin-bottom: 4px;
+  letter-spacing: 0.01em;
+}
+
+.study-editor-note-body {
+  color: #38414a;
+  white-space: pre-line;
+  font-style: italic;
+}
+
 .ktf-edit-study-popis-row {
   display: flex;
   flex-direction: column;

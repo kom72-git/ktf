@@ -1007,7 +1007,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   };
   const additionalStudyHeadingId = `${detailHeadingId}-study-after`;
   // Fancybox galerie pro skupinu
-  const openFancybox = (flatIndex = 0) => {
+  const openFancybox = (flatIndex = 0, clickedSrc = '') => {
     if (!allVariantsOrdered || allVariantsOrdered.length === 0) return;
     const slides = allVariantsOrdered.map(def => {
       const displayDescription = buildDefectDescriptionWithVariant(def);
@@ -1021,6 +1021,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           + `</div>`
       };
     });
+    if (clickedSrc && slides[flatIndex]) {
+      slides[flatIndex] = {
+        ...slides[flatIndex],
+        src: clickedSrc,
+      };
+    }
     Fancybox.show(slides, {
       startIndex: flatIndex,
       Toolbar: [ 'thumbs', 'zoom', 'close' ],
@@ -1727,8 +1733,9 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </div>
                   <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
                     <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
-                    <div className="ktf-tip-box">
+                    <div className="ktf-tip-box ktf-tip-box-bulleted">
                       <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Podporované formátování: <code>&apos;text&apos;</code> → šedé zvýraznění ✧ <code>*</code> → zneviditelnění tooltipu</span>
+                      <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Redakční blok: <code>[pozn]Tvůj doplněný text[/pozn]</code></span>
                       <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">HTML: <code>&lt;b&gt;&lt;/b&gt;</code> → tučně ✧ <code>&lt;em&gt;&lt;/em&gt;</code> → kurzíva ✧ <code>&lt;u&gt;&lt;/u&gt;</code> → podtržení ✧ <code>&lt;br /&gt;</code> → nový řádek ✧ <code>&lt;sup&gt;&lt;/sup&gt;</code> → horní index ✧ <code>&lt;sub&gt;&lt;/sub&gt;</code> → dolní index</span>
                     </div>
                   </div>
@@ -1741,7 +1748,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
               {/* --- POPIS STUDIE --- */}
               <div className="study-note-section">
                 {resolvedPopisStudie ? (
-                  <span className="study-note" dangerouslySetInnerHTML={{__html: formatPopisWithAll(resolvedPopisStudie)}} />
+                  <div className="study-note" dangerouslySetInnerHTML={{__html: formatPopisWithAll(resolvedPopisStudie)}} />
                 ) : (
                   <span className="study-note-placeholder">–</span>
                 )}
@@ -1853,6 +1860,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     const flatIndex = allVariantsOrdered.indexOf(def);
                     const imagePathFlags = parseDefectImagePathFlags(def.obrazekVady);
                     const isSpecial = imagePathFlags.hasImageDashedMarker;
+                    const isExplicitNoImage = imagePathFlags.isExplicitNoImage;
                     const isSpecialBox = imagePathFlags.hasBoxDashedMarker;
                     const displayDescription = buildDefectDescriptionWithVariant(def);
                     const { variantToken, descriptionText } = splitLeadingVariantToken(displayDescription);
@@ -1875,11 +1883,11 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                             </>
                           )}
                         </div>
-                        <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(flatIndex)}>
+                        <div className="variant-img-bg variant-img-bg-pointer" onClick={(e) => openFancybox(flatIndex, e.currentTarget.querySelector('img')?.currentSrc || '')}>
                           <img
                             src={normalizeDefectImageSrc(def.obrazekVady) || NO_IMAGE}
                             alt={def.idVady}
-                            className={isSpecial ? 'variant-img-special' : ''}
+                            className={`${isSpecial ? 'variant-img-special' : ''}${isExplicitNoImage ? ' variant-img-no-image' : ''}`.trim()}
                             onError={e => { e.target.onerror = null; e.target.src = NO_IMAGE; }}
                           />
                         </div>
@@ -2078,6 +2086,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   const flatIndex = allVariantsOrdered.indexOf(def);
                   const imagePathFlags = parseDefectImagePathFlags(def.obrazekVady);
                   const isSpecial = imagePathFlags.hasImageDashedMarker;
+                  const isExplicitNoImage = imagePathFlags.isExplicitNoImage;
                   const isSpecialBox = imagePathFlags.hasBoxDashedMarker;
                   const displayDescription = buildDefectDescriptionWithVariant(def);
                   const { variantToken, descriptionText } = splitLeadingVariantToken(displayDescription);
@@ -2100,11 +2109,11 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         </>
                       )}
                     </div>
-                    <div className="variant-img-bg variant-img-bg-pointer" onClick={() => openFancybox(flatIndex)}>
+                    <div className="variant-img-bg variant-img-bg-pointer" onClick={(e) => openFancybox(flatIndex, e.currentTarget.querySelector('img')?.currentSrc || '')}>
                       <img
                         src={normalizeDefectImageSrc(def.obrazekVady) || '/img/no-image.png'}
                         alt={def.idVady}
-                        className={isSpecial ? 'variant-img-special' : ''}
+                        className={`${isSpecial ? 'variant-img-special' : ''}${isExplicitNoImage ? ' variant-img-no-image' : ''}`.trim()}
                         onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
                       />
                     </div>
@@ -2356,7 +2365,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             ) : (
               <>
                 {hasPopisStudie2Content && (
-                  <span
+                  <div
                     className="study-note"
                     dangerouslySetInnerHTML={{ __html: formatPopisWithAll(popisStudie2Display) }}
                   />
