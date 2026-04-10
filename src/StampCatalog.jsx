@@ -13,7 +13,10 @@ import {
   sklonujPosledniVlozeneEmise
 } from './utils/formatovaniTextu.jsx';
 import { katalogSort, emissionToSlug, slugToEmission } from './utils/katalog.js';
-import { normalizeStampImagePath } from "./utils/obrazekCesta.js";
+import {
+  normalizeStampImagePath,
+  normalizeStampImagePathForStorage
+} from "./utils/obrazekCesta.js";
 import "./App.css";
 
 function getCatalogDisplayParts(stamp) {
@@ -776,7 +779,7 @@ export default function StampCatalog(props) {
                             <div className="stamp-img-bg">
                               {item.obrazek ? (
                                 <img
-                                  src={item.obrazek}
+                                  src={normalizeStampImagePath(item.obrazek, item.rok)}
                                   alt={item.emise}
                                   onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
                                 />
@@ -835,7 +838,7 @@ export default function StampCatalog(props) {
                             <div className="stamp-img-bg">
                               {item.obrazek ? (
                                 <img
-                                  src={item.obrazek}
+                                  src={normalizeStampImagePath(item.obrazek, item.rok)}
                                   alt={item.emise}
                                   onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
                                 />
@@ -878,8 +881,9 @@ export default function StampCatalog(props) {
         onAddStamp={async (stampData) => {
           const normalizedStampData = {
             ...stampData,
-            obrazek: normalizeStampImagePath(stampData.obrazek, stampData.rok),
-            obrazekStudie: normalizeStampImagePath(stampData.obrazekStudie, stampData.rok)
+            obrazek: normalizeStampImagePathForStorage(stampData.obrazek, stampData.rok),
+            obrazekStudie: normalizeStampImagePathForStorage(stampData.obrazekStudie, stampData.rok),
+            schemaTF: normalizeStampImagePathForStorage(stampData.schemaTF, stampData.rok)
           };
           // Odeslání na backend
           const API_BASE =

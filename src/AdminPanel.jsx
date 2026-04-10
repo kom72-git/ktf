@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 export default function AdminPanel({
   isAdmin,
   onLogout,
@@ -62,6 +62,101 @@ export default function AdminPanel({
   const suggestionEntries = Object.entries(fieldSuggestions || {}).filter(
     ([, values]) => Array.isArray(values) && values.length > 0
   );
+  const lastAutoImageBaseRef = useRef("");
+  const autoManagedImageFieldsRef = useRef({
+    obrazek: true,
+    obrazekStudie: true,
+    schemaTF: true,
+  });
+  const buildImageAddressBase = (yearValue, catalogValue, options = {}) => {
+    const { allowThreeDigit = false } = options;
+    const year = String(yearValue ?? "").trim();
+    const catalog = String(catalogValue ?? "").replace(/\s+/g, "").trim();
+    const digitMatch = catalog.match(/\d+/);
+    const digitLength = digitMatch ? digitMatch[0].length : 0;
+    const hasCatalogCore = allowThreeDigit ? digitLength >= 3 : digitLength >= 4;
+    if (!/^\d{4}$/.test(year) || !catalog || !hasCatalogCore) return "";
+    return `${year}/${catalog}`;
+  };
+
+  const applyAutoImagePrefill = (allowThreeDigit = false, overrides = {}, options = {}) => {
+    const { forceResetOnInvalid = false } = options;
+    if (!showAddModal) return;
+
+    setNewStampData((prev) => {
+      const draft = {
+        ...prev,
+        ...overrides,
+      };
+      const base = buildImageAddressBase(draft.rok, draft.katalogCislo, { allowThreeDigit });
+      const previousAutoBase = lastAutoImageBaseRef.current;
+      const currentMain = String(draft.obrazek || "").trim();
+      const currentStudy = String(draft.obrazekStudie || "").trim();
+      const currentTf = String(draft.schemaTF || "").trim();
+      if (!base) {
+        if (forceResetOnInvalid) {
+          lastAutoImageBaseRef.current = "";
+          autoManagedImageFieldsRef.current = {
+            obrazek: true,
+            obrazekStudie: true,
+            schemaTF: true,
+          };
+          return {
+            ...draft,
+            obrazek: "",
+            obrazekStudie: "",
+            schemaTF: "",
+          };
+        }
+        if (previousAutoBase) {
+          let changedOnClear = false;
+          const cleared = { ...draft };
+          if (autoManagedImageFieldsRef.current.obrazek) {
+            cleared.obrazek = "";
+            changedOnClear = true;
+          }
+          if (autoManagedImageFieldsRef.current.obrazekStudie) {
+            cleared.obrazekStudie = "";
+            changedOnClear = true;
+          }
+          if (autoManagedImageFieldsRef.current.schemaTF) {
+            cleared.schemaTF = "";
+            changedOnClear = true;
+          }
+          lastAutoImageBaseRef.current = "";
+          return changedOnClear ? cleared : draft;
+        }
+        lastAutoImageBaseRef.current = "";
+        return draft;
+      }
+
+      let changed = false;
+      const next = { ...draft };
+      const canAutoUpdateMain = autoManagedImageFieldsRef.current.obrazek;
+      const canAutoUpdateStudy = autoManagedImageFieldsRef.current.obrazekStudie;
+      const canAutoUpdateTf = autoManagedImageFieldsRef.current.schemaTF;
+
+      if (canAutoUpdateMain && currentMain !== base) {
+        next.obrazek = base;
+        autoManagedImageFieldsRef.current.obrazek = true;
+        changed = true;
+      }
+      if (canAutoUpdateStudy && currentStudy !== `${base}s`) {
+        next.obrazekStudie = `${base}s`;
+        autoManagedImageFieldsRef.current.obrazekStudie = true;
+        changed = true;
+      }
+      if (canAutoUpdateTf && currentTf !== `${base}-TF`) {
+        next.schemaTF = `${base}-TF`;
+        autoManagedImageFieldsRef.current.schemaTF = true;
+        changed = true;
+      }
+
+      lastAutoImageBaseRef.current = base;
+
+      return changed ? next : draft;
+    });
+  };
 
   useEffect(() => {
     async function loadVariantSuggestions() {
@@ -99,6 +194,12 @@ export default function AdminPanel({
     if (!showAddModal) {
       return undefined;
     }
+    autoManagedImageFieldsRef.current = {
+      obrazek: true,
+      obrazekStudie: true,
+      schemaTF: true,
+    };
+    lastAutoImageBaseRef.current = "";
     const handleEsc = (event) => {
       if (event.key === "Escape") {
         setShowAddModal(false);
@@ -109,6 +210,12 @@ export default function AdminPanel({
       window.removeEventListener("keydown", handleEsc);
     };
   }, [showAddModal, setShowAddModal]);
+
+  useEffect(() => {
+    if (!showAddModal) return;
+    // Pri psani cekame na 4 cislice, aby se nepredvyplnovalo prilis brzy (napr. PL287).
+    applyAutoImagePrefill(false);
+  }, [showAddModal, newStampData.rok, newStampData.katalogCislo]);
 
   // Otevření modalu na základě eventu z DetailPage
   useEffect(() => {
@@ -183,6 +290,13 @@ export default function AdminPanel({
       delete window.setShowAddVariantModal;
     };
   }, []);
+
+  useEffect(() => {
+    if (!showAddVariantModal) return;
+    const handleEsc = (e) => { if (e.key === 'Escape') setShowAddVariantModal(false); };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [showAddVariantModal]);
 
   // Funkce pro přidání nové varianty
   const handleAddVariant = async () => {
@@ -313,13 +427,27 @@ export default function AdminPanel({
                 <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Pokud nechceš u zkratky tooltip, napiš před ni hvězdičku (např. *HT)</span>
               </div>
             </div>
-            <form onSubmit={e => { e.preventDefault(); if (onAddStamp) onAddStamp(newStampData); }}>
+            <form
+              onSubmit={e => { e.preventDefault(); if (onAddStamp) onAddStamp(newStampData); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                }
+              }}
+            >
               <div className="label-top-input">
                 <label>Rok vydání</label>
                 <input
                   type="number"
                   value={newStampData.rok}
                   onChange={e => setNewStampData({ ...newStampData, rok: e.target.value })}
+                  onBlur={(e) => applyAutoImagePrefill(true, { rok: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      applyAutoImagePrefill(true, { rok: e.currentTarget.value }, { forceResetOnInvalid: true });
+                    }
+                  }}
                   list={hasSuggestions('rok') ? getSuggestionListId('rok') : undefined}
                   autoComplete="off"
                   required
@@ -336,11 +464,18 @@ export default function AdminPanel({
                 />
               </div>
               <div className="label-top-input">
-                <label>Katalogové číslo</label>
+                <label>Katalogové číslo <span style={{ fontWeight: 400, fontSize: '0.9em', color: '#475569' }}>(pro přepočet adres použij Enter)</span></label>
                 <input
                   type="text"
                   value={newStampData.katalogCislo}
                   onChange={e => setNewStampData({ ...newStampData, katalogCislo: e.target.value })}
+                  onBlur={(e) => applyAutoImagePrefill(true, { katalogCislo: e.target.value })}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      applyAutoImagePrefill(true, { katalogCislo: e.currentTarget.value }, { forceResetOnInvalid: true });
+                    }
+                  }}
                   list={hasSuggestions('katalogCislo') ? getSuggestionListId('katalogCislo') : undefined}
                   autoComplete="off"
                 />
@@ -350,8 +485,10 @@ export default function AdminPanel({
                 <input
                   type="text"
                   value={newStampData.obrazek}
-                  onChange={e => setNewStampData({ ...newStampData, obrazek: e.target.value })}
-                  placeholder="stačí vyplnit např. PL1800 či PL1800.png (pokud není koncovka .jpg)"
+                  onChange={e => {
+                    autoManagedImageFieldsRef.current.obrazek = false;
+                    setNewStampData({ ...newStampData, obrazek: e.target.value });
+                  }}
                   list={hasSuggestions('obrazek') ? getSuggestionListId('obrazek') : undefined}
                   autoComplete="off"
                 />
@@ -361,8 +498,10 @@ export default function AdminPanel({
                 <input
                   type="text"
                   value={newStampData.obrazekStudie}
-                  onChange={e => setNewStampData({ ...newStampData, obrazekStudie: e.target.value })}
-                  placeholder="stačí vyplnit např. PL1800s či PL1800s.png (pokud není koncovka .jpg)"
+                  onChange={e => {
+                    autoManagedImageFieldsRef.current.obrazekStudie = false;
+                    setNewStampData({ ...newStampData, obrazekStudie: e.target.value });
+                  }}
                   list={hasSuggestions('obrazekStudie') ? getSuggestionListId('obrazekStudie') : undefined}
                   autoComplete="off"
                 />
@@ -473,8 +612,10 @@ export default function AdminPanel({
                 <input
                   type="text"
                   value={newStampData.schemaTF}
-                  onChange={e => setNewStampData({ ...newStampData, schemaTF: e.target.value })}
-                  placeholder="stačí vyplnit např. PL1800-TF či PL1800-TF.png (pokud není koncovka .jpg)"
+                  onChange={e => {
+                    autoManagedImageFieldsRef.current.schemaTF = false;
+                    setNewStampData({ ...newStampData, schemaTF: e.target.value });
+                  }}
                   list={hasSuggestions('schemaTF') ? getSuggestionListId('schemaTF') : undefined}
                   autoComplete="off"
                 />

@@ -58,6 +58,20 @@ export default async function handler(req, res) {
       return res.status(200).json(updatedStamp);
     }
 
+    if (req.method === 'DELETE') {
+      const stampResult = await mongoose.connection.db.collection("stamps").deleteOne({ idZnamky: id });
+      if (!stampResult.deletedCount) {
+        return res.status(404).json({ error: "Známka nenalezena nebo již smazána" });
+      }
+
+      const defectsResult = await mongoose.connection.db.collection("defects").deleteMany({ idZnamky: id });
+      return res.status(200).json({
+        success: true,
+        deletedStampId: id,
+        deletedDefectsCount: defectsResult.deletedCount
+      });
+    }
+
     if (req.method !== 'GET') {
       return res.status(405).json({ error: "Metoda není podporována" });
     }

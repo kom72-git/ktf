@@ -145,6 +145,27 @@ app.put("/api/stamps/:id", async (req, res) => {
   }
 });
 
+app.delete("/api/stamps/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const stampResult = await mongoose.connection.db.collection("stamps").deleteOne({ idZnamky: id });
+    if (stampResult.deletedCount === 0) {
+      return res.status(404).json({ error: "Známka nenalezena nebo již smazána" });
+    }
+
+    const defectsResult = await mongoose.connection.db.collection("defects").deleteMany({ idZnamky: id });
+    console.log("Successfully deleted stamp and related defects:", id, defectsResult.deletedCount);
+    res.status(200).json({
+      success: true,
+      deletedStampId: id,
+      deletedDefectsCount: defectsResult.deletedCount
+    });
+  } catch (err) {
+    console.error("Chyba při mazání známky:", err);
+    res.status(500).json({ error: "Chyba při mazání známky", details: err.message });
+  }
+});
+
 // Endpoint pro všechny vady
 app.get("/api/defects", async (req, res) => {
   try {

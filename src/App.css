@@ -420,13 +420,17 @@
 
 /* Input pro editaci roku */
 .edit-year-input {
-  padding: 4px 6px;
+  padding: 6px 8px;
   border: 1px solid #d1d5db;
   border-radius: 4px;
   font-size: inherit;
   font-weight: inherit;
+  text-align: left;
   background: #fff;
-  width: 60px;
+  min-height: 38px;
+  width: 128px;
+  min-width: 128px;
+  box-sizing: border-box;
 }
 /* Notifikační hláška "Uloženo" */
 .ktf-notification {
@@ -466,6 +470,9 @@ textarea.resize-corner {
 .edit-title-input {
   border: 1px solid #d1d5db;
   border-radius: 4px;
+  min-height: 38px;
+  padding: 6px 8px;
+  box-sizing: border-box;
   font-size: inherit;
   font-weight: inherit;
   background: #fff;
@@ -487,6 +494,9 @@ textarea.resize-corner {
 }
 .admin-edit-btn.success {
   background: #10b981;
+}
+.admin-edit-btn.primary {
+  background: #2563eb;
 }
 .admin-edit-btn.danger {
   background: #ef4444;

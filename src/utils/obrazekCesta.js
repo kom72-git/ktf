@@ -5,16 +5,11 @@ function hasExplicitExtension(value) {
   return EXTENSION_RE.test(value);
 }
 
-// Umozni zadat jen nazev souboru (napr. A2273A-1-1) a automaticky doplni img/rok a .jpg.
-export function normalizeStampImagePath(rawValue, stampYear) {
+function normalizeStampImageBase(rawValue, stampYear) {
   const raw = String(rawValue ?? "").trim();
   if (!raw) return "";
 
-  const isExplicitUnavailable = UNAVAILABLE_IMAGE_SUFFIX_RE.test(raw);
   const value = raw.replace(UNAVAILABLE_IMAGE_SUFFIX_RE, "").trim();
-  if (isExplicitUnavailable) {
-    return "img/no-img.png";
-  }
   if (!value) return "";
 
   // Externi URL, data URI nebo absolutni cesta mimo img ponechame beze zmen.
@@ -26,12 +21,15 @@ export function normalizeStampImagePath(rawValue, stampYear) {
 
   // Pokud uz je vyplnena cesta se slozkami, jen doplnime pripadnou koncovku.
   if (cleanedValue.includes("/")) {
-    const parts = cleanedValue.split("/");
+    const withImgPrefix = /^img\//i.test(cleanedValue)
+      ? cleanedValue
+      : (/^\d{4}\//.test(cleanedValue) ? `img/${cleanedValue}` : cleanedValue);
+    const parts = withImgPrefix.split("/");
     const last = parts[parts.length - 1] || "";
     if (!last || hasExplicitExtension(last)) {
-      return cleanedValue;
+      return withImgPrefix;
     }
-    return `${cleanedValue}.jpg`;
+    return `${withImgPrefix}.jpg`;
   }
 
   // Shorthand bez cesty: slozime img/rok/soubor[.ext].
@@ -41,4 +39,23 @@ export function normalizeStampImagePath(rawValue, stampYear) {
     return `img/${year}/${fileName}`;
   }
   return `img/${fileName}`;
+}
+
+// Normalizace pro ulozeni do DB: zachova explicitni suffix (n/a), aby bylo mozne
+// v editaci videt puvodni hodnotu a stale rozpoznat, ze jde o trvale nedostupny obrazek.
+export function normalizeStampImagePathForStorage(rawValue, stampYear) {
+  void stampYear;
+  return String(rawValue ?? "").trim();
+}
+
+// Normalizace pro vykresleni: explicitni suffix (n/a) mapuje na no-img placeholder.
+export function normalizeStampImagePath(rawValue, stampYear) {
+  const raw = String(rawValue ?? "").trim();
+  if (!raw) return "";
+
+  if (UNAVAILABLE_IMAGE_SUFFIX_RE.test(raw)) {
+    return "img/no-img.png";
+  }
+
+  return normalizeStampImageBase(raw, stampYear);
 }

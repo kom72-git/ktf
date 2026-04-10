@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Fancybox } from "@fancyapps/ui";
 import VariantTooltip from "./components/VariantTooltip.jsx";
 import {
@@ -10,7 +10,10 @@ import {
   naturalVariantSort,
   compareVariantsWithBracket
 } from "./utils/katalog.js";
-import { normalizeStampImagePath } from "./utils/obrazekCesta.js";
+import {
+  normalizeStampImagePath,
+  normalizeStampImagePathForStorage
+} from "./utils/obrazekCesta.js";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import "./fancybox-responsive.css";
 import ImageSources from "./components/ImageSources.jsx";
@@ -75,8 +78,62 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const [editStampData, setEditStampData] = useState({});
   const [savedCaption, setSavedCaption] = useState(false);
   const [isSavingHidden, setIsSavingHidden] = useState(false);
+  const [isSavingAllChanges, setIsSavingAllChanges] = useState(false);
+  const [isDeletingStamp, setIsDeletingStamp] = useState(false);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [deleteConfirmDigitInput, setDeleteConfirmDigitInput] = useState('');
   const [hoverPreviewId, setHoverPreviewId] = useState(null);
   const technicalTooltipExcludedFields = new Set([]);
+  const getSuggestionValues = (field) => {
+    const values = fieldSuggestions?.[field];
+    return Array.isArray(values) ? values : [];
+  };
+  const hasSuggestions = (field) => getSuggestionValues(field).length > 0;
+  const getSuggestionListId = (field) => `detail-edit-${field}-options`;
+  const suggestionEntries = Object.entries(fieldSuggestions || {}).filter(
+    ([, values]) => Array.isArray(values) && values.length > 0
+  );
+  const lastAutoImageBaseRef = useRef("");
+  const lastAutoSavedPrefillRef = useRef("");
+  const isAutoSavingPrefillRef = useRef(false);
+
+  const buildImageAddressBase = (yearValue, catalogValue) => {
+    const year = String(yearValue ?? "").trim();
+    const catalog = String(catalogValue ?? "").replace(/\s+/g, "").trim();
+    const hasCatalogCore = /\d{3,}/.test(catalog);
+    if (!/^\d{4}$/.test(year) || !catalog || !hasCatalogCore) return "";
+    return `${year}/${catalog}`;
+  };
+
+  const recalculateImageAddressesFromCatalog = (overrides = {}, options = {}) => {
+    const { forceResetOnInvalid = false } = options;
+    setEditStampData((prev) => {
+      const draft = { ...prev, ...overrides };
+      const base = buildImageAddressBase(draft.rok || item?.rok, draft.katalogCislo || item?.katalogCislo);
+      if (!base) {
+        if (!forceResetOnInvalid) return draft;
+        return {
+          ...draft,
+          obrazek: "",
+          obrazekStudie: "",
+          schemaTF: "",
+        };
+      }
+
+      return {
+        ...draft,
+        obrazek: base,
+        obrazekStudie: `${base}s`,
+        schemaTF: `${base}-TF`,
+      };
+    });
+  };
+
+  const normalizeStampImageFieldValue = (field, value, yearValue) => (
+    field === 'obrazek' || field === 'obrazekStudie' || field === 'schemaTF'
+      ? normalizeStampImagePathForStorage(value, yearValue)
+      : value
+  );
 
   const parseCatalogAB = (catalogValue) => {
     const text = String(catalogValue || "").trim();
@@ -162,6 +219,121 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   useEffect(() => {
     setLocalDefects(defects || []);
   }, [defects]);
+
+  useEffect(() => {
+    if (!isEditingAll || !item?.idZnamky) return;
+
+    let prefillPayload = null;
+
+    setEditStampData((prev) => {
+      const base = buildImageAddressBase(prev.rok || item?.rok, prev.katalogCislo || item?.katalogCislo);
+      const previousAutoBase = lastAutoImageBaseRef.current;
+      const currentMain = String(prev.obrazek || "").trim();
+      const currentStudy = String(prev.obrazekStudie || "").trim();
+      const currentTf = String(prev.schemaTF || "").trim();
+      const nextPayload = {};
+      if (!base) {
+        if (previousAutoBase) {
+          let changedOnClear = false;
+          const cleared = { ...prev };
+          if (currentMain === previousAutoBase) {
+            cleared.obrazek = "";
+            nextPayload.obrazek = "";
+            changedOnClear = true;
+          }
+          if (currentStudy === `${previousAutoBase}s`) {
+            cleared.obrazekStudie = "";
+            nextPayload.obrazekStudie = "";
+            changedOnClear = true;
+          }
+          if (currentTf === `${previousAutoBase}-TF`) {
+            cleared.schemaTF = "";
+            nextPayload.schemaTF = "";
+            changedOnClear = true;
+          }
+          if (Object.keys(nextPayload).length > 0) {
+            prefillPayload = nextPayload;
+          }
+          lastAutoImageBaseRef.current = "";
+          return changedOnClear ? cleared : prev;
+        }
+        lastAutoImageBaseRef.current = "";
+        return prev;
+      }
+
+      let changed = false;
+      const next = { ...prev };
+      const canAutoUpdateMain = !currentMain || (previousAutoBase && currentMain === previousAutoBase);
+      const canAutoUpdateStudy = !currentStudy || (previousAutoBase && currentStudy === `${previousAutoBase}s`);
+      const canAutoUpdateTf = !currentTf || (previousAutoBase && currentTf === `${previousAutoBase}-TF`);
+
+      if (canAutoUpdateMain && currentMain !== base) {
+        next.obrazek = base;
+        nextPayload.obrazek = base;
+        changed = true;
+      }
+      if (canAutoUpdateStudy && currentStudy !== `${base}s`) {
+        next.obrazekStudie = `${base}s`;
+        nextPayload.obrazekStudie = `${base}s`;
+        changed = true;
+      }
+      if (canAutoUpdateTf && currentTf !== `${base}-TF`) {
+        next.schemaTF = `${base}-TF`;
+        nextPayload.schemaTF = `${base}-TF`;
+        changed = true;
+      }
+
+      lastAutoImageBaseRef.current = base;
+      if (Object.keys(nextPayload).length > 0) {
+        prefillPayload = nextPayload;
+      }
+
+      return changed ? next : prev;
+    });
+
+    if (!prefillPayload || Object.keys(prefillPayload).length === 0) return;
+
+    const yearForNormalization = editStampData.rok || item?.rok;
+    const normalizedPayload = Object.entries(prefillPayload).reduce((acc, [field, value]) => {
+      acc[field] = normalizeStampImageFieldValue(field, value, yearForNormalization);
+      return acc;
+    }, {});
+    const signature = `${item.idZnamky}|${JSON.stringify(normalizedPayload)}`;
+    if (isAutoSavingPrefillRef.current || lastAutoSavedPrefillRef.current === signature) {
+      return;
+    }
+
+    isAutoSavingPrefillRef.current = true;
+    lastAutoSavedPrefillRef.current = signature;
+
+    const API_BASE =
+      import.meta.env.VITE_API_BASE ||
+      (window.location.hostname.endsWith("app.github.dev")
+        ? `https://${window.location.hostname}`
+        : window.location.hostname.endsWith("vercel.app")
+        ? ""
+        : "http://localhost:3001");
+
+    fetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(normalizedPayload)
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const updatedStamp = await response.json();
+        setItem(updatedStamp);
+      })
+      .catch((error) => {
+        console.error('Auto-uložení předvyplněných adres selhalo:', error);
+        lastAutoSavedPrefillRef.current = "";
+      })
+      .finally(() => {
+        isAutoSavingPrefillRef.current = false;
+      });
+  }, [isEditingAll, item?.idZnamky, item?.rok, item?.katalogCislo, editStampData.rok, editStampData.katalogCislo]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -282,8 +454,9 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     try {
       const normalizedEditStampData = {
         ...editStampData,
-        obrazek: normalizeStampImagePath(editStampData.obrazek, editStampData.rok || item?.rok),
-        obrazekStudie: normalizeStampImagePath(editStampData.obrazekStudie, editStampData.rok || item?.rok),
+        obrazek: normalizeStampImageFieldValue('obrazek', editStampData.obrazek, editStampData.rok || item?.rok),
+        obrazekStudie: normalizeStampImageFieldValue('obrazekStudie', editStampData.obrazekStudie, editStampData.rok || item?.rok),
+        schemaTF: normalizeStampImageFieldValue('schemaTF', editStampData.schemaTF, editStampData.rok || item?.rok),
       };
       console.log('Saving stamp:', id, normalizedEditStampData);
       
@@ -330,10 +503,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   // Funkce pro uložení technických údajů
   const saveTechnicalField = async (field, value) => {
     try {
-      const normalizedValue =
-        field === 'obrazek' || field === 'obrazekStudie'
-          ? normalizeStampImagePath(value, editStampData.rok || item?.rok)
-          : value;
+      const normalizedValue = normalizeStampImageFieldValue(field, value, editStampData.rok || item?.rok);
       const API_BASE =
         import.meta.env.VITE_API_BASE ||
         (window.location.hostname.endsWith("app.github.dev")
@@ -454,11 +624,56 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
   // Funkce pro uložení všech změn
   const saveAllChanges = async () => {
+    setIsSavingAllChanges(true);
     const stampSaved = await saveStampEdit();
     if (stampSaved) {
-      setIsEditingAll(false);
       setEditingDefect(null);
     }
+    setIsSavingAllChanges(false);
+  };
+
+  const deleteStampWithDefects = () => {
+    if (!item?.idZnamky) return;
+    setDeleteConfirmDigitInput('');
+    setDeleteConfirmVisible(true);
+  };
+
+  const confirmDeleteStamp = async () => {
+    const requiredDigits = String(item?.katalogCislo || "").replace(/\D+/g, "");
+    if (String(deleteConfirmDigitInput).trim() !== requiredDigits) {
+      return;
+    }
+    setDeleteConfirmVisible(false);
+    setIsDeletingStamp(true);
+    try {
+      const API_BASE =
+        import.meta.env.VITE_API_BASE ||
+        (window.location.hostname.endsWith("app.github.dev")
+          ? `https://${window.location.hostname}`
+          : window.location.hostname.endsWith("vercel.app")
+          ? ""
+          : "http://localhost:3001");
+
+      const apiUrl = `${API_BASE}/api/stamps/${item.idZnamky}`;
+
+      const response = await fetch(apiUrl, { method: 'DELETE' });
+      const responseData = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        alert(`Chyba při mazání známky: ${responseData.error || 'Neznámá chyba'}`);
+        return;
+      }
+
+      const deletedVariantsCount = responseData.deletedDefectsCount ?? 0;
+      const stampLabel = `${item?.emise || 'Neznámá emise'} (${item?.katalogCislo || item?.idZnamky || 'bez katalogu'})`;
+      alert(`Smazána známka: ${stampLabel}\nOdstraněno variant: ${deletedVariantsCount}`);
+      if (typeof onBack === 'function') {
+        onBack();
+      }
+      window.location.reload();
+    } catch (error) {
+      alert('Chyba při mazání známky: ' + error.message);
+    }
+    setIsDeletingStamp(false);
   };
 
   const handleVisibilityToggle = async (isPublished) => {
@@ -586,6 +801,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
   const resolvedObrazek = getResolvedFromA("obrazek") || "";
   const resolvedObrazekStudie = getResolvedFromA("obrazekStudie", { inheritFromA: false }) || "";
+  const normalizedResolvedObrazekStudie = normalizeStampImagePath(
+    resolvedObrazekStudie,
+    editStampData.rok || item?.rok
+  );
   const resolvedPopisObrazkuStudie = getResolvedFromA("popisObrazkuStudie", { inheritFromA: false }) || "";
   const resolvedDatumVydani = getResolvedFromA("datumVydani") || "";
   const resolvedNavrh = getResolvedFromA("navrh") || "";
@@ -597,6 +816,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const resolvedRozmer = getResolvedFromA("rozmer") || "";
   const resolvedNaklad = getResolvedFromA("naklad") || "";
   const resolvedSchemaTF = getResolvedFromA("schemaTF") || "";
+  const normalizedItemSchemaTF = normalizeStampImagePath(item?.schemaTF || "", editStampData.rok || item?.rok);
+  const normalizedResolvedSchemaTF = normalizeStampImagePath(resolvedSchemaTF, editStampData.rok || item?.rok);
   const resolvedStudie = getResolvedFromA("Studie") || "";
   const resolvedStudieUrl = getResolvedFromA("studieUrl") || "";
   const resolvedPopisStudie = getResolvedFromA("popisStudie") || "";
@@ -1090,10 +1311,20 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   setIsEditingAll(false);
                 }
               }}
-              className={isEditingAll ? "admin-edit-btn danger" : "admin-edit-btn success"}
+              className={isEditingAll ? "admin-edit-btn primary" : "admin-edit-btn success"}
             >
-              {isEditingAll ? '❌ Zrušit editaci' : 'Editovat'}
+              {isEditingAll ? 'Odejít' : 'Editovat'}
             </button>
+            {isEditingAll && (
+              <button
+                className="ktf-btn-confirm"
+                style={{ marginLeft: '8px' }}
+                onClick={saveAllChanges}
+                disabled={isSavingAllChanges}
+              >
+                {isSavingAllChanges ? 'Ukládám vše…' : '✔ Ulož vše'}
+              </button>
+            )}
             {/* Tlačítko pro otevření modalu v admin panelu */}
             <button
               className="ktf-btn-confirm"
@@ -1108,6 +1339,17 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             >
               + Přidat variantu
             </button>
+            {isEditingAll && (
+              <button
+                className="admin-edit-btn danger"
+                style={{ marginLeft: '8px' }}
+                onClick={deleteStampWithDefects}
+                disabled={isDeletingStamp}
+                title="Smazat známku z databáze včetně všech jejích variant"
+              >
+                {isDeletingStamp ? 'Mažu…' : '🗑 Smazat známku'}
+              </button>
+            )}
             <label
               className="hide-stamp-toggle"
             >
@@ -1135,6 +1377,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 onChange={(e) => setEditStampData({...editStampData, emise: e.target.value})}
                 className="edit-title-input"
                 placeholder="Název emise"
+                list={hasSuggestions('emise') ? getSuggestionListId('emise') : undefined}
+                autoComplete="off"
               />
               <button
                 onClick={() => saveTechnicalField('emise', editStampData.emise)}
@@ -1147,16 +1391,24 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 type="text"
                 value={editStampData.rok}
                 onChange={(e) => setEditStampData({...editStampData, rok: e.target.value})}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    recalculateImageAddressesFromCatalog({ rok: e.currentTarget.value }, { forceResetOnInvalid: true });
+                  }
+                }}
                 className="edit-year-input"
                 placeholder="Rok"
+                list={hasSuggestions('rok') ? getSuggestionListId('rok') : undefined}
+                autoComplete="off"
               />
+              <span>)</span>
               <button
                 onClick={() => saveTechnicalField('rok', editStampData.rok)}
                 className="ktf-btn-check"
               >
                 ✓
               </button>
-              <span>)</span>
             </div>
             <div className="label-top-input edit-title-subfield" style={{ marginTop: 8 }}>
               <label htmlFor="edit-emise-skupina">Skupina emise (jen pro filtr)</label>
@@ -1192,8 +1444,16 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 type="text"
                 value={editStampData.katalogCislo}
                 onChange={(e) => setEditStampData({...editStampData, katalogCislo: e.target.value})}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    recalculateImageAddressesFromCatalog({ katalogCislo: e.currentTarget.value }, { forceResetOnInvalid: true });
+                  }
+                }}
                 className="ktf-edit-input-tech"
                 placeholder="Katalogové číslo"
+                list={hasSuggestions('katalogCislo') ? getSuggestionListId('katalogCislo') : undefined}
+                autoComplete="off"
               />
               <button
                 onClick={() => saveTechnicalField('katalogCislo', editStampData.katalogCislo)}
@@ -1250,7 +1510,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   value={editStampData.obrazek || ''}
                   onChange={(e) => setEditStampData({...editStampData, obrazek: e.target.value})}
                   className="ktf-edit-input-tech ktf-edit-input-long"
-                  placeholder="A2273A-1-1 nebo A2273A-1-1.png"
+                  list={hasSuggestions('obrazek') ? getSuggestionListId('obrazek') : undefined}
+                  autoComplete="off"
                 />
                 <button
                   onClick={() => {
@@ -1272,7 +1533,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   value={editStampData.obrazekStudie || ''}
                   onChange={(e) => setEditStampData({...editStampData, obrazekStudie: e.target.value})}
                   className="ktf-edit-input-tech ktf-edit-input-long"
-                  placeholder="A2273A-1-1-studie nebo studie.webp"
+                  list={hasSuggestions('obrazekStudie') ? getSuggestionListId('obrazekStudie') : undefined}
+                  autoComplete="off"
                 />
                 <button
                   onClick={() => {
@@ -1296,8 +1558,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             if (e.target.classList.contains('study-img-caption') || e.target.closest('.study-img-caption')) return;
             // V detailu preferujeme pouze obrázek studie; když chybí, použijeme no-image.
             let src = '/img/no-image.png';
-            if (resolvedObrazekStudie) {
-              src = resolvedObrazekStudie[0] !== '/' && !resolvedObrazekStudie.startsWith('http') ? '/' + resolvedObrazekStudie : resolvedObrazekStudie;
+            if (normalizedResolvedObrazekStudie) {
+              src = normalizedResolvedObrazekStudie[0] !== '/' && !normalizedResolvedObrazekStudie.startsWith('http')
+                ? '/' + normalizedResolvedObrazekStudie
+                : normalizedResolvedObrazekStudie;
             }
             Fancybox.show([
               {
@@ -1317,7 +1581,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           }}>
             <figure style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
               <img
-                src={(resolvedObrazekStudie && resolvedObrazekStudie[0] !== '/' ? '/' + resolvedObrazekStudie : resolvedObrazekStudie) || '/img/no-image.png'}
+                src={
+                  (normalizedResolvedObrazekStudie && normalizedResolvedObrazekStudie[0] !== '/'
+                    ? '/' + normalizedResolvedObrazekStudie
+                    : normalizedResolvedObrazekStudie)
+                  || '/img/no-image.png'
+                }
                 alt={item.emise}
                 className="stamp-detail-img stamp-detail-img-main"
                 onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
@@ -1370,6 +1639,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     value={editStampData.datumVydani}
                     onChange={(e) => setEditStampData({...editStampData, datumVydani: e.target.value})}
                     className="ktf-edit-input-tech"
+                    list={hasSuggestions('datumVydani') ? getSuggestionListId('datumVydani') : undefined}
+                    autoComplete="off"
                   />
                   <button
                     onClick={() => saveTechnicalField('datumVydani', editStampData.datumVydani)}
@@ -1397,6 +1668,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       }
                     }}
                     className="ktf-edit-input-tech"
+                    list={hasSuggestions('navrh') ? getSuggestionListId('navrh') : undefined}
+                    autoComplete="off"
                   />
                   <button
                     onClick={() => saveTechnicalField('navrh', editStampData.navrh)}
@@ -1424,6 +1697,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       }
                     }}
                     className="ktf-edit-input-tech"
+                    list={hasSuggestions('rytec') ? getSuggestionListId('rytec') : undefined}
+                    autoComplete="off"
                   />
                   <button
                     onClick={() => saveTechnicalField('rytec', editStampData.rytec)}
@@ -1451,6 +1726,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       }
                     }}
                     className="ktf-edit-input-tech"
+                    list={hasSuggestions('druhTisku') ? getSuggestionListId('druhTisku') : undefined}
                     autoComplete="off"
                   />
                   <button
@@ -1479,6 +1755,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       }
                     }}
                     className="ktf-edit-input-tech"
+                    list={hasSuggestions('tiskovaForma') ? getSuggestionListId('tiskovaForma') : undefined}
+                    autoComplete="off"
                   />
                   <button
                     onClick={() => saveTechnicalField('tiskovaForma', editStampData.tiskovaForma)}
@@ -1506,6 +1784,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       }
                     }}
                     className="ktf-edit-input-tech"
+                    list={hasSuggestions('zoubkovani') ? getSuggestionListId('zoubkovani') : undefined}
+                    autoComplete="off"
                   />
                   <button
                     onClick={() => saveTechnicalField('zoubkovani', editStampData.zoubkovani)}
@@ -1533,6 +1813,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       }
                     }}
                     className="ktf-edit-input-tech"
+                    list={hasSuggestions('papir') ? getSuggestionListId('papir') : undefined}
                     autoComplete="off"
                   />
                   <button
@@ -1561,6 +1842,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       }
                     }}
                     className="ktf-edit-input-tech"
+                    list={hasSuggestions('rozmer') ? getSuggestionListId('rozmer') : undefined}
+                    autoComplete="off"
                   />
                   <button
                     onClick={() => saveTechnicalField('rozmer', editStampData.rozmer)}
@@ -1588,6 +1871,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       }
                     }}
                     className="ktf-edit-input-tech"
+                    list={hasSuggestions('naklad') ? getSuggestionListId('naklad') : undefined}
+                    autoComplete="off"
                   />
                   <button
                     onClick={() => saveTechnicalField('naklad', editStampData.naklad)}
@@ -1608,10 +1893,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 <div>
                   {item.schemaTF && (
                     <img
-                      src={normalizeImageSrc(item.schemaTF)}
+                      src={normalizeImageSrc(normalizedItemSchemaTF)}
                       alt="Schéma TF"
                       className="tf-img tf-img-clickable"
-                      onClick={() => openSingleImageLightbox(item.schemaTF, "Schéma TF")}
+                      onClick={() => openSingleImageLightbox(normalizedItemSchemaTF, "Schéma TF")}
                       onError={e => {
                         e.target.onerror = null;
                         e.target.src = '/img/no-image.png';
@@ -1624,14 +1909,11 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       value={editStampData.schemaTF}
                       onChange={(e) => setEditStampData({...editStampData, schemaTF: e.target.value})}
                       className="ktf-edit-input-tech"
-                      placeholder="https://example.com/schema.jpg"
+                      list={hasSuggestions('schemaTF') ? getSuggestionListId('schemaTF') : undefined}
+                      autoComplete="off"
                     />
                     <button
-                      onClick={() => {
-                        let val = editStampData.schemaTF || '';
-                        if (val && val[0] !== '/' && !val.startsWith('http')) val = '/' + val;
-                        saveTechnicalField('schemaTF', val);
-                      }}
+                      onClick={() => saveTechnicalField('schemaTF', editStampData.schemaTF || '')}
                       className="ktf-btn-check"
                     >
                       ✓
@@ -1639,12 +1921,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   </div>
                 </div>
               ) : (
-                resolvedSchemaTF && (
+                normalizedResolvedSchemaTF && (
                   <img
-                    src={normalizeImageSrc(resolvedSchemaTF)}
+                    src={normalizeImageSrc(normalizedResolvedSchemaTF)}
                     alt="Schéma TF"
                     className="tf-img tf-img-clickable"
-                    onClick={() => openSingleImageLightbox(resolvedSchemaTF, "Schéma TF")}
+                    onClick={() => openSingleImageLightbox(normalizedResolvedSchemaTF, "Schéma TF")}
                     onError={e => {
                       e.target.onerror = null;
                       e.target.src = '/img/no-image.png';
@@ -1673,6 +1955,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         onChange={(e) => setEditStampData({...editStampData, Studie: e.target.value})}
                         className="ktf-edit-input-tech ktf-edit-input-long"
                         placeholder="Zpracováno dle studie: text %klikací část%"
+                        list={hasSuggestions('Studie') ? getSuggestionListId('Studie') : undefined}
+                        autoComplete="off"
                       />
                       <button
                         onClick={() => {
@@ -1700,6 +1984,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         onChange={(e) => setEditStampData({...editStampData, studieUrl: e.target.value})}
                         className="ktf-edit-input-tech ktf-edit-input-long"
                         placeholder="https://example.com/studie"
+                        list={hasSuggestions('studieUrl') ? getSuggestionListId('studieUrl') : undefined}
+                        autoComplete="off"
                       />
                       <button
                         onClick={() => {
@@ -2456,6 +2742,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           </section>
         </section>
       )}
+      {isEditingAll && suggestionEntries.map(([field, values]) => (
+        <datalist key={field} id={getSuggestionListId(field)}>
+          {values.map((value) => (
+            <option key={value} value={value} />
+          ))}
+        </datalist>
+      ))}
       {showScrollTopButton && (
         <button
           type="button"
@@ -2467,6 +2760,32 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           ↑
         </button>
       )}
+      {deleteConfirmVisible && (() => {
+        const requiredDigits = String(item?.katalogCislo || "").replace(/\D+/g, "");
+        const digitsMatch = String(deleteConfirmDigitInput).trim() === requiredDigits;
+        return (
+          <div className="ktf-modal-bg" onClick={() => setDeleteConfirmVisible(false)}>
+            <div className="ktf-modal" onClick={e => e.stopPropagation()} style={{maxWidth: 420}}>
+              <p style={{margin: 0, fontWeight: 600, fontSize: '1.05em'}}>Smazat tuto známku?</p>
+              <p style={{margin: 0}}>Budou smazány i všechny její varianty a deskové vady.</p>
+              <p style={{margin: 0}}>Mažete: <strong>{item.katalogCislo || item.idZnamky}</strong></p>
+              <p style={{margin: 0, color: '#555'}}>Pro potvrzení zadejte číselnou část katalogového čísla:</p>
+              <input
+                type="text"
+                value={deleteConfirmDigitInput}
+                onChange={e => setDeleteConfirmDigitInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter' && digitsMatch) confirmDeleteStamp(); }}
+                autoFocus
+                style={{width: '100%', padding: '8px 10px', fontSize: '1em', border: '1px solid #ccc', borderRadius: 6, boxSizing: 'border-box'}}
+              />
+              <div style={{display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4}}>
+                <button onClick={() => setDeleteConfirmVisible(false)} className="back-btn" style={{marginBottom: 0}}>Zrušit</button>
+                <button onClick={confirmDeleteStamp} className="admin-edit-btn danger" disabled={!digitsMatch}>Smazat</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </article>
   );
 }
