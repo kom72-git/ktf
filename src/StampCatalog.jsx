@@ -10,6 +10,7 @@ import {
   sklonujPolozka,
   sklonujEmise,
   sklonujZnamek,
+  sklonujVariant,
   sklonujPosledniVlozeneEmise
 } from './utils/formatovaniTextu.jsx';
 import { katalogSort, emissionToSlug, slugToEmission } from './utils/katalog.js';
@@ -453,6 +454,16 @@ export default function StampCatalog(props) {
     return boxesToRender.reduce((sum, [, items]) => sum + items.length, 0);
   }, [boxesToRender]);
 
+  const displayedVariantCount = useMemo(() => {
+    if (!Array.isArray(defects) || defects.length === 0) return 0;
+    const displayedStampIds = new Set(
+      boxesToRender.flatMap(([, items]) => items.map((stamp) => String(stamp.idZnamky)))
+    );
+    return defects.reduce((sum, defect) => {
+      return displayedStampIds.has(String(defect.idZnamky)) ? sum + 1 : sum;
+    }, 0);
+  }, [boxesToRender, defects]);
+
   const visibleExpandableKeys = useMemo(() => {
     return boxesToRender
       .filter(([, items]) => items.length > 1)
@@ -608,16 +619,16 @@ export default function StampCatalog(props) {
                 {isHomepageDefault ? (
                   homeSortMode === "db" ? (
                     <>
-                      Zobrazeno: <strong>{displayedBoxCount}</strong> z <strong>{totalBoxCount}</strong> posledních vložených emisí do katalogu (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)})
+                      Zobrazeno: <strong>{displayedBoxCount}</strong> z <strong>{totalBoxCount}</strong> posledních vložených emisí do katalogu (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)}, <strong>{displayedVariantCount}</strong> {sklonujVariant(displayedVariantCount)})
                     </>
                   ) : (
                     <>
-                      Zobrazeno: <strong>{displayedBoxCount}</strong> z <strong>{totalBoxCount}</strong> emisí do katalogu (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)})
+                      Zobrazeno: <strong>{displayedBoxCount}</strong> z <strong>{totalBoxCount}</strong> emisí do katalogu (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)}, <strong>{displayedVariantCount}</strong> {sklonujVariant(displayedVariantCount)})
                     </>
                   )
                 ) : (
                   <>
-                    Obsahuje: <strong>{totalBoxCount}</strong> {sklonujEmise(totalBoxCount)} (<strong>{filtered.length}</strong> {sklonujZnamek(filtered.length)})
+                    Obsahuje: <strong>{totalBoxCount}</strong> {sklonujEmise(totalBoxCount)} (<strong>{filtered.length}</strong> {sklonujZnamek(filtered.length)}, <strong>{displayedVariantCount}</strong> {sklonujVariant(displayedVariantCount)})
                   </>
                 )}
               </div>

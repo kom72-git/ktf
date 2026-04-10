@@ -270,6 +270,12 @@ export function sklonujZnamek(count) {
   return "známek";
 }
 
+export function sklonujVariant(count) {
+  if (count === 1) return "varianta";
+  if (count >= 2 && count <= 4) return "varianty";
+  return "variant";
+}
+
 // --- Varianty: zvýraznění textu „část nákladu“ kurzívou ---
 const italicizeCastNakladu = (value = "") =>
   value.replace(/(\(část nákladu\)|část nákladu)/gi, (match, _p1, offset, source) => {
