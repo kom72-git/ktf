@@ -3,6 +3,8 @@
 
 const ZKRATKY_TOOLTIPY = {
   "AP": "aršíkové pole",
+  "BIB": "Bienále ilustrací Bratislava",
+  "Bienále": "umělecká akce pořádaná vždy po dvou letech",
   "DO": "desková odchylka",
   "DV": "desková vada",
   "FL1": "papír s fluorescenční přísadou (pod UV svítí žlutě)",
