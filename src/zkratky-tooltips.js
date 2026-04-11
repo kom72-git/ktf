@@ -11,6 +11,7 @@ const ZKRATKY_TOOLTIPY = {
   "FL2": "papír s fluorescenční přísadou (pod UV svítí žlutozeleně)",
   "HT": "hlubotisk",
   "KČSZ": "Komise československé známky",
+  "KN": "nepotištěný kupón",
   "OTp": "ocelotisk z plochy",
   "OTr": "ocelotisk rotační",
   "OZ": "papír se záměrnou přísadou opticky zjasňující látky",
