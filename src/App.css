@@ -508,6 +508,9 @@ textarea.resize-corner {
   margin-bottom: 16px;
   align-items: center;
   flex-wrap: wrap;
+  width: 100%;
+  position: relative;
+  z-index: 2;
 }
 .scroll-top-button {
   position: fixed;
@@ -538,7 +541,7 @@ textarea.resize-corner {
   outline-offset: 3px;
 }
 .hide-stamp-toggle {
-  margin-left: auto;
+  margin-left: 0;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -548,6 +551,44 @@ textarea.resize-corner {
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   padding: 8px 10px;
+}
+.verified-stamp-wrap {
+  position: absolute;
+  right: 20px;
+  top: -28px;
+  z-index: 1;
+  pointer-events: none;
+}
+.verified-stamp-mark {
+  width: 105px;
+  max-width: min(34vw, 132px);
+  height: auto;
+  display: block;
+  opacity: 0.92;
+  transform: translateY(56px) rotate(-8deg);
+  transform-origin: center;
+}
+@media (max-width: 900px) {
+  .verified-stamp-wrap {
+    right: 14px;
+    top: -20px;
+  }
+  .verified-stamp-mark {
+    width: 93px;
+    max-width: min(34vw, 108px);
+    transform: translateY(52px) rotate(-8deg);
+  }
+}
+@media (max-width: 640px) {
+  .verified-stamp-wrap {
+    right: 10px;
+    top: -22px;
+  }
+  .verified-stamp-mark {
+    width: 86px;
+    max-width: 30vw;
+    transform: translateY(48px) rotate(-8deg);
+  }
 }
 .study-inline-note {
   display: flex;
@@ -1393,6 +1434,7 @@ textarea.resize-corner {
 }
 /* Detail známky */
 .stamp-detail-block {
+  position: relative;
   background: #fff;
   border-radius: 18px;
   margin: 0 auto;

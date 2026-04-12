@@ -78,6 +78,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const [editStampData, setEditStampData] = useState({});
   const [savedCaption, setSavedCaption] = useState(false);
   const [isSavingHidden, setIsSavingHidden] = useState(false);
+  const [isSavingVerified, setIsSavingVerified] = useState(false);
   const [isSavingAllChanges, setIsSavingAllChanges] = useState(false);
   const [isDeletingStamp, setIsDeletingStamp] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
@@ -204,6 +205,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           literatura: data.literatura || '',
           obrazekAutor: data.obrazekAutor || '',
           isHidden: Boolean(data.isHidden),
+          overeno: Boolean(data.overeno),
           variantyVylouceneZA: data.variantyVylouceneZA || [],
           variantyMamZA: data.variantyMamZA || {}
         });
@@ -698,6 +700,27 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     }, 1500);
   };
 
+  const handleVerifiedToggle = async (isVerified) => {
+    const previous = Boolean(editStampData.overeno);
+    setEditStampData((prev) => ({ ...prev, overeno: isVerified }));
+    setIsSavingVerified(true);
+    const saved = await saveMainField('overeno', isVerified);
+    setIsSavingVerified(false);
+    if (!saved) {
+      setEditStampData((prev) => ({ ...prev, overeno: previous }));
+      return;
+    }
+    const notification = document.createElement('div');
+    notification.textContent = 'Uloženo';
+    notification.className = 'ktf-notification';
+    document.body.appendChild(notification);
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        document.body.removeChild(notification);
+      }
+    }, 1500);
+  };
+
   if (!item) return <div className="p-8">Načítám…</div>;
   if (item.error) {
     console.error("[DetailPage] API vrátilo chybu:", item.error);
@@ -1085,6 +1108,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     return Number.isFinite(parsed) ? parsed : "";
   };
   const secondStudyBlockClass = isEditingAll ? 'study-note-block editing' : 'study-note-block';
+  const isVerifiedStamp = Boolean(item?.overeno);
   const detailHeadingId = `stamp-detail-${item.idZnamky || id}-title`;
   const specHeadingId = `${detailHeadingId}-spec`;
   const studyHeadingId = `${detailHeadingId}-study`;
@@ -1306,7 +1330,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     popisStudie: item.popisStudie || '',
                     popisStudie2: item.popisStudie2 || '',
                     literatura: item.literatura || '',
-                    isHidden: Boolean(item.isHidden)
+                    isHidden: Boolean(item.isHidden),
+                    overeno: Boolean(item.overeno)
                   });
                   setIsEditingAll(false);
                 }
@@ -1361,9 +1386,31 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
               />
               {isSavingHidden ? 'ukládám…' : 'zveřejněno'}
             </label>
+            <label
+              className="hide-stamp-toggle verified-toggle"
+            >
+              <input
+                type="checkbox"
+                checked={Boolean(editStampData.overeno)}
+                onChange={(e) => handleVerifiedToggle(e.target.checked)}
+                disabled={isSavingVerified}
+              />
+              {isSavingVerified ? 'ukládám…' : 'ověřeno'}
+            </label>
           </>
         )}
       </div>
+      {isVerifiedStamp && (
+        <span className="verified-stamp-wrap" role="status" aria-label="Známka je ověřená">
+          <img
+            src="/img/verified.svg"
+            alt="Ověřeno"
+            className="verified-stamp-mark"
+            loading="lazy"
+            decoding="async"
+          />
+        </span>
+      )}
       <header className="detail-title">
         {isEditingAll ? (
           <>
