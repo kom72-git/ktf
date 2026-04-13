@@ -560,13 +560,15 @@ textarea.resize-corner {
   pointer-events: none;
 }
 .verified-stamp-mark {
-  width: 105px;
+  width: 112px;
   max-width: min(34vw, 132px);
   height: auto;
   display: block;
-  opacity: 0.92;
-  transform: translateY(56px) rotate(-8deg);
+  opacity: 1;
+  transform: translateY(56px) rotate(-4deg);
   transform-origin: center;
+  image-rendering: auto;
+  filter: contrast(1.08) saturate(1.02);
 }
 @media (max-width: 900px) {
   .verified-stamp-wrap {
@@ -574,9 +576,9 @@ textarea.resize-corner {
     top: -20px;
   }
   .verified-stamp-mark {
-    width: 93px;
+    width: 98px;
     max-width: min(34vw, 108px);
-    transform: translateY(52px) rotate(-8deg);
+    transform: translateY(52px) rotate(-5deg);
   }
 }
 @media (max-width: 640px) {
@@ -587,7 +589,7 @@ textarea.resize-corner {
   .verified-stamp-mark {
     width: 86px;
     max-width: 30vw;
-    transform: translateY(48px) rotate(-8deg);
+    transform: translateY(48px) rotate(-5deg);
   }
 }
 .study-inline-note {
