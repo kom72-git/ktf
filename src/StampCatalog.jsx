@@ -459,9 +459,71 @@ export default function StampCatalog(props) {
     const displayedStampIds = new Set(
       boxesToRender.flatMap(([, items]) => items.map((stamp) => String(stamp.idZnamky)))
     );
-    return defects.reduce((sum, defect) => {
-      return displayedStampIds.has(String(defect.idZnamky)) ? sum + 1 : sum;
-    }, 0);
+
+    // PŮVODNÍ STAV: počítal všechny vložené DV (řádky defects) pro zobrazené známky.
+    // const displayedDvCount = defects.reduce((sum, defect) => {
+    //   return displayedStampIds.has(String(defect.idZnamky)) ? sum + 1 : sum;
+    // }, 0);
+
+    // NOVĚ: počítáme skutečný počet variant (unikátní variantaVady na známku),
+    // tj. více rozlišovacích DV stejné varianty se započítá jen jednou.
+    const variantsByStamp = new Map();
+
+    const isSharedVariant = (value) => {
+      const raw = String(value || "").trim();
+      if (!raw) return false;
+      // Společné varianty (např. "A, B") nechceme do počtu zahrnovat.
+      if (raw.includes(",")) return true;
+      const normalized = raw
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase();
+      return normalized.includes("SPOLECNE");
+    };
+
+    defects.forEach((defect) => {
+      const stampId = String(defect?.idZnamky || "").trim();
+      if (!displayedStampIds.has(stampId)) return;
+
+      const rawVariant = String(defect?.variantaVady || "").trim();
+      if (!rawVariant) return;
+      if (isSharedVariant(rawVariant)) return;
+
+      const normalizedVariant = rawVariant.replace(/\s+/g, "").toUpperCase();
+
+      if (!variantsByStamp.has(stampId)) {
+        variantsByStamp.set(stampId, new Set());
+      }
+      variantsByStamp.get(stampId).add(normalizedVariant);
+    });
+
+    let total = 0;
+    variantsByStamp.forEach((variants) => {
+      const variantList = Array.from(variants);
+
+      const hasChildVariant = (variant) => {
+        return variantList.some((candidate) => {
+          if (candidate === variant) return false;
+
+          // Přímá hierarchie se zapisuje tečkou: B1 -> B1.1, B1.2 ...
+          if (candidate.startsWith(`${variant}.`)) return true;
+
+          // Základní písmeno je rodič číselných větví: A -> A1, A2 ...
+          if (/^[A-Z]$/.test(variant) && new RegExp(`^${variant}\\d`).test(candidate)) {
+            return true;
+          }
+
+          return false;
+        });
+      };
+
+      variantList.forEach((variant) => {
+        if (hasChildVariant(variant)) return;
+        total += 1;
+      });
+    });
+
+    return total;
   }, [boxesToRender, defects]);
 
   const visibleExpandableKeys = useMemo(() => {
