@@ -939,6 +939,17 @@ textarea.resize-corner {
   font-weight: normal;
   font-size: 0.925em;
 }
+.variant-typ-edit-input {
+  padding: 2px 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  font-size: 0.925em;
+  font-weight: normal;
+  background: #fff;
+  font-family: inherit;
+  width: 320px;
+  vertical-align: middle;
+}
 /* --- Patička webu --- */
 .footer {
   width: 100%;

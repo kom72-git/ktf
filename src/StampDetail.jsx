@@ -2173,8 +2173,30 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
               <section key={group} aria-labelledby={`${variantsHeadingBaseId}-${group}`}>
                 <h3 id={`${variantsHeadingBaseId}-${group}`} className="variant-subtitle">
                   {isNumericGroup ? numericHeading : `Varianta ${group}`}
-                  {typVarianty && (
-                    <><span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span><span className="variant-type">{typVarianty}</span></>
+                  {isEditingAll && isAdmin && !isNumericGroup && mainDef ? (
+                    <>
+                      <span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span>
+                      <input
+                        type="text"
+                        className="variant-typ-edit-input"
+                        defaultValue={typVarianty}
+                        placeholder="typ varianty…"
+                        id={`typVarianty-input-${group}`}
+                      />
+                      <button
+                        className="ktf-btn-check"
+                        title="Uložit typ varianty"
+                        style={{ marginLeft: '4px', verticalAlign: 'middle' }}
+                        onClick={() => {
+                          const val = document.getElementById(`typVarianty-input-${group}`)?.value ?? '';
+                          saveDefectEdit(mainDef._id || mainDef.idVady, { ...mainDef, typVarianty: val });
+                        }}
+                      >✓</button>
+                    </>
+                  ) : (
+                    typVarianty && (
+                      <><span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span><span className="variant-type">{typVarianty}</span></>
+                    )
                   )}
                 </h3>
                 {subvariantLabels.length > 0 && (
