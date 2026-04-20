@@ -28,13 +28,12 @@ export default function Help() {
               </div>
 
               <p className="help-lead">
-                Všechny studie rozlišení tiskových forem československých známek přehledně na jednom místě.
-                Účelem je zachovat práci autorů studií bez zbytečných zásahů do jejich obsahu.
+                Tyto stránky poskytují široké filatelistické veřejnosti seznam o všech studiích, které rozlišují tiskové formy, desky a pole při tisku československých známek v letech 1945-92.
               </p>
               <p className="help-lead help-lead-secondary">
                 Web má usnadnit orientaci v materiálech, které by jinak bylo potřeba dohledávat jednotlivě na různých místech internetu,
-                ve zpravodajích nebo ve starších časopisech. Místo roztříštěného hledání nabízí souvislý přehled, na který je možné se
-                vracet při běžném prohlížení i podrobnějším studiu.
+                ve zpravodajích nebo ve starších časopisech. Místo roztříštěného hledání nabízí ucelený přehled, který je možný
+                využít zejména při podrobnějším studiu a kompletaci vaší specializované sbírky československých známek.
               </p>
             </div>
 
@@ -60,16 +59,14 @@ export default function Help() {
 
           <div className="help-grid">
             <section className="help-card">
-              <h2 className="help-card-title">Jak začít</h2>
+              <h2 className="help-card-title">Hlavní stránka</h2>
               <ul className="help-list">
-                <li>Na hlavní stránce je výchozí řazení od nejnovějších, tedy naposledy vložené emise a známky v databázi se zobrazují na prvním místě.</li>
-                <li>Výchozí zobrazení je <strong>12 emisí na stránku</strong>, počet lze změnit v pravé části nad katalogem.</li>
                 <li>
-                  Známky v rámci emisí se sdružují do boxů. Jednotlivý box rozbalíš tlačítkem
+                  Známky se v rámci emisí sdružují do boxů. Pro zobrazení jednotlivých známek box rozbalíš tlačítkem
                   <span className="help-ui-sample" aria-hidden="true">
                     <button type="button" className="stamp-box-toggle" disabled>+</button>
                   </span>{" "}
-                  nebo všechny najednou tlačítkem
+                  nebo všechny najednou pomocí
                   <span className="help-ui-sample" aria-hidden="true">
                     <button type="button" className="count-control-toggle" disabled>
                       <svg className="count-control-diag-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -83,6 +80,8 @@ export default function Help() {
                     </button>
                   </span>
                 </li>
+                <li>Jako výchozí řazení se používá zobrazení podle naposledy vložených emisí do databáze. Nejnovější se zobrazí na prvním místě.</li>
+                <li>Výchozí výpis je <strong>12 emisí na stránku</strong>, počet lze změnit v pravé části nad katalogem.</li>
                 <li>Řazení boxů lze přepnout na řazení dle emise, katalogového čísla nebo ponechat výchozí režim nové.</li>
                 <li>Kliknutí na logo v hlavičce tě vždy vrátí na hlavní stránku katalogu.</li>
               </ul>
@@ -92,7 +91,7 @@ export default function Help() {
               <h2 className="help-card-title">Vyhledávání a filtry</h2>
               <ul className="help-list">
                 <li>Pro rychlé nalezení konkrétní položky použij pole Vyhledat.</li>
-                <li>Ve filtrech můžeš samostatně vybírat podle Roku vydání, Názvu emise a Katalogového čísla.</li>
+                <li>Ve filtrech můžeš samostatně zobrazovat podle Roku vydání, Názvu emise a Katalogového čísla.</li>
                 <li>Filtry je možné mezi sebou kombinovat.</li>
                 <li>Prohlížeč si pamatuje naposledy zvolený počet zobrazených emisí a způsob řazení boxů. Aktivní filtry ani pole Vyhledat se neukládají.</li>
                 <li>
@@ -109,44 +108,39 @@ export default function Help() {
               <ul className="help-list">
                 <li>V detailu najdeš hlavní obrázek studie a základní přehled informací ke konkrétní známce.</li>
                 <li>
-                  U aršíků se často objevují dvě možné varianty katalogového čísla (zoubkovaný a nezoubkovaný), například:
-                  <span className="help-catalog-preview" aria-label="Ukázka řádku katalogového čísla">
-                    <span className="help-catalog-preview-label">Katalogové číslo:</span>
-                    <span className="help-catalog-preview-value">A 2852A</span>
-                    <span className="help-catalog-preview-sep">|</span>
-                    <a
-                      href="#"
-                      className="details-link help-catalog-preview-link"
-                      onClick={event => event.preventDefault()}
-                    >
-                      A 2852B
-                    </a>
+                  U aršíků se často objevují dvě možné varianty katalogového čísla (zoubkovaný a nezoubkovaný), například: <strong>A 2852A</strong> | <a
+                    href="#"
+                    className="details-link"
+                    onClick={event => event.preventDefault()}
+                  >A 2852B</a>
+                </li>
+                <li>V hlavním obrázku studie jsou grafické odkazy na pozici výskytu jednotlivých variant.</li>
+                <li>Ty jsou později na stránce jednotlivě vypsané.</li>
+                <li>
+                  <span className="help-verified-item">
+                    <span>Razítko Ověřeno v pravém horním rohu detailu známky znamená, že obsah je odsouhlasený samotným autorem studie.</span>
+                    <img src="/img/verified.svg" alt="Ověřeno" className="help-verified-sample" />
                   </span>
                 </li>
-                <li>V hlavním obrázku studie jsou odkazy na výskyt jednotlivých variant, které jsou níže na stránce vypsané.</li>
-                <li>V režimu Náhledu obrázků je možné mezi nimi procházet i pomocí šipek na klávesnici.</li>
               </ul>
             </section>
 
             <section className="help-card">
               <h2 className="help-card-title">Varianty</h2>
               <ul className="help-list">
-                <li>V této části je výpis variant a DV včetně doprovodných obrázků a popisů.</li>
-                <li><strong>Varianta</strong> je obecné označení pro jednotlivá pole na tiskové formě.</li>
-                <li>
-                  U aršíků se často objevují varianty katalogového čísla pro zoubkovaný a nezoubkovaný.
-                </li>
-                <li>Obrázky variant lze po kliknutí zvětšit a přibližovat kolečkem myši.</li>
+                <li><strong>Varianta</strong> je obecné označení pro jednotlivá pole tiskové formy.</li>
+                <li>Obrázky variant lze v módu prohlížení zvětšovat kolečkem myši. Mezi nimi je možné procházet i pomocí šipek na klávesnici.</li>
                 <li>Pokud je obrázek varianty černobílý a ohraničený čárkovaně, obvykle jde o výstřižek ze studie.</li>
+                <li>Pokud je ohraničený čárkovaně celý box varianty, jedná se o dodanou variantu nad rámec původní studie.</li>
                 <li>
-                  V popisu DV jednotlivé varianty se může objevit značka
+                  V popisu u jednotlivých variant se může objevit značka
                   <span className="help-ui-sample">
                     <VariantTooltip tooltip={<span style={{ fontSize: "13px" }}>Ukázka plného popisu DV</span>}>
                       …
                     </VariantTooltip>
                   </span>
                   <br />
-                  po najetí myší nebo na mobilu ťapnutím se zobrazí celý popis.
+                  Pokud na ní najedu myší nebo na ní ťapnu na mobilu, zobrazí se celý popis.
                 </li>
               </ul>
             </section>

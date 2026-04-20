@@ -1074,7 +1074,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     if (!token || !token.content) return null;
     return (
       <>
-        {boldBracket ? <strong>[{token.content}]</strong> : <span>[{token.content}]</span>}
+        {boldBracket ? <strong>{token.content}</strong> : <span>{token.content}</span>}
         {token.suffix ? <span className="variant-suffix">{token.suffix}</span> : null}
       </>
     );
@@ -2161,19 +2161,32 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             const numericNums = isNumericGroup
               ? sortedDefs.map(d => parseInt(d.variantaVady, 10)).filter(n => !isNaN(n)).sort((a,b) => a-b)
               : [];
-            const numericHeading = isNumericGroup && numericNums.length > 0
+            const numericRangeLabel = isNumericGroup && numericNums.length > 0
               ? (numericNums.length === 1
-                  ? `Varianta ${numericNums[0]}`
-                  : `Varianty ${numericNums[0]} - ${numericNums[numericNums.length - 1]}`)
-              : null;
+                  ? `${numericNums[0]}`
+                  : `${numericNums[0]} - ${numericNums[numericNums.length - 1]}`)
+              : "";
             const mainDef = sortedDefs.find(def => def.variantaVady &&
               (def.variantaVady.length === 1 || /^\d+$/.test(def.variantaVady)));
             const typVarianty = mainDef && mainDef.typVarianty ? mainDef.typVarianty : '';
+            const defaultVariantHeading = isNumericGroup
+              ? (
+                <>
+                  <span className="variant-subtitle-prefix">{numericNums.length === 1 ? "Varianta" : "Varianty"}</span>
+                  <span className="variant-subtitle-name">{numericRangeLabel}</span>
+                </>
+              )
+              : (
+                <>
+                  <span className="variant-subtitle-prefix">Varianta</span>
+                  <span className="variant-subtitle-name">{group}</span>
+                </>
+              );
             return (
               <section key={group} aria-labelledby={`${variantsHeadingBaseId}-${group}`}>
                 <h3 id={`${variantsHeadingBaseId}-${group}`} className="variant-subtitle">
-                  {isNumericGroup ? numericHeading : `Varianta ${group}`}
-                  {isEditingAll && isAdmin && !isNumericGroup && mainDef ? (
+                  {defaultVariantHeading}
+                  {isEditingAll && isAdmin && mainDef ? (
                     <>
                       <span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span>
                       <input
@@ -2284,7 +2297,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                         )}
                         <div className="variant-label">
                           {variantToken && (
-                            <span className="variant-label-token">
+                            <span className={`variant-label-token${def.tucneVSeznamu ? ' variant-label-token-emph' : ''}`}>
                               {renderVariantToken(variantToken, !!def.tucneVSeznamu)}
                             </span>
                           )}
@@ -2431,13 +2444,48 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           {/* Speciální skupina pro varianty s + */}
           {plusVariantsOrdered.length > 0 && (
             <section aria-labelledby={`${variantsHeadingBaseId}-plus`}>
+              {(() => {
+                const plusVariantLabel = plusVariantsOrdered[0]?.variantaVady || "";
+                const isPlural = plusVariantLabel.includes(",");
+                const mainPlusDef = plusVariantsOrdered.find(def => def?.variantaVady) || plusVariantsOrdered[0];
+                const plusTypVarianty = mainPlusDef?.typVarianty || "";
+                return (
               <h3 id={`${variantsHeadingBaseId}-plus`} className="variant-subtitle">
-                {plusVariantsOrdered[0]?.variantaVady && plusVariantsOrdered[0].variantaVady.includes(',')
-                  ? `Společné ${plusVariantsOrdered[0].variantaVady}`
-                  : `Varianta ${plusVariantsOrdered[0]?.variantaVady}`}
+                <>
+                  <span className="variant-subtitle-prefix">{isPlural ? "Varianty" : "Varianta"}</span>
+                  <span className="variant-subtitle-name">{plusVariantLabel}</span>
+                </>
+                {isEditingAll && isAdmin && mainPlusDef ? (
+                  <>
+                    <span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span>
+                    <input
+                      type="text"
+                      className="variant-typ-edit-input"
+                      defaultValue={plusTypVarianty}
+                      placeholder="typ varianty…"
+                      id="typVarianty-input-plus"
+                    />
+                    <button
+                      className="ktf-btn-check"
+                      title="Uložit typ varianty"
+                      style={{ marginLeft: '4px', verticalAlign: 'middle' }}
+                      onClick={() => {
+                        const val = document.getElementById('typVarianty-input-plus')?.value ?? '';
+                        saveDefectEdit(mainPlusDef._id || mainPlusDef.idVady, { ...mainPlusDef, typVarianty: val });
+                      }}
+                    >✓</button>
+                  </>
+                ) : (
+                  plusTypVarianty && (
+                    <><span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span><span className="variant-type">{plusTypVarianty}</span></>
+                  )
+                )}
               </h3>
+                );
+              })()}
               <div className="variants">
                 {plusVariantsOrdered.map((def, idx) => {
+                  const plusDefectId = def._id || def.idVady;
                   const flatIndex = allVariantsOrdered.indexOf(def);
                   const imagePathFlags = parseDefectImagePathFlags(def.obrazekVady);
                   const isSpecial = imagePathFlags.hasImageDashedMarker;
@@ -2493,7 +2541,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                               let val = e.target.value;
                               if (val && val[0] !== '/' && !val.startsWith('http')) val = '/' + val;
                               if (val !== def.obrazekVady) {
-                                saveDefectEdit(def._id, { ...def, obrazekVady: val });
+                                saveDefectEdit(plusDefectId, { ...def, obrazekVady: val });
                               }
                             }}
                           />
@@ -2510,7 +2558,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     )}
                     <div className="variant-label">
                       {variantToken && (
-                        <span className="variant-label-token">
+                        <span className={`variant-label-token${def.tucneVSeznamu ? ' variant-label-token-emph' : ''}`}>
                           {renderVariantToken(variantToken, !!def.tucneVSeznamu)}
                         </span>
                       )}
@@ -2568,7 +2616,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                               const orderInput = container.querySelector('input[data-field=\"poradiVady\"]');
                               const boldCheckbox = container.querySelector('input[data-field=\"tucneVSeznamu\"]');
                               // Uložíme všechny hodnoty najednou
-                              saveDefectEdit(def._id, { 
+                              saveDefectEdit(plusDefectId, { 
                                 ...def, 
                                 variantaVady: variantInput?.value || '',
                                 umisteniVady: umisteniInput?.value || '',
@@ -2584,7 +2632,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                           </button>
                           <span className="edit-variant-help">Uloží vše</span>
                           <button
-                            onClick={() => deleteDefect(def._id)}
+                            onClick={() => deleteDefect(plusDefectId)}
                             className="ktf-btn-delete"
                             title="Smazat variantu z databáze"
                           >
