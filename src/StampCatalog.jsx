@@ -954,6 +954,7 @@ export default function StampCatalog(props) {
         onAddStamp={async (stampData) => {
           const normalizedStampData = {
             ...stampData,
+            isHidden: stampData.isHidden ?? true,
             obrazek: normalizeStampImagePathForStorage(stampData.obrazek, stampData.rok),
             obrazekStudie: normalizeStampImagePathForStorage(stampData.obrazekStudie, stampData.rok),
             schemaTF: normalizeStampImagePathForStorage(stampData.schemaTF, stampData.rok)

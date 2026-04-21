@@ -12,6 +12,14 @@ export default function AdminPanel({
   fieldSuggestions = {},
 }) {
   const DEFAULT_DEFECT_DESCRIPTION = "";
+  const QUICK_LOCATION_CHIPS = ["ZP1", "ZP2", "ZP3", "ZP4"];
+  const LOCATION_PREFIX_OPTIONS = [
+    { symbol: "▲", text: "nad " },
+    { symbol: "▼", text: "pod " },
+    { symbol: "◄", text: "vlevo od " },
+    { symbol: "►", text: "vpravo od " },
+  ];
+  const VARIANT_LETTER_OPTIONS = ["A", "B", "C", "D", "E", "F", "G", "H"];
   const [newStampData, setNewStampData] = useState({
     emise: '',
     rok: '',
@@ -53,6 +61,116 @@ export default function AdminPanel({
     variantaVady: [],
     umisteniVady: []
   });
+  const getLocationPrefix = (value) => {
+    const match = String(value ?? "").match(/^\s*(nad|pod|vlevo od|vpravo od)(?:\s+|$)/i);
+    return match ? `${match[1].toLowerCase()} ` : "";
+  };
+  const applyLocationPrefix = (prefixText) => {
+    setNewVariantData((prev) => {
+      const current = String(prev.umisteniVady ?? "").trim();
+      const currentPrefix = getLocationPrefix(prev.umisteniVady);
+      const withoutPrefix = current.replace(/^\s*(nad|pod|vlevo od|vpravo od)(?:\s+|$)/i, "").trim();
+      if (currentPrefix === prefixText) {
+        return {
+          ...prev,
+          umisteniVady: withoutPrefix,
+        };
+      }
+      const nextValue = withoutPrefix ? `${prefixText}${withoutPrefix}` : prefixText;
+      return {
+        ...prev,
+        umisteniVady: nextValue,
+      };
+    });
+  };
+  const applyLocationChip = (chip) => {
+    setNewVariantData((prev) => {
+      const prefix = getLocationPrefix(prev.umisteniVady);
+      const locationWithoutPrefix = String(prev.umisteniVady ?? "")
+        .trim()
+        .replace(/^\s*(nad|pod|vlevo od|vpravo od)(?:\s+|$)/i, "")
+        .trim();
+      const isSameChip = locationWithoutPrefix.toUpperCase() === chip;
+      return {
+        ...prev,
+        umisteniVady: isSameChip ? prefix : `${prefix}${chip}`,
+      };
+    });
+  };
+  const updateVariantDataWithImageSync = (updates = {}, options = {}) => {
+    const { forceImageSync = false } = options;
+    setNewVariantData((prev) => {
+      const next = {
+        ...prev,
+        ...updates,
+      };
+      const shouldSyncImage = forceImageSync || isVariantImageAutoManagedRef.current;
+      if (shouldSyncImage) {
+        const currentBase = String(variantImageBaseRef.current || "").trim();
+        const variantForStrip = String(prev.variantaVady ?? "").trim().replace(/\s+/g, "");
+        const orderForStrip = String(prev.poradiVady ?? "").trim();
+        const previousImage = String(prev.obrazekVady ?? "").trim();
+        let fallbackBase = previousImage;
+        if (variantForStrip && orderForStrip && fallbackBase.endsWith(`-${variantForStrip}-${orderForStrip}`)) {
+          fallbackBase = fallbackBase.slice(0, -(`-${variantForStrip}-${orderForStrip}`).length);
+        } else if (variantForStrip && fallbackBase.endsWith(`-${variantForStrip}`)) {
+          fallbackBase = fallbackBase.slice(0, -(`-${variantForStrip}`).length);
+        }
+        const resolvedBase = currentBase || fallbackBase;
+        if (resolvedBase && !currentBase) {
+          variantImageBaseRef.current = resolvedBase;
+        }
+        const composedPath = buildVariantImagePath(
+          resolvedBase,
+          next.variantaVady,
+          next.poradiVady
+        );
+        if (composedPath) {
+          next.obrazekVady = composedPath;
+        }
+      }
+      return next;
+    });
+  };
+  const stepVariantLetter = (direction) => {
+    const rawValue = String(newVariantData.variantaVady ?? "");
+    const match = rawValue.match(/^([A-Ha-h])(.*)$/);
+    const fallbackLetter = direction >= 0 ? "A" : "";
+
+    if (!match) {
+      updateVariantDataWithImageSync({ variantaVady: fallbackLetter }, { forceImageSync: true });
+      return;
+    }
+
+    const currentLetter = match[1].toUpperCase();
+    const suffix = match[2] || "";
+    const currentIndex = VARIANT_LETTER_OPTIONS.indexOf(currentLetter);
+    const safeIndex = currentIndex === -1 ? 0 : currentIndex;
+    const nextIndex = Math.min(
+      VARIANT_LETTER_OPTIONS.length - 1,
+      Math.max(0, safeIndex + direction)
+    );
+    const nextLetter = direction < 0 && safeIndex === 0
+      ? ""
+      : `${VARIANT_LETTER_OPTIONS[nextIndex]}${suffix}`;
+
+    updateVariantDataWithImageSync(
+      { variantaVady: nextLetter },
+      { forceImageSync: true }
+    );
+  };
+  const stepVariantOrder = (direction) => {
+    const raw = String(newVariantData.poradiVady ?? "").trim();
+    const parsed = Number.parseInt(raw, 10);
+    const base = Number.isFinite(parsed) ? parsed : 0;
+    let nextOrder = "";
+    if (direction > 0) {
+      nextOrder = String(Math.min(99, base + 1));
+    } else if (base > 1) {
+      nextOrder = String(base - 1);
+    }
+    updateVariantDataWithImageSync({ poradiVady: nextOrder }, { forceImageSync: true });
+  };
   const getSuggestionValues = (field) => {
     const values = fieldSuggestions?.[field];
     return Array.isArray(values) ? values : [];
@@ -63,11 +181,23 @@ export default function AdminPanel({
     ([, values]) => Array.isArray(values) && values.length > 0
   );
   const lastAutoImageBaseRef = useRef("");
+  const variantImageBaseRef = useRef("");
+  const isVariantImageAutoManagedRef = useRef(true);
   const autoManagedImageFieldsRef = useRef({
     obrazek: true,
     obrazekStudie: true,
     schemaTF: true,
   });
+  const buildVariantImagePath = (basePath, variantValue, orderValue) => {
+    const base = String(basePath ?? "").trim();
+    const variant = String(variantValue ?? "").trim().replace(/\s+/g, "");
+    const order = String(orderValue ?? "").trim();
+
+    if (!base) return "";
+    if (!variant) return base;
+    if (!order) return `${base}-${variant}`;
+    return `${base}-${variant}-${order}`;
+  };
   const buildImageAddressBase = (yearValue, catalogValue, options = {}) => {
     const { allowThreeDigit = false } = options;
     const year = String(yearValue ?? "").trim();
@@ -243,13 +373,16 @@ export default function AdminPanel({
           }
         }
       } catch (err) {}
+      variantImageBaseRef.current = obrazekVady;
+      isVariantImageAutoManagedRef.current = true;
       setNewVariantData({
         idZnamky,
         variantaVady: '',
         umisteniVady: '',
         poradiVady: '',
         obrazekVady,
-        popisVady: DEFAULT_DEFECT_DESCRIPTION
+        popisVady: DEFAULT_DEFECT_DESCRIPTION,
+        mam: false
       });
       setShowAddVariantModal(true);
     }
@@ -274,6 +407,8 @@ export default function AdminPanel({
           }
         }
       } catch (err) {}
+      variantImageBaseRef.current = obrazekVady;
+      isVariantImageAutoManagedRef.current = true;
       setNewVariantData({
         idZnamky,
         variantaVady: '',
@@ -297,6 +432,26 @@ export default function AdminPanel({
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [showAddVariantModal]);
+
+  useEffect(() => {
+    if (!showAddVariantModal) return;
+    if (!isVariantImageAutoManagedRef.current) return;
+
+    setNewVariantData((prev) => {
+      const nextImagePath = buildVariantImagePath(
+        variantImageBaseRef.current,
+        prev.variantaVady,
+        prev.poradiVady
+      );
+      if (!nextImagePath || nextImagePath === prev.obrazekVady) {
+        return prev;
+      }
+      return {
+        ...prev,
+        obrazekVady: nextImagePath,
+      };
+    });
+  }, [showAddVariantModal, newVariantData.variantaVady, newVariantData.poradiVady]);
 
   // Funkce pro přidání nové varianty
   const handleAddVariant = async () => {
@@ -331,6 +486,8 @@ export default function AdminPanel({
           popisVady: DEFAULT_DEFECT_DESCRIPTION,
           mam: false
         });
+        variantImageBaseRef.current = "";
+        isVariantImageAutoManagedRef.current = true;
         window.location.reload();
       } else {
         alert('Chyba při přidávání varianty');
@@ -751,44 +908,220 @@ export default function AdminPanel({
               </div>
               <div className="label-top-input">
                 <label>Umístění</label>
-                <input
-                  type="text"
-                  value={newVariantData.umisteniVady}
-                  onChange={e => setNewVariantData(v => ({ ...v, umisteniVady: e.target.value }))}
-                  className="ktf-edit-input-tech"
-                  list={variantSuggestions.umisteniVady.length ? "variant-umisteni-options" : undefined}
-                  autoComplete="off"
-                />
-              </div>
-              <div className="label-top-input">
-                <label>Obrázek vady</label>
-                <input type="text" value={newVariantData.obrazekVady} onChange={e => setNewVariantData(v => ({ ...v, obrazekVady: e.target.value }))} className="ktf-edit-input-tech" placeholder="automaticky předvyplneno" />
-              </div>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <div className="label-top-input" style={{ flex: 1, marginBottom: 0 }}>
-                  <label>Varianta</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap', width: '100%' }}>
                   <input
                     type="text"
-                    value={newVariantData.variantaVady}
-                    onChange={e => setNewVariantData(v => ({ ...v, variantaVady: e.target.value }))}
+                    value={newVariantData.umisteniVady}
+                    onChange={e => setNewVariantData(v => ({ ...v, umisteniVady: e.target.value }))}
                     className="ktf-edit-input-tech"
-                    list={variantSuggestions.variantaVady.length ? "variant-varianta-options" : undefined}
+                    style={{ flex: '1 1 0', minWidth: 0 }}
+                    list={variantSuggestions.umisteniVady.length ? "variant-umisteni-options" : undefined}
                     autoComplete="off"
-                    required
                   />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+                      {LOCATION_PREFIX_OPTIONS.map((option) => {
+                        const isPrefixActive = getLocationPrefix(newVariantData.umisteniVady) === option.text;
+                        return (
+                          <button
+                            key={option.text}
+                            type="button"
+                            onClick={() => applyLocationPrefix(option.text)}
+                            style={{
+                              border: isPrefixActive ? '1px solid #2563eb' : '1px solid #cbd5e1',
+                              background: isPrefixActive ? '#dbeafe' : '#f8fafc',
+                              color: isPrefixActive ? '#1d4ed8' : '#334155',
+                              borderRadius: 4,
+                              width: 16,
+                              height: 13,
+                              padding: 0,
+                              fontSize: 10,
+                              fontWeight: 700,
+                              lineHeight: 1,
+                              cursor: 'pointer'
+                            }}
+                            title={`Doplnit ${option.text.trim()}`}
+                            aria-label={`Doplnit ${option.text.trim()}`}
+                          >
+                            {option.symbol}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                      {QUICK_LOCATION_CHIPS.map((chip) => {
+                        const locationWithoutPrefix = String(newVariantData.umisteniVady || '').trim().replace(/^\s*(nad|pod|vlevo od|vpravo od)(?:\s+|$)/i, '');
+                        const isActive = locationWithoutPrefix.toUpperCase() === chip;
+                        return (
+                          <button
+                            key={chip}
+                            type="button"
+                            onClick={() => applyLocationChip(chip)}
+                            style={{
+                              border: isActive ? '1px solid #2563eb' : '1px solid #cbd5e1',
+                              background: isActive ? '#dbeafe' : '#f8fafc',
+                              color: isActive ? '#1d4ed8' : '#334155',
+                              borderRadius: 999,
+                              padding: '2px 6px',
+                              fontSize: 10,
+                              lineHeight: 1,
+                              cursor: 'pointer'
+                            }}
+                            title={`Vyplnit ${chip}`}
+                          >
+                            {chip}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-                <div className="label-top-input" style={{ width: 120, marginBottom: 0 }}>
-                  <label>Pořadí varianty</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={newVariantData.poradiVady}
-                    onChange={e => setNewVariantData(v => ({ ...v, poradiVady: e.target.value }))}
-                    className="ktf-edit-input-tech"
-                  />
+              </div>
+              <div className="label-top-input">
+                <label>
+                  Obrázek vady <span style={{ fontWeight: 400, fontSize: '0.86em', color: '#64748b' }}>(adresa se doplňuje automaticky)</span>
+                </label>
+                <input
+                  type="text"
+                  value={newVariantData.obrazekVady}
+                  onChange={e => {
+                    isVariantImageAutoManagedRef.current = false;
+                    setNewVariantData(v => ({ ...v, obrazekVady: e.target.value }));
+                  }}
+                  className="ktf-edit-input-tech"
+                  placeholder="automaticky předvyplneno"
+                />
+              </div>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+                <div className="label-top-input" style={{ flex: '0 0 132px', marginBottom: 0 }}>
+                  <label>Varianta</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <input
+                      type="text"
+                      value={newVariantData.variantaVady}
+                      onChange={e => updateVariantDataWithImageSync({ variantaVady: e.target.value })}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          updateVariantDataWithImageSync({}, { forceImageSync: true });
+                        }
+                      }}
+                      className="ktf-edit-input-tech"
+                      style={{ flex: '1 1 0', minWidth: 0, marginBottom: 0 }}
+                      list={variantSuggestions.variantaVady.length ? "variant-varianta-options" : undefined}
+                      autoComplete="off"
+                      required
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+                      <button
+                        type="button"
+                        onClick={() => stepVariantLetter(1)}
+                        aria-label="Další písmeno varianty"
+                        title="Další písmeno (A-H)"
+                        style={{
+                          width: 18,
+                          height: 14,
+                          lineHeight: 1,
+                          fontSize: 9,
+                          border: '1px solid #cbd5e1',
+                          borderRadius: 4,
+                          background: '#f8fafc',
+                          color: '#334155',
+                          padding: 0,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ▲
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => stepVariantLetter(-1)}
+                        aria-label="Předchozí písmeno varianty"
+                        title="Předchozí písmeno (A-H)"
+                        style={{
+                          width: 18,
+                          height: 14,
+                          lineHeight: 1,
+                          fontSize: 9,
+                          border: '1px solid #cbd5e1',
+                          borderRadius: 4,
+                          background: '#f8fafc',
+                          color: '#334155',
+                          padding: 0,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ▼
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', marginBottom: 4, gap: 6 }}>
+                <div className="label-top-input" style={{ width: 88, marginBottom: 0 }}>
+                  <label>Pořadí</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={newVariantData.poradiVady}
+                      onChange={e => {
+                        const digitsOnly = e.target.value.replace(/\D+/g, '').slice(0, 2);
+                        updateVariantDataWithImageSync({ poradiVady: digitsOnly });
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          updateVariantDataWithImageSync({}, { forceImageSync: true });
+                        }
+                      }}
+                      className="ktf-edit-input-tech"
+                      style={{ width: 42, minWidth: 42, marginBottom: 0, textAlign: 'center' }}
+                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+                      <button
+                        type="button"
+                        onClick={() => stepVariantOrder(1)}
+                        aria-label="Zvýšit pořadí varianty"
+                        title="Zvýšit pořadí"
+                        style={{
+                          width: 18,
+                          height: 14,
+                          lineHeight: 1,
+                          fontSize: 9,
+                          border: '1px solid #cbd5e1',
+                          borderRadius: 4,
+                          background: '#f8fafc',
+                          color: '#334155',
+                          padding: 0,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ▲
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => stepVariantOrder(-1)}
+                        aria-label="Snížit pořadí varianty"
+                        title="Snížit pořadí"
+                        style={{
+                          width: 18,
+                          height: 14,
+                          lineHeight: 1,
+                          fontSize: 9,
+                          border: '1px solid #cbd5e1',
+                          borderRadius: 4,
+                          background: '#f8fafc',
+                          color: '#334155',
+                          padding: 0,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        ▼
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 8 }}>
                   <input
                     type="checkbox"
                     id="variant-mam-checkbox"
