@@ -1,15 +1,15 @@
 .variant-img-special {
-  border: 1px dashed #94a3b8 !important;
+  border: 1px dashed #ef4444 !important;
   border-radius: 8px !important;
-  background: #f8fafc !important;
+  background: #ffffff !important;
   box-shadow: none;
 }
 .variant-img-no-image {
-  border: 1px dashed #d46a5c !important;
+  border: 1px dashed #ef4444 !important;
   border-radius: 8px !important;
-  background: #fff3f1 !important;
+  background: #ffffff !important;
   box-shadow: none;
-  opacity: 0.82;
+  opacity: 1;
 }
 .stamp-title-abbr {
   font-weight: 700;

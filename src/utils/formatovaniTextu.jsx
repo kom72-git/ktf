@@ -5,7 +5,7 @@ import ZKRATKY_TOOLTIPY from "../zkratky-tooltips";
 // Univerzální formátování popisu: apostrofy → zvýraznění, hranaté závorky → tučně, známé zkratky → tooltip HTML
 export function formatPopisWithAll(text) {
   if (!text) return "";
-  let s = text.replace(/'([^']+)'/g, '<span class="variant-popis-apostrof">$1</span>');
+  let s = text.replace(/'(.+?)'(?=$|[\s.,;:!?)\]}])/g, '<span class="variant-popis-apostrof">$1</span>');
   // Redakční poznámka: [pozn]...[/pozn] (podporovány i aliasy [poznamka] a [redakce]).
   s = s.replace(/\[(pozn|poznamka|redakce)\]([\s\S]*?)\[\/\1\]/gi, (_m, _tag, content) => {
     const body = String(content ?? "").trim();
@@ -140,7 +140,7 @@ export function formatDefectDescription(text, options = {}) {
 
   const formatInnerHtml = (str) => {
     if (!str) return "";
-    const withApostrophes = str.replace(/'([^']+)'/g, '<span class="variant-popis-apostrof">$1</span>');
+    const withApostrophes = str.replace(/'(.+?)'(?=$|[\s.,;:!?)\]}])/g, '<span class="variant-popis-apostrof">$1</span>');
     const withItalics = italicizeCastNakladu(withApostrophes);
     return replaceAbbreviationsWithHtml(withItalics);
   };
