@@ -287,6 +287,7 @@ export default function StampCatalog(props) {
       "rytec",
       "druhTisku",
       "tiskovaForma",
+      "nominal",
       "zoubkovani",
       "papir",
       "rozmer",

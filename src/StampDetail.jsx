@@ -190,6 +190,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           rytec: data.rytec || '',
           druhTisku: data.druhTisku || '',
           tiskovaForma: data.tiskovaForma || '',
+          nominal: data.nominal || '',
           zoubkovani: data.zoubkovani || '',
           papir: data.papir || '',
           rozmer: data.rozmer || '',
@@ -834,6 +835,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const resolvedRytec = getResolvedFromA("rytec") || "";
   const resolvedDruhTisku = getResolvedFromA("druhTisku") || "";
   const resolvedTiskovaForma = getResolvedFromA("tiskovaForma") || "";
+  const resolvedNominal = getResolvedFromA("nominal") || "";
   const resolvedZoubkovani = getResolvedFromA("zoubkovani") || "";
   const resolvedPapir = getResolvedFromA("papir") || "";
   const resolvedRozmer = getResolvedFromA("rozmer") || "";
@@ -1316,6 +1318,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     rytec: item.rytec || '',
                     druhTisku: item.druhTisku || '',
                     tiskovaForma: item.tiskovaForma || '',
+                    nominal: item.nominal || '',
                     zoubkovani: item.zoubkovani || '',
                     papir: item.papir || '',
                     rozmer: item.rozmer || '',
@@ -1814,6 +1817,35 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 </div>
               ) : (
                 renderTechnicalValue('tiskovaForma', isEditingAll ? editStampData.tiskovaForma : resolvedTiskovaForma)
+              )}
+            </span>
+          </div>
+          <div className="stamp-spec-row">
+            <span className="stamp-spec-label">Nominál</span>
+            <span className="stamp-spec-value">
+              {isEditingAll ? (
+                <div className="edit-field-row">
+                  <input
+                    type="text"
+                    value={editStampData.nominal}
+                    onChange={(e) => setEditStampData({...editStampData, nominal: e.target.value})}
+                    onKeyDown={(e) => {
+                      if (e.ctrlKey && e.key === 'Enter') {
+                      }
+                    }}
+                    className="ktf-edit-input-tech"
+                    list={hasSuggestions('nominal') ? getSuggestionListId('nominal') : undefined}
+                    autoComplete="off"
+                  />
+                  <button
+                    onClick={() => saveTechnicalField('nominal', editStampData.nominal)}
+                    className="ktf-btn-check"
+                  >
+                    ✓
+                  </button>
+                </div>
+              ) : (
+                renderTechnicalValue('nominal', isEditingAll ? editStampData.nominal : resolvedNominal)
               )}
             </span>
           </div>

@@ -31,6 +31,7 @@ export default function AdminPanel({
     rytec: '',
     druhTisku: '',
     tiskovaForma: '',
+    nominal: '',
     zoubkovani: '',
     papir: '',
     rozmer: '',
@@ -721,6 +722,16 @@ export default function AdminPanel({
                   value={newStampData.tiskovaForma}
                   onChange={e => setNewStampData({ ...newStampData, tiskovaForma: e.target.value })}
                   list={hasSuggestions('tiskovaForma') ? getSuggestionListId('tiskovaForma') : undefined}
+                  autoComplete="off"
+                />
+              </div>
+              <div className="label-top-input">
+                <label>Nominál</label>
+                <input
+                  type="text"
+                  value={newStampData.nominal}
+                  onChange={e => setNewStampData({ ...newStampData, nominal: e.target.value })}
+                  list={hasSuggestions('nominal') ? getSuggestionListId('nominal') : undefined}
                   autoComplete="off"
                 />
               </div>

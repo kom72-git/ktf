@@ -25,6 +25,7 @@ const StampSchema = new mongoose.Schema({
   rytec: String,
   druhTisku: String,
   tiskovaForma: String,
+  nominal: String,
   zoubkovani: String,
   papir: String,
   rozmer: String,

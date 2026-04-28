@@ -40,6 +40,7 @@ async function importData() {
       rytec: s.specs?.find(x => x.label === "Rytec")?.value || "",
       druhTisku: s.specs?.find(x => x.label === "Druh tisku")?.value || "",
       tiskovaForma: s.specs?.find(x => x.label === "Tisková forma")?.value || "",
+      nominal: s.specs?.find(x => x.label === "Nominál")?.value || "",
       zoubkovani: s.specs?.find(x => x.label === "Zoubkování")?.value || "",
       papir: s.specs?.find(x => x.label === "Papír")?.value || "",
       rozmer: s.specs?.find(x => x.label === "Rozměr")?.value || "",
