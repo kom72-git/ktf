@@ -20,6 +20,17 @@ import ImageSources from "./components/ImageSources.jsx";
 
 const LITERATURE_PREFIX_REGEX = /^\s*(?:\[(\d+)\]|(\d+)([.)]))\s*(.*)$/;
 const LITERATURE_URL_REGEX = /(https?:\/\/[^\s]+)/i;
+const CATALOG_DISPLAY_SUFFIX_RE = /^(.*?\d+(?:\/\d+)?)([A-Za-zČŘŽŠĚÚŮ]+(?:\/[A-Za-zČŘŽŠĚÚŮ]+)*)$/i;
+const CATALOG_SUFFIX_SPACING = "\u202F";
+
+function splitCatalogDisplaySuffix(text) {
+  const normalizedText = String(text || "").trim();
+  const match = normalizedText.match(CATALOG_DISPLAY_SUFFIX_RE);
+  return {
+    base: match ? match[1] : normalizedText,
+    suffix: match ? match[2] : "",
+  };
+}
 
 function parseLiteratureEntries(rawValue) {
   if (typeof rawValue !== "string" || rawValue.trim() === "") {
@@ -138,7 +149,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
   const parseCatalogAB = (catalogValue) => {
     const text = String(catalogValue || "").trim();
-    const match = text.match(/^([A-ZČŘŽŠĚÚŮ]+)\s*(\d+)([A-Z])$/i);
+    const match = text.match(/^([A-ZČŘŽŠĚÚŮ]+)\s*([\d/]+)([A-Z])$/i);
     if (!match) return null;
     return {
       prefix: (match[1] || "").trim().toUpperCase(),
@@ -1212,7 +1223,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         onMouseEnter={() => setHoverPreviewId(key)}
         onMouseLeave={() => setHoverPreviewId((current) => (current === key ? null : current))}
       >
-        <a href={`#/detail/${stamp.idZnamky}`}>{text}</a>
+        <a href={`#/detail/${stamp.idZnamky}`}>{renderCatalogDisplay(text, key)}</a>
         {isOpen && (
           <span className="catalog-preview-popover" aria-hidden="true">
             <img
@@ -1228,6 +1239,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         )}
       </span>
     );
+  };
+
+  const renderCatalogDisplay = (text, keyPrefix = "catalog") => {
+    const { base, suffix } = splitCatalogDisplaySuffix(text);
+    if (!suffix) return text;
+    return `${base}${CATALOG_SUFFIX_SPACING}${suffix}`;
   };
 
   const openSingleImageLightbox = (src, caption = "") => {
@@ -1519,7 +1536,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             {hasABPair && aStamp && bStamp ? (
               <>
                 {currentIsA ? (
-                  <strong>{aStamp.katalogCislo}</strong>
+                  <strong>{renderCatalogDisplay(aStamp.katalogCislo, aStamp.idZnamky || "a-stamp")}</strong>
                 ) : (
                   renderCatalogLinkWithPreview(aStamp, aStamp.katalogCislo)
                 )}
@@ -1527,12 +1544,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 {currentIsA ? (
                   renderCatalogLinkWithPreview(bStamp, bStamp.katalogCislo)
                 ) : (
-                  <strong>{bStamp.katalogCislo}</strong>
+                  <strong>{renderCatalogDisplay(bStamp.katalogCislo, bStamp.idZnamky || "b-stamp")}</strong>
                 )}
               </>
             ) : (
               <>
-                <strong>{item.katalogCislo}</strong>
+                <strong>{renderCatalogDisplay(item.katalogCislo, item.idZnamky || "item-stamp")}</strong>
                 {companionStamp && companionStamp.katalogCislo && (
                   <>
                     <span style={{ display: 'inline-block', margin: '0 12px', color: '#6b7280' }}>|</span>

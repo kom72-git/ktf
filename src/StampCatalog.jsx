@@ -20,10 +20,22 @@ import {
 } from "./utils/obrazekCesta.js";
 import "./App.css";
 
+const CATALOG_DISPLAY_SUFFIX_RE = /^(.*?\d+(?:\/\d+)?)([A-Za-zČŘŽŠĚÚŮ]+(?:\/[A-Za-zČŘŽŠĚÚŮ]+)*)$/i;
+const CATALOG_SUFFIX_SPACING = "\u202F";
+
+function splitCatalogDisplaySuffix(text) {
+  const normalizedText = String(text || "").trim();
+  const match = normalizedText.match(CATALOG_DISPLAY_SUFFIX_RE);
+  return {
+    base: match ? match[1] : normalizedText,
+    suffix: match ? match[2] : "",
+  };
+}
+
 function getCatalogDisplayParts(stamp) {
   const katalogCislo = String(stamp?.katalogCislo || "").trim();
   const idZnamky = String(stamp?.idZnamky || "").trim();
-  const catalogMatch = katalogCislo.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*(\d+)([A-ZČŘŽŠĚÚŮ]*)$/i);
+  const catalogMatch = katalogCislo.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*([\d/]+)([A-ZČŘŽŠĚÚŮ]*)$/i);
 
   if (!catalogMatch) {
     return {
@@ -56,7 +68,7 @@ function getCatalogDisplayParts(stamp) {
 function getCatalogBaseKey(stamp) {
   const katalogCislo = String(stamp?.katalogCislo || "").trim();
   const idZnamky = String(stamp?.idZnamky || "").trim();
-  const match = katalogCislo.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*(\d+)([A-ZČŘŽŠĚÚŮ]*)$/i);
+  const match = katalogCislo.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*([\d/]+)([A-ZČŘŽŠĚÚŮ]*)$/i);
   if (match) {
     const prefix = (match[1] || "").trim().toUpperCase();
     const number = match[2];
@@ -85,6 +97,12 @@ function formatGroupedCatalogText(groupItems) {
     return `${parsed[0].prefix} ${numbers.join(", ")}`;
   }
   return groupItems.map(s => s?.katalogCislo).filter(Boolean).join(", ");
+}
+
+function renderCatalogDisplay(text, keyPrefix = "catalog") {
+  const { base, suffix } = splitCatalogDisplaySuffix(text);
+  if (!suffix) return text;
+  return `${base}${CATALOG_SUFFIX_SPACING}${suffix}`;
 }
 
 
@@ -865,7 +883,7 @@ export default function StampCatalog(props) {
                               <EmissionTitleAbbr>{replaceAbbreviations(`${emise} (${rok})`)}</EmissionTitleAbbr>
                             </div>
                             <div className="stamp-bottom">
-                              <div>Katalog: <span className="catalog">{katalogText}</span></div>
+                              <div>Katalog: <span className="catalog">{renderCatalogDisplay(katalogText, `${key}-collapsed`)}</span></div>
                               {isSingle && (
                                 <span className="details-link" style={{marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer'}}>detaily</span>
                               )}
@@ -924,7 +942,7 @@ export default function StampCatalog(props) {
                               <EmissionTitleAbbr>{replaceAbbreviations(`${item.emise} (${item.rok})`)}</EmissionTitleAbbr>
                             </div>
                             <div className="stamp-bottom">
-                              <div>Katalog: <span className="catalog">{katalogText || item.katalogCislo}</span></div>
+                              <div>Katalog: <span className="catalog">{renderCatalogDisplay(katalogText || item.katalogCislo, `${key}-${idx}-expanded`)}</span></div>
                               <span className="details-link" style={{marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer'}}>detaily</span>
                             </div>
                           </div>
