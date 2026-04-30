@@ -1245,7 +1245,7 @@ textarea.resize-corner {
   object-fit: contain !important;
   background: none !important;
   box-shadow: none !important;
-  border: 1px solid #f8f8f8 !important;
+  border: 0px solid #f8f8f8 !important;
   margin: 0 !important;
   padding: 0 !important;
 }
