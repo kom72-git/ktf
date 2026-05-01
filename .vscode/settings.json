@@ -6,5 +6,11 @@
     "**/.git/subtree-cache/**": false,
     "**/node_modules/*/**": true
   },
-  "git.includeUntracked": true
+  "git.includeUntracked": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/server/node_modules": true
+  }
 }
