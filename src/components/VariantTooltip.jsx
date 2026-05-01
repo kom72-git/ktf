@@ -1,3 +1,6 @@
+// Komponenta VariantTooltip zobrazuje tooltip s podrobnostmi k variantě vady.
+// Tooltip se zobrazí na hover (desktop) nebo tap (mobil), pozicuje se podle boxu varianty.
+// Používá se v detailech známek a variant.
 import React, { useState, useRef, useEffect } from "react";
 
 export default function VariantTooltip({ children, tooltip }) {

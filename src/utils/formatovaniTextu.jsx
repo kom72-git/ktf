@@ -301,3 +301,27 @@ export function sklonujPosledniVlozeneEmise(count) {
   return "posledních vložených emisí";
 }
 
+// Vykreslení názvu emise s případnou příponou PRAGA '88 oddělenou do spanu.
+// Používá se v katalogu a komponentě StampBoxList pro zobrazení názvu boxu.
+export function renderEmissionTitleWithPragaSuffix(emise, rok) {
+  const emissionText = String(emise || "");
+  const yearSuffix = ` (${rok})`;
+  const pragaSuffix = " – PRAGA '88";
+  const suffixIndex = emissionText.indexOf(pragaSuffix);
+
+  if (suffixIndex === -1) {
+    return replaceAbbreviations(`${emissionText}${yearSuffix}`);
+  }
+
+  const beforeSuffix = emissionText.slice(0, suffixIndex);
+  const afterSuffix = emissionText.slice(suffixIndex + pragaSuffix.length);
+
+  return (
+    <>
+      {replaceAbbreviations(beforeSuffix)}
+      <span className="emission-praga88-suffix">{pragaSuffix}</span>
+      {replaceAbbreviations(`${afterSuffix}${yearSuffix}`)}
+    </>
+  );
+}
+

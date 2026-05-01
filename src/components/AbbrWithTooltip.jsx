@@ -1,3 +1,6 @@
+// Komponenta AbbrWithTooltip zobrazuje zkratku s tooltipem (vysvětlivkou).
+// Tooltip funguje na desktopu (hover) i na mobilu (tap).
+// Používá se pro vysvětlení zkratek v katalogu a detailech.
 import React, { useState, useRef, useEffect } from "react";
 
 // Tooltip zkratky, který funguje na desktopu (hover) i mobilech (tap)

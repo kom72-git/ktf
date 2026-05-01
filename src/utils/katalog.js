@@ -154,6 +154,75 @@ export function emissionToSlug(emise = "") {
     .toLowerCase();
 }
 
+// --- Pomocné funkce pro zobrazení katalogových čísel v boxech ---
+
+const CATALOG_DISPLAY_SUFFIX_RE = /^(.*?\d+(?:\/\d+)?)([A-Za-zČŘŽŠĚÚŮ]+(?:\/[A-Za-zČŘŽŠĚÚŮ]+)*)$/i;
+export const CATALOG_SUFFIX_SPACING = "\u202F";
+
+export function splitCatalogDisplaySuffix(text) {
+  const normalizedText = String(text || "").trim();
+  const match = normalizedText.match(CATALOG_DISPLAY_SUFFIX_RE);
+  return {
+    base: match ? match[1] : normalizedText,
+    suffix: match ? match[2] : "",
+  };
+}
+
+export function getCatalogDisplayParts(stamp) {
+  const katalogCislo = String(stamp?.katalogCislo || "").trim();
+  const idZnamky = String(stamp?.idZnamky || "").trim();
+  const catalogMatch = katalogCislo.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*([\d/]+)([A-ZČŘŽŠĚÚŮ]*)$/i);
+  if (!catalogMatch) {
+    return { prefix: "", number: katalogCislo, suffix: "", value: katalogCislo };
+  }
+  const prefix = (catalogMatch[1] || "").trim();
+  const number = catalogMatch[2];
+  let suffix = (catalogMatch[3] || "").trim();
+  if (!suffix) {
+    const idMatch = idZnamky.match(new RegExp(`${number}([A-ZČŘŽŠĚÚŮ]+)$`, "i"));
+    if (idMatch) suffix = (idMatch[1] || "").trim().toUpperCase();
+  }
+  return { prefix, number, suffix, value: `${number}${suffix}` };
+}
+
+export function getCatalogBaseKey(stamp) {
+  const katalogCislo = String(stamp?.katalogCislo || "").trim();
+  const idZnamky = String(stamp?.idZnamky || "").trim();
+  const match = katalogCislo.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*([\d/]+)([A-ZČŘŽŠĚÚŮ]*)$/i);
+  if (match) {
+    const prefix = (match[1] || "").trim().toUpperCase();
+    const number = match[2];
+    return `${prefix}|${number}`;
+  }
+  return `__single__|${idZnamky || katalogCislo}`;
+}
+
+export function formatGroupedCatalogText(groupItems) {
+  const parsed = groupItems.map(getCatalogDisplayParts).filter(p => p.value);
+  if (parsed.length === 0) return "";
+  const allSamePrefix = parsed.every(p => p.prefix === parsed[0].prefix);
+  if (allSamePrefix && parsed[0].prefix) {
+    if (
+      parsed.length === 2 &&
+      parsed[0].number === parsed[1].number
+    ) {
+      const suffixes = parsed.map(p => (p.suffix || "").toUpperCase()).sort();
+      if (suffixes[0] === "A" && suffixes[1] === "B") {
+        return `${parsed[0].prefix} ${parsed[0].number}A/B`;
+      }
+    }
+    const numbers = parsed.map(p => (p.suffix ? p.value : p.number));
+    return `${parsed[0].prefix} ${numbers.join(", ")}`;
+  }
+  return groupItems.map(s => s?.katalogCislo).filter(Boolean).join(", ");
+}
+
+export function renderCatalogDisplay(text) {
+  const { base, suffix } = splitCatalogDisplaySuffix(text);
+  if (!suffix) return text;
+  return `${base}${CATALOG_SUFFIX_SPACING}${suffix}`;
+}
+
 // Vyhledání původního názvu emise podle slugu
 export function slugToEmission(slug, items = []) {
   if (!slug) return null;

@@ -1,3 +1,6 @@
+// Komponenta ImageSources zobrazuje zdroje (autory) obrázků u známek nebo studií.
+// Odděluje jednotlivé autory, zvýrazňuje jména a umožňuje zobrazit více autorů najednou.
+// Používá se v detailech známek a studií.
 import React from 'react';
 import { replaceAbbreviations } from '../utils/formatovaniTextu.jsx';
 

@@ -1,3 +1,6 @@
+// Komponenta EmissionTitleAbbr slouží jako wrapper pro název emise.
+// Zajišťuje, že kliknutí na tooltipy v názvu emise nepropaguje událost dál (např. do boxu).
+// Používá se v katalogu a detailech známek.
 import React from "react";
 
 // Wrapper for emission titles that prevents tooltip clicks bubbling to parent toggles

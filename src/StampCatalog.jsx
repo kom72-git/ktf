@@ -4,7 +4,10 @@ import Header from './Header';
 import Footer from './Footer';
 import AdminPanel from "./AdminPanel";
 import DetailPage from "./StampDetail.jsx";
-import EmissionTitleAbbr from "./components/EmissionTitleAbbr.jsx";
+import Pagination from "./components/Pagination.jsx";
+import CatalogFilters from "./components/CatalogFilters.jsx";
+import CatalogViewControls from "./components/CatalogViewControls.jsx";
+import StampBoxList from "./components/StampBoxList.jsx";
 import {
   replaceAbbreviations,
   sklonujPolozka,
@@ -13,120 +16,13 @@ import {
   sklonujVariant,
   sklonujPosledniVlozeneEmise
 } from './utils/formatovaniTextu.jsx';
-import { katalogSort, emissionToSlug, slugToEmission } from './utils/katalog.js';
+import { katalogSort, emissionToSlug, slugToEmission, getCatalogBaseKey } from './utils/katalog.js';
 import {
   normalizeStampImagePath,
   normalizeStampImagePathForStorage
 } from "./utils/obrazekCesta.js";
 import "./App.css";
 
-const CATALOG_DISPLAY_SUFFIX_RE = /^(.*?\d+(?:\/\d+)?)([A-Za-zČŘŽŠĚÚŮ]+(?:\/[A-Za-zČŘŽŠĚÚŮ]+)*)$/i;
-const CATALOG_SUFFIX_SPACING = "\u202F";
-
-function splitCatalogDisplaySuffix(text) {
-  const normalizedText = String(text || "").trim();
-  const match = normalizedText.match(CATALOG_DISPLAY_SUFFIX_RE);
-  return {
-    base: match ? match[1] : normalizedText,
-    suffix: match ? match[2] : "",
-  };
-}
-
-function getCatalogDisplayParts(stamp) {
-  const katalogCislo = String(stamp?.katalogCislo || "").trim();
-  const idZnamky = String(stamp?.idZnamky || "").trim();
-  const catalogMatch = katalogCislo.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*([\d/]+)([A-ZČŘŽŠĚÚŮ]*)$/i);
-
-  if (!catalogMatch) {
-    return {
-      prefix: "",
-      number: katalogCislo,
-      suffix: "",
-      value: katalogCislo,
-    };
-  }
-
-  const prefix = (catalogMatch[1] || "").trim();
-  const number = catalogMatch[2];
-  let suffix = (catalogMatch[3] || "").trim();
-
-  if (!suffix) {
-    const idMatch = idZnamky.match(new RegExp(`${number}([A-ZČŘŽŠĚÚŮ]+)$`, "i"));
-    if (idMatch) {
-      suffix = (idMatch[1] || "").trim().toUpperCase();
-    }
-  }
-
-  return {
-    prefix,
-    number,
-    suffix,
-    value: `${number}${suffix}`,
-  };
-}
-
-function getCatalogBaseKey(stamp) {
-  const katalogCislo = String(stamp?.katalogCislo || "").trim();
-  const idZnamky = String(stamp?.idZnamky || "").trim();
-  const match = katalogCislo.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*([\d/]+)([A-ZČŘŽŠĚÚŮ]*)$/i);
-  if (match) {
-    const prefix = (match[1] || "").trim().toUpperCase();
-    const number = match[2];
-    return `${prefix}|${number}`;
-  }
-  return `__single__|${idZnamky || katalogCislo}`;
-}
-
-function formatGroupedCatalogText(groupItems) {
-  const parsed = groupItems.map(getCatalogDisplayParts).filter(p => p.value);
-  if (parsed.length === 0) return "";
-  const allSamePrefix = parsed.every(p => p.prefix === parsed[0].prefix);
-  if (allSamePrefix && parsed[0].prefix) {
-    // Special case: only A/B pair for the same catalog number -> "A 2273A/B"
-    if (
-      parsed.length === 2
-      && parsed[0].number === parsed[1].number
-    ) {
-      const suffixes = parsed.map(p => (p.suffix || "").toUpperCase()).sort();
-      if (suffixes[0] === "A" && suffixes[1] === "B") {
-        return `${parsed[0].prefix} ${parsed[0].number}A/B`;
-      }
-    }
-
-    const numbers = parsed.map(p => (p.suffix ? p.value : p.number));
-    return `${parsed[0].prefix} ${numbers.join(", ")}`;
-  }
-  return groupItems.map(s => s?.katalogCislo).filter(Boolean).join(", ");
-}
-
-function renderCatalogDisplay(text, keyPrefix = "catalog") {
-  const { base, suffix } = splitCatalogDisplaySuffix(text);
-  if (!suffix) return text;
-  return `${base}${CATALOG_SUFFIX_SPACING}${suffix}`;
-}
-
-function renderEmissionTitleWithPragaSuffix(emise, rok) {
-  const emissionText = String(emise || "");
-  const yearSuffix = ` (${rok})`;
-  const pragaSuffix = " – PRAGA '88";
-  const suffixIndex = emissionText.indexOf(pragaSuffix);
-
-  if (suffixIndex === -1) {
-    return replaceAbbreviations(`${emissionText}${yearSuffix}`);
-  }
-
-  const beforeSuffix = emissionText.slice(0, suffixIndex);
-  const suffixText = pragaSuffix;
-  const afterSuffix = emissionText.slice(suffixIndex + pragaSuffix.length);
-
-  return (
-    <>
-      {replaceAbbreviations(beforeSuffix)}
-      <span className="emission-praga88-suffix">{suffixText}</span>
-      {replaceAbbreviations(`${afterSuffix}${yearSuffix}`)}
-    </>
-  );
-}
 
 
 export default function StampCatalog(props) {
@@ -724,16 +620,11 @@ export default function StampCatalog(props) {
                 </button>
               </div>
             )}
-            <section className="search-row">
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Vyhledat…"
-              />
-                  {/* debug výpis odstraněn */}
-              <select value={year} onChange={(e) => {
-                const newYear = e.target.value;
+            <CatalogFilters
+              query={query}
+              setQuery={setQuery}
+              year={year}
+              setYear={(newYear) => {
                 if (emission !== "all" && newYear !== "all") {
                   const slug = emissionToSlug(emission);
                   navigate(`/emise/${slug}-${newYear}`);
@@ -745,14 +636,10 @@ export default function StampCatalog(props) {
                 } else {
                   navigate(`/`);
                 }
-              }}>
-                <option value="all">Rok</option>
-                {filteredYears.filter(y => y !== "all").map((y) => (
-                  <option key={y} value={y}>{y}</option>
-                ))}
-              </select>
-              <select value={emission} onChange={(e) => {
-                const newEmission = e.target.value;
+              }}
+              years={filteredYears}
+              emission={emission}
+              setEmission={(newEmission) => {
                 if (newEmission !== "all" && year !== "all") {
                   const slug = emissionToSlug(newEmission);
                   navigate(`/emise/${slug}-${year}`);
@@ -762,14 +649,10 @@ export default function StampCatalog(props) {
                 } else {
                   navigate(`/`);
                 }
-              }}>
-                <option value="all">Emise</option>
-                {filteredEmissions.filter(em => em !== "all").map((em) => (
-                  <option key={em} value={em}>{em}</option>
-                ))}
-              </select>
-              <select value={catalog} onChange={(e) => {
-                const newCatalog = e.target.value;
+              }}
+              emissions={filteredEmissions}
+              catalog={catalog}
+              setCatalog={(newCatalog) => {
                 setCatalog(newCatalog);
                 if (newCatalog !== "all") {
                   const matches = stamps.filter((s) => {
@@ -798,30 +681,23 @@ export default function StampCatalog(props) {
                     }
                   }
                 }
-              }}>
-                <option value="all">Katalogové číslo</option>
-                {filteredCatalogs.filter(c => c !== "all").map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-              <button
-                title="Vyčistit filtry"
-                aria-label="Vyčistit filtry"
-                onClick={() => {
-                  setQuery("");
-                  setCatalog("all");
-                  setHomeBoxLimit(String(HOMEPAGE_BOX_LIMIT));
-                  setHomeSortMode("db");
-                  setExpandedBoxes([]);
-                  if (navigate) {
-                    navigate(`/`);
-                  } else {
-                    window.location.href = `/`;
-                  }
-                }}>
-                Vyčistit
-              </button>
-            </section>
+              }}
+              catalogs={filteredCatalogs}
+              onClear={() => {
+                setQuery("");
+                setCatalog("all");
+                setHomeBoxLimit(String(HOMEPAGE_BOX_LIMIT));
+                setHomeSortMode("db");
+                setExpandedBoxes([]);
+                if (navigate) {
+                  navigate(`/`);
+                } else {
+                  window.location.href = `/`;
+                }
+              }}
+              navigate={navigate}
+              emissionToSlug={emissionToSlug}
+            />
             <div className="count-info-row">
               <div className="count-info">
                 {isHomepageDefault ? (
@@ -840,291 +716,48 @@ export default function StampCatalog(props) {
                   </>
                 )}
               </div>
-              {isHomepageDefault && (
-                <div className="count-controls">
-                  <span className="count-controls-hint">Zobrazit:</span>
-                  <select
-                    className="count-control-select count-control-select--count"
-                    value={homeBoxLimit}
-                    onChange={(e) => setHomeBoxLimit(e.target.value)}
-                    title="Počet emisí"
-                    aria-label="Počet boxů na homepage"
-                  >
-                    <option value="__count_label" disabled>-- Počet --</option>
-                    <option value={String(HOMEPAGE_BOX_LIMIT)} hidden>{HOMEPAGE_BOX_LIMIT}</option>
-                    {homeBoxLimitOptions.map((limit) => (
-                      <option key={limit} value={String(limit)}>
-                        {limit === HOMEPAGE_BOX_LIMIT ? `${limit} (výchozí)` : limit}
-                      </option>
-                    ))}
-                    <option value="all">vše</option>
-                  </select>
-                  <select
-                    className="count-control-select count-control-select--sort"
-                    value={homeSortMode}
-                    onChange={(e) => setHomeSortMode(e.target.value)}
-                    title="Řazení emisí"
-                    aria-label="Řazení boxů na homepage"
-                  >
-                    <option value="__sort_label" disabled>-- Řadit --</option>
-                    <option value="db" hidden>nové</option>
-                    <option value="alpha" hidden>emise</option>
-                    <option value="num" hidden>katalog</option>
-                    <option value="db">nové (výchozí)</option>
-                    <option value="alpha">emise (A-Z)</option>
-                    <option value="num">katalog (0-9)</option>
-                  </select>
-                  <button
-                    type="button"
-                    className="count-control-toggle"
-                    onClick={handleToggleVisibleBoxes}
-                    disabled={visibleExpandableKeys.length === 0}
-                    title={areAllVisibleExpanded ? "Zavřít všechny rozbalené emise" : "Otevřít všechny sbalené emise"}
-                    aria-label={areAllVisibleExpanded ? "Zavřít všechny rozbalené emise" : "Otevřít všechny sbalené emise"}
-                  >
-                    <svg
-                      className="count-control-diag-icon"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                      focusable="false"
-                    >
-                      {areAllVisibleExpanded ? (
-                        <>
-                          <path d="M19 5 L14 10" />
-                          <path d="M14 10 L18 10" />
-                          <path d="M14 10 L14 6" />
-                          <path d="M5 19 L10 14" />
-                          <path d="M10 14 L6 14" />
-                          <path d="M10 14 L10 18" />
-                        </>
-                      ) : (
-                        <>
-                          <path d="M10 14 L5 19" />
-                          <path d="M5 19 L9 19" />
-                          <path d="M5 19 L5 15" />
-                          <path d="M14 10 L19 5" />
-                          <path d="M19 5 L15 5" />
-                          <path d="M19 5 L19 9" />
-                        </>
-                      )}
-                    </svg>
-                  </button>
-                </div>
-              )}
+              <CatalogViewControls
+                isHomepageDefault={isHomepageDefault}
+                homeBoxLimit={homeBoxLimit}
+                setHomeBoxLimit={setHomeBoxLimit}
+                homeBoxLimitOptions={homeBoxLimitOptions}
+                HOMEPAGE_BOX_LIMIT={HOMEPAGE_BOX_LIMIT}
+                homeSortMode={homeSortMode}
+                setHomeSortMode={setHomeSortMode}
+                handleToggleVisibleBoxes={handleToggleVisibleBoxes}
+                visibleExpandableKeys={visibleExpandableKeys}
+                areAllVisibleExpanded={areAllVisibleExpanded}
+              />
             </div>
-            <div className="stamp-list-layout">
-              {(() => {
-                {
-                  // Předpočítat střídající se pruhy pro sousedící rozbalené boxy
-                  const stripeMap = new Map();
-                  let stripeCounter = 0;
-                  boxesToRender.forEach(([key, items]) => {
-                    const anyExpanded = expandedBoxes.includes(key);
-                    const sameBase = items.length > 1 &&
-                      items.every(s => getCatalogBaseKey(s) === getCatalogBaseKey(items[0]));
-                    if (anyExpanded && !sameBase) {
-                      stripeMap.set(key, stripeCounter % 2);
-                      stripeCounter++;
-                    }
-                  });
-
-                  return boxesToRender.flatMap(([key, items]) => {
-                      const sortedItems = [...items].sort(katalogSort);
-                      const item = sortedItems[0];
-                      // Pokud mají všechny známky v boxu stejný základ katalogu (liší se jen sufixem A/B/C...),
-                      // chovej se jako isSingle – jeden sloučený box, přímý proklik na detail, zobrazit "detaily".
-                      const allSameBaseKey = sortedItems.length > 1 &&
-                        sortedItems.every(s => getCatalogBaseKey(s) === getCatalogBaseKey(sortedItems[0]));
-                      const isSingle = sortedItems.length === 1 || allSameBaseKey;
-                      const [emise, rok] = key.split('|');
-                      const slug = emissionToSlug(emise);
-                      const expanded = expandedBoxes.includes(key);
-                      if (!expanded || allSameBaseKey) {
-                        // SLOUČENÝ BOX
-                        // Výpis katalogových čísel všech známek v boxu
-                        const groupedForCollapsed = new Map();
-                        sortedItems.forEach((entry) => {
-                          const groupKey = getCatalogBaseKey(entry);
-                          if (!groupedForCollapsed.has(groupKey)) {
-                            groupedForCollapsed.set(groupKey, [entry]);
-                          } else {
-                            groupedForCollapsed.get(groupKey).push(entry);
-                          }
-                        });
-
-                        const groupedTexts = Array.from(groupedForCollapsed.values())
-                          .map((group) => formatGroupedCatalogText([...group].sort(katalogSort)))
-                          .filter(Boolean);
-
-                        let katalogText = groupedTexts.join(', ');
-                        if (groupedTexts.length > 1) {
-                          const firstParts = groupedTexts[0].match(/^([A-ZČŘŽŠĚÚŮ]+)\s+(.+)$/i);
-                          if (firstParts) {
-                            const sharedPrefix = firstParts[1];
-                            const hasAllSamePrefix = groupedTexts.every((text) => text.startsWith(`${sharedPrefix} `));
-                            if (hasAllSamePrefix) {
-                              katalogText = groupedTexts
-                                .map((text, index) => (index === 0 ? text : text.replace(new RegExp(`^${sharedPrefix}\\s+`), '')))
-                                .join(', ');
-                            }
-                          }
-                        }
-                        return (
-                          <div key={key} className="stamp-card stamp-card-pointer"
-                            style={{position: 'relative'}}
-                            onClick={() => {
-                              if (isSingle) {
-                                if (props && props.setDetailId) {
-                                  props.setDetailId(item.idZnamky);
-                                } else if (navigate) {
-                                  navigate(`/detail/${item.idZnamky}`);
-                                } else {
-                                  window.location.href = `/detail/${item.idZnamky}`;
-                                }
-                              } else {
-                                if (navigate) {
-                                  // Předat klíč boxu do state
-                                  navigate(`/emise/${slug}-${rok}`, { state: { openBoxKey: key } });
-                                } else {
-                                  window.location.href = `/emise/${slug}-${rok}`;
-                                }
-                              }
-                            }}>
-                            {!isSingle && (
-                              <button className="stamp-box-toggle" title="Rozbalit box" style={{right: 2, top: 2, position: 'absolute'}}
-                                onClick={e => { e.stopPropagation(); handleToggleBox(key); }}
-                              >+</button>
-                            )}
-                            <div className="stamp-img-bg">
-                              {item.obrazek ? (
-                                <img
-                                  src={normalizeStampImagePath(item.obrazek, item.rok)}
-                                  alt={item.emise}
-                                  onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
-                                />
-                              ) : (
-                                <div className="stamp-img-missing">obrázek chybí</div>
-                              )}
-                            </div>
-                            <div className="stamp-title stamp-title-abbr">
-                              <EmissionTitleAbbr>{renderEmissionTitleWithPragaSuffix(emise, rok)}</EmissionTitleAbbr>
-                            </div>
-                            <div className="stamp-bottom">
-                              <div>Katalog: <span className="catalog">{renderCatalogDisplay(katalogText, `${key}-collapsed`)}</span></div>
-                              {isSingle && (
-                                <span className="details-link" style={{marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer'}}>detaily</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      } else {
-                        // ROZBALENÉ BOXy – zvýraznění pouze zde
-                        const groupedForExpanded = new Map();
-                        sortedItems.forEach((entry) => {
-                          const groupKey = getCatalogBaseKey(entry);
-                          if (!groupedForExpanded.has(groupKey)) {
-                            groupedForExpanded.set(groupKey, [entry]);
-                          } else {
-                            groupedForExpanded.get(groupKey).push(entry);
-                          }
-                        });
-                        const expandedCards = Array.from(groupedForExpanded.values()).map((group) => {
-                          const groupSorted = [...group].sort(katalogSort);
-                          return {
-                            item: groupSorted[0],
-                            katalogText: formatGroupedCatalogText(groupSorted),
-                          };
-                        });
-
-                        const stripeClass = stripeMap.get(key) === 1 ? 'stamp-card-grouped-alt' : 'stamp-card-grouped';
-                        return expandedCards.map(({ item, katalogText }, idx) => (
-                          <div key={key + '-' + idx} className={`stamp-card ${stripeClass} stamp-card-pointer`}
-                            style={{position: 'relative'}}
-                            onClick={() => {
-                              if (props && props.setDetailId) {
-                                props.setDetailId(item.idZnamky);
-                              } else if (navigate) {
-                                navigate(`/detail/${item.idZnamky}`);
-                              } else {
-                                window.location.href = `/detail/${item.idZnamky}`;
-                              }
-                            }}>
-                            {idx === 0 && (
-                              <button className="stamp-box-toggle" title="Sloučit boxy" style={{right: 2, top: 2, position: 'absolute'}}
-                                onClick={e => { e.stopPropagation(); handleToggleBox(key); }}
-                              >−</button>
-                            )}
-                            <div className="stamp-img-bg">
-                              {item.obrazek ? (
-                                <img
-                                  src={normalizeStampImagePath(item.obrazek, item.rok)}
-                                  alt={item.emise}
-                                  onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
-                                />
-                              ) : (
-                                <div className="stamp-img-missing">obrázek chybí</div>
-                              )}
-                            </div>
-                            <div className="stamp-title stamp-title-abbr">
-                              <EmissionTitleAbbr>{renderEmissionTitleWithPragaSuffix(item.emise, item.rok)}</EmissionTitleAbbr>
-                            </div>
-                            <div className="stamp-bottom">
-                              <div>Katalog: <span className="catalog">{renderCatalogDisplay(katalogText || item.katalogCislo, `${key}-${idx}-expanded`)}</span></div>
-                              <span className="details-link" style={{marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer'}}>detaily</span>
-                            </div>
-                          </div>
-                        ));
-                      }
-                    });
+            <StampBoxList
+              boxesToRender={boxesToRender}
+              expandedBoxes={expandedBoxes}
+              handleToggleBox={handleToggleBox}
+              onNavigateToDetail={(id) => {
+                if (props && props.setDetailId) {
+                  props.setDetailId(id);
+                } else if (navigate) {
+                  navigate(`/detail/${id}`);
+                } else {
+                  window.location.href = `/detail/${id}`;
                 }
-              })()}
-            </div>
+              }}
+              onNavigateToEmission={(slug, rok, key) => {
+                if (navigate) {
+                  navigate(`/emise/${slug}-${rok}`, { state: { openBoxKey: key } });
+                } else {
+                  window.location.href = `/emise/${slug}-${rok}`;
+                }
+              }}
+            />
+
             {isHomepagePaginationActive && totalHomepagePages > 1 && (
-              <div className="home-pagination-row" role="navigation" aria-label="Stránkování emisí">
-                <div className="home-pagination">
-                  <button
-                    type="button"
-                    className="home-pagination-btn"
-                    onClick={() => handleHomepagePageChange(homePage - 1)}
-                    disabled={homePage <= 1}
-                    aria-label="Předchozí stránka"
-                  >
-                    Předchozí
-                  </button>
-
-                  {homepageVisiblePages.map((pageToken) => {
-                    if (typeof pageToken !== "number") {
-                      return (
-                        <span key={String(pageToken)} className="home-pagination-ellipsis" aria-hidden="true">…</span>
-                      );
-                    }
-
-                    const isActive = pageToken === homePage;
-                    return (
-                      <button
-                        key={pageToken}
-                        type="button"
-                        className={`home-pagination-btn home-pagination-btn--page${isActive ? " home-pagination-btn--active" : ""}`}
-                        onClick={() => handleHomepagePageChange(pageToken)}
-                        aria-current={isActive ? "page" : undefined}
-                        aria-label={`Strana ${pageToken}`}
-                      >
-                        {pageToken}
-                      </button>
-                    );
-                  })}
-
-                  <button
-                    type="button"
-                    className="home-pagination-btn"
-                    onClick={() => handleHomepagePageChange(homePage + 1)}
-                    disabled={homePage >= totalHomepagePages}
-                    aria-label="Další stránka"
-                  >
-                    Další
-                  </button>
-                </div>
-              </div>
+              <Pagination
+                homePage={homePage}
+                totalHomepagePages={totalHomepagePages}
+                homepageVisiblePages={homepageVisiblePages}
+                onPageChange={handleHomepagePageChange}
+              />
             )}
           </>
         )}
