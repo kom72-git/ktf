@@ -105,6 +105,29 @@ function renderCatalogDisplay(text, keyPrefix = "catalog") {
   return `${base}${CATALOG_SUFFIX_SPACING}${suffix}`;
 }
 
+function renderEmissionTitleWithPragaSuffix(emise, rok) {
+  const emissionText = String(emise || "");
+  const yearSuffix = ` (${rok})`;
+  const pragaSuffix = " – PRAGA '88";
+  const suffixIndex = emissionText.indexOf(pragaSuffix);
+
+  if (suffixIndex === -1) {
+    return replaceAbbreviations(`${emissionText}${yearSuffix}`);
+  }
+
+  const beforeSuffix = emissionText.slice(0, suffixIndex);
+  const suffixText = pragaSuffix;
+  const afterSuffix = emissionText.slice(suffixIndex + pragaSuffix.length);
+
+  return (
+    <>
+      {replaceAbbreviations(beforeSuffix)}
+      <span className="emission-praga88-suffix">{suffixText}</span>
+      {replaceAbbreviations(`${afterSuffix}${yearSuffix}`)}
+    </>
+  );
+}
+
 
 export default function StampCatalog(props) {
   const HOMEPAGE_BOX_LIMIT = 12; // 👈 zde měň výchozí počet zobrazených boxů/emisí na HomePage
@@ -118,6 +141,7 @@ export default function StampCatalog(props) {
   const [homeSortMode, setHomeSortMode] = useState(
     () => localStorage.getItem("ktf_home_sort_mode") || "db"
   );
+  const [homePage, setHomePage] = useState(1);
   const location = typeof useLocation === 'function' ? useLocation() : {};
 
   // Automatické rozbalení boxu po příchodu z hlavní stránky
@@ -450,22 +474,125 @@ export default function StampCatalog(props) {
     });
   }, [filtered, isHomepageDefault, homeSortMode]);
 
+  const homepagePageSize = useMemo(() => {
+    if (homeBoxLimit === "all") {
+      return null;
+    }
+
+    const parsedLimit = Number(homeBoxLimit);
+    if (!Number.isFinite(parsedLimit) || parsedLimit <= 0) {
+      return HOMEPAGE_BOX_LIMIT;
+    }
+
+    return parsedLimit;
+  }, [homeBoxLimit, HOMEPAGE_BOX_LIMIT]);
+
+  const isHomepagePaginationActive = isHomepageDefault && homepagePageSize !== null;
+
+  const totalHomepagePages = useMemo(() => {
+    if (!isHomepagePaginationActive || !homepagePageSize) {
+      return 1;
+    }
+
+    return Math.max(1, Math.ceil(groupedBoxes.length / homepagePageSize));
+  }, [groupedBoxes.length, homepagePageSize, isHomepagePaginationActive]);
+
+  useEffect(() => {
+    if (!isHomepageDefault) {
+      setHomePage(1);
+      return;
+    }
+
+    setHomePage(1);
+    setExpandedBoxes([]);
+  }, [isHomepageDefault, homeSortMode, homeBoxLimit]);
+
+  useEffect(() => {
+    if (!isHomepagePaginationActive) {
+      if (homePage !== 1) {
+        setHomePage(1);
+      }
+      return;
+    }
+
+    if (homePage > totalHomepagePages) {
+      setHomePage(totalHomepagePages);
+    }
+  }, [homePage, isHomepagePaginationActive, totalHomepagePages]);
+
+  const homepageVisiblePages = useMemo(() => {
+    if (!isHomepagePaginationActive || totalHomepagePages <= 1) {
+      return [];
+    }
+
+    const windowSize = 4;
+
+    if (totalHomepagePages <= windowSize) {
+      return Array.from({ length: totalHomepagePages }, (_, idx) => idx + 1);
+    }
+
+    let start;
+    let end;
+
+    if (homePage <= windowSize - 1) {
+      start = 1;
+      end = windowSize;
+    } else if (homePage >= totalHomepagePages - (windowSize - 1)) {
+      end = totalHomepagePages;
+      start = totalHomepagePages - windowSize + 1;
+    } else {
+      start = homePage - 1;
+      end = start + windowSize - 1;
+    }
+
+    const sortedPages = Array.from({ length: end - start + 1 }, (_, idx) => start + idx);
+    const tokens = [];
+
+    if (start > 1) {
+      tokens.push(1);
+      if (start > 2) {
+        tokens.push("ellipsis-left");
+      }
+    }
+
+    sortedPages.forEach((page, index) => {
+      tokens.push(page);
+      const nextPage = sortedPages[index + 1];
+      if (typeof nextPage === "number" && nextPage - page > 1) {
+        tokens.push(`ellipsis-${page}-${nextPage}`);
+      }
+    });
+
+    if (end < totalHomepagePages) {
+      if (end < totalHomepagePages - 1) {
+        tokens.push("ellipsis-right");
+      }
+      tokens.push(totalHomepagePages);
+    }
+
+    return tokens;
+  }, [homePage, isHomepagePaginationActive, totalHomepagePages]);
+
+  function handleHomepagePageChange(nextPage) {
+    const safePage = Math.max(1, Math.min(nextPage, totalHomepagePages));
+    if (safePage === homePage) return;
+    setExpandedBoxes([]);
+    setHomePage(safePage);
+  }
+
   const boxesToRender = useMemo(() => {
     if (!isHomepageDefault) {
       return groupedBoxes;
     }
 
-    if (homeBoxLimit === "all") {
+    if (!isHomepagePaginationActive || !homepagePageSize) {
       return groupedBoxes;
     }
 
-    const parsedLimit = Number(homeBoxLimit);
-    if (!Number.isFinite(parsedLimit) || parsedLimit <= 0) {
-      return groupedBoxes.slice(0, HOMEPAGE_BOX_LIMIT);
-    }
-
-    return groupedBoxes.slice(0, parsedLimit);
-  }, [groupedBoxes, isHomepageDefault, homeBoxLimit, HOMEPAGE_BOX_LIMIT]);
+    const startIndex = (homePage - 1) * homepagePageSize;
+    const endIndex = startIndex + homepagePageSize;
+    return groupedBoxes.slice(startIndex, endIndex);
+  }, [groupedBoxes, isHomepageDefault, isHomepagePaginationActive, homepagePageSize, homePage]);
 
   const displayedBoxCount = boxesToRender.length;
 
@@ -880,7 +1007,7 @@ export default function StampCatalog(props) {
                               )}
                             </div>
                             <div className="stamp-title stamp-title-abbr">
-                              <EmissionTitleAbbr>{replaceAbbreviations(`${emise} (${rok})`)}</EmissionTitleAbbr>
+                              <EmissionTitleAbbr>{renderEmissionTitleWithPragaSuffix(emise, rok)}</EmissionTitleAbbr>
                             </div>
                             <div className="stamp-bottom">
                               <div>Katalog: <span className="catalog">{renderCatalogDisplay(katalogText, `${key}-collapsed`)}</span></div>
@@ -939,7 +1066,7 @@ export default function StampCatalog(props) {
                               )}
                             </div>
                             <div className="stamp-title stamp-title-abbr">
-                              <EmissionTitleAbbr>{replaceAbbreviations(`${item.emise} (${item.rok})`)}</EmissionTitleAbbr>
+                              <EmissionTitleAbbr>{renderEmissionTitleWithPragaSuffix(item.emise, item.rok)}</EmissionTitleAbbr>
                             </div>
                             <div className="stamp-bottom">
                               <div>Katalog: <span className="catalog">{renderCatalogDisplay(katalogText || item.katalogCislo, `${key}-${idx}-expanded`)}</span></div>
@@ -952,6 +1079,53 @@ export default function StampCatalog(props) {
                 }
               })()}
             </div>
+            {isHomepagePaginationActive && totalHomepagePages > 1 && (
+              <div className="home-pagination-row" role="navigation" aria-label="Stránkování emisí">
+                <div className="home-pagination">
+                  <button
+                    type="button"
+                    className="home-pagination-btn"
+                    onClick={() => handleHomepagePageChange(homePage - 1)}
+                    disabled={homePage <= 1}
+                    aria-label="Předchozí stránka"
+                  >
+                    Předchozí
+                  </button>
+
+                  {homepageVisiblePages.map((pageToken) => {
+                    if (typeof pageToken !== "number") {
+                      return (
+                        <span key={String(pageToken)} className="home-pagination-ellipsis" aria-hidden="true">…</span>
+                      );
+                    }
+
+                    const isActive = pageToken === homePage;
+                    return (
+                      <button
+                        key={pageToken}
+                        type="button"
+                        className={`home-pagination-btn home-pagination-btn--page${isActive ? " home-pagination-btn--active" : ""}`}
+                        onClick={() => handleHomepagePageChange(pageToken)}
+                        aria-current={isActive ? "page" : undefined}
+                        aria-label={`Strana ${pageToken}`}
+                      >
+                        {pageToken}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    className="home-pagination-btn"
+                    onClick={() => handleHomepagePageChange(homePage + 1)}
+                    disabled={homePage >= totalHomepagePages}
+                    aria-label="Další stránka"
+                  >
+                    Další
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>

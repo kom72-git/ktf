@@ -1540,6 +1540,9 @@ textarea.resize-corner {
   padding: 0;
   font-size: inherit; /* h1 uvnitř – bere font z rodiče */
 }
+.emission-praga88-suffix {
+  font-weight: 400;
+}
 .detail-catalog {
   font-size: 1.05rem;
   color: #444;
@@ -1734,6 +1737,76 @@ textarea.resize-corner {
   outline: none;
   border-color: #93c5fd;
 }
+
+.home-pagination-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+  margin-bottom: 6px;
+  padding-right: 0;
+  margin-right: -7px;
+}
+
+.home-pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.home-pagination-btn {
+  height: 26px;
+  min-width: 26px;
+  padding: 0 9px;
+  border-radius: 5px;
+  border: 1px solid #d8dee8;
+  background: linear-gradient(180deg, #ffffff 0%, #eef3f9 100%);
+  color: #475569;
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+  transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s, transform 0.08s;
+}
+
+.home-pagination-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, #f8fbff 0%, #e9f1ff 100%);
+  border-color: #c7d2e3;
+  color: #1d4ed8;
+  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.16);
+}
+
+.home-pagination-btn:disabled {
+  cursor: default;
+  opacity: 0.45;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.home-pagination-btn--page {
+  min-width: 28px;
+  padding: 0 7px;
+}
+
+.home-pagination-btn--active {
+  border-color: #2563eb;
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 5px rgba(37, 99, 235, 0.18);
+}
+
+.home-pagination-btn--active:hover:not(:disabled) {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+
+.home-pagination-ellipsis {
+  color: #64748b;
+  padding: 0 3px;
+  font-size: 0.92rem;
+  user-select: none;
+}
+
 .count-control-toggle {
   width: 26px;
   height: 26px;
@@ -2200,6 +2273,23 @@ textarea.resize-corner {
   }
   .count-controls {
     justify-content: flex-start;
+  }
+
+  .home-pagination-row {
+    justify-content: flex-start;
+    width: 100%;
+    padding-right: 0;
+    margin-right: 0;
+  }
+
+  .home-pagination {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .home-pagination-btn {
+    height: 26px;
+    font-size: 0.82rem;
   }
 
   .help-banner-frame {

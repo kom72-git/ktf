@@ -80,6 +80,29 @@ function parseLiteratureEntries(rawValue) {
     .filter(Boolean);
 }
 
+function renderEmissionTitleWithPragaSuffix(emise, rok) {
+  const emissionText = String(emise || "");
+  const yearSuffix = ` (${rok})`;
+  const pragaSuffix = " – PRAGA '88";
+  const suffixIndex = emissionText.indexOf(pragaSuffix);
+
+  if (suffixIndex === -1) {
+    return replaceAbbreviations(`${emissionText}${yearSuffix}`);
+  }
+
+  const beforeSuffix = emissionText.slice(0, suffixIndex);
+  const suffixText = pragaSuffix;
+  const afterSuffix = emissionText.slice(suffixIndex + pragaSuffix.length);
+
+  return (
+    <>
+      {replaceAbbreviations(beforeSuffix)}
+      <span className="emission-praga88-suffix">{suffixText}</span>
+      {replaceAbbreviations(`${afterSuffix}${yearSuffix}`)}
+    </>
+  );
+}
+
 export default function DetailPage({ id, onBack, defects, isAdmin = false, fieldSuggestions = {}, allStamps = [] }) {
   const [item, setItem] = useState(null);
   const [localDefects, setLocalDefects] = useState(defects || []);
@@ -1498,7 +1521,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             </div>
           </>
         ) : (
-          <h1 id={detailHeadingId} className="detail-title-text">{replaceAbbreviations(`${item.emise} (${item.rok})`)}</h1>
+          <h1 id={detailHeadingId} className="detail-title-text">{renderEmissionTitleWithPragaSuffix(item.emise, item.rok)}</h1>
         )}
       </header>
       <div className="detail-catalog">
