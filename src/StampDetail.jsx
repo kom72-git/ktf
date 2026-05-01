@@ -4,11 +4,15 @@ import VariantTooltip from "./components/VariantTooltip.jsx";
 import {
   replaceAbbreviations,
   formatPopisWithAll,
-  formatDefectDescription
+  formatDefectDescription,
+  renderEmissionTitleWithPragaSuffix
 } from "./utils/formatovaniTextu.jsx";
 import {
   naturalVariantSort,
-  compareVariantsWithBracket
+  compareVariantsWithBracket,
+  splitCatalogDisplaySuffix,
+  renderCatalogDisplay,
+  CATALOG_SUFFIX_SPACING
 } from "./utils/katalog.js";
 import {
   normalizeStampImagePath,
@@ -17,21 +21,10 @@ import {
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import "./fancybox-responsive.css";
 import ImageSources from "./components/ImageSources.jsx";
+import VariantList from "./components/VariantList.jsx";
 
 const LITERATURE_PREFIX_REGEX = /^\s*(?:\[(\d+)\]|(\d+)([.)]))\s*(.*)$/;
 const LITERATURE_URL_REGEX = /(https?:\/\/[^\s]+)/i;
-const CATALOG_DISPLAY_SUFFIX_RE = /^(.*?\d+(?:\/\d+)?)([A-Za-zČŘŽŠĚÚŮ]+(?:\/[A-Za-zČŘŽŠĚÚŮ]+)*)$/i;
-const CATALOG_SUFFIX_SPACING = "\u202F";
-
-function splitCatalogDisplaySuffix(text) {
-  const normalizedText = String(text || "").trim();
-  const match = normalizedText.match(CATALOG_DISPLAY_SUFFIX_RE);
-  return {
-    base: match ? match[1] : normalizedText,
-    suffix: match ? match[2] : "",
-  };
-}
-
 function parseLiteratureEntries(rawValue) {
   if (typeof rawValue !== "string" || rawValue.trim() === "") {
     return [];
@@ -80,29 +73,6 @@ function parseLiteratureEntries(rawValue) {
     .filter(Boolean);
 }
 
-function renderEmissionTitleWithPragaSuffix(emise, rok) {
-  const emissionText = String(emise || "");
-  const yearSuffix = ` (${rok})`;
-  const pragaSuffix = " – PRAGA '88";
-  const suffixIndex = emissionText.indexOf(pragaSuffix);
-
-  if (suffixIndex === -1) {
-    return replaceAbbreviations(`${emissionText}${yearSuffix}`);
-  }
-
-  const beforeSuffix = emissionText.slice(0, suffixIndex);
-  const suffixText = pragaSuffix;
-  const afterSuffix = emissionText.slice(suffixIndex + pragaSuffix.length);
-
-  return (
-    <>
-      {replaceAbbreviations(beforeSuffix)}
-      <span className="emission-praga88-suffix">{suffixText}</span>
-      {replaceAbbreviations(`${afterSuffix}${yearSuffix}`)}
-    </>
-  );
-}
-
 export default function DetailPage({ id, onBack, defects, isAdmin = false, fieldSuggestions = {}, allStamps = [] }) {
   const [item, setItem] = useState(null);
   const [localDefects, setLocalDefects] = useState(defects || []);
@@ -129,6 +99,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     ([, values]) => Array.isArray(values) && values.length > 0
   );
   const lastAutoImageBaseRef = useRef("");
+  const variantListRef = useRef(null);
   const lastAutoSavedPrefillRef = useRef("");
   const isAutoSavingPrefillRef = useRef(false);
 
@@ -390,7 +361,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   };
 
   // Funkce pro editaci vady
-  const saveDefectEdit = async (defectId, updatedData) => {
+  const saveDefectEdit = async (defectId, updatedData, options = {}) => {
+    const { silent = false } = options;
     try {
       console.log('=== SAVING DEFECT ===');
       console.log('defectId:', defectId);
@@ -407,6 +379,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       // Zkusme použít MongoDB _id nebo idVady
       const actualId = defectId._id || defectId.idVady || defectId;
+      if (!actualId) {
+        if (!silent) {
+          alert('Chyba při ukládání vady: chybí ID varianty');
+        }
+        return false;
+      }
       console.log('Using ID for API:', actualId);
 
       // Pro lokální vývoj použijeme server API
@@ -423,28 +401,82 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         body: JSON.stringify(updatedData)
       });
 
-      const responseData = await response.json();
-      console.log('API Response:', responseData);
+      const responseContentType = response.headers.get('content-type') || '';
+      const isJsonResponse = responseContentType.includes('application/json');
+      let responseData = null;
+      let responseText = '';
+
+      if (response.status !== 204) {
+        if (isJsonResponse) {
+          responseData = await response.json().catch(() => null);
+        } else {
+          responseText = await response.text().catch(() => '');
+          if (responseText) {
+            try {
+              responseData = JSON.parse(responseText);
+            } catch {
+              responseData = null;
+            }
+          }
+        }
+      }
+
+      console.log('API Response:', responseData || responseText || `HTTP ${response.status}`);
 
       if (response.ok) {
         console.log('Vada úspěšně aktualizována');
+        const savedDefect = responseData && typeof responseData === 'object'
+          ? responseData
+          : { ...updatedData, _id: actualId, idVady: actualId };
         setLocalDefects((prev) => prev.map((defect) => {
           const currentId = defect._id?.toString() || defect.idVady;
-          return currentId === actualId.toString() ? responseData : defect;
+          return currentId === actualId.toString() ? savedDefect : defect;
         }));
         // Zobraz dočasnou hlášku
-        const notification = document.createElement('div');
-        notification.textContent = 'Uloženo';
-        notification.className = 'ktf-notification';
-        document.body.appendChild(notification);
-        setTimeout(() => document.body.removeChild(notification), 2000);
+        if (!silent) {
+          const notification = document.createElement('div');
+          notification.textContent = 'Uloženo';
+          notification.className = 'ktf-notification';
+          document.body.appendChild(notification);
+          setTimeout(() => document.body.removeChild(notification), 2000);
+        }
+        return true;
       } else {
         console.error('Chyba při ukládání vady:', responseData);
-        alert(`Chyba při ukládání vady: ${responseData.error || 'Neznámá chyba'}`);
+        const errorMessage =
+          responseData?.error
+          || responseText?.trim()
+          || `HTTP ${response.status}`;
+
+        // Některé verze backendu vrací tuto hlášku i při no-op update (data již odpovídají DB).
+        // V takovém případě bereme výsledek jako úspěch, aby nevznikala falešná chyba v UI.
+        if (errorMessage === 'Nepodařilo se aktualizovat vadu') {
+          const savedDefect = { ...updatedData, _id: actualId, idVady: actualId };
+          setLocalDefects((prev) => prev.map((defect) => {
+            const currentId = defect._id?.toString() || defect.idVady;
+            return currentId === actualId.toString() ? savedDefect : defect;
+          }));
+          if (!silent) {
+            const notification = document.createElement('div');
+            notification.textContent = 'Uloženo';
+            notification.className = 'ktf-notification';
+            document.body.appendChild(notification);
+            setTimeout(() => document.body.removeChild(notification), 2000);
+          }
+          return true;
+        }
+
+        if (!silent) {
+          alert(`Chyba při ukládání vady: ${errorMessage}`);
+        }
+        return false;
       }
     } catch (error) {
       console.error('Chyba při ukládání:', error);
-      alert('Chyba při ukládání vady: ' + error.message);
+      if (!silent) {
+        alert('Chyba při ukládání vady: ' + error.message);
+      }
+      return false;
     }
   };
 
@@ -524,6 +556,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       if (response.ok) {
         console.log('Známka úspěšně aktualizována');
         setItem(responseData);
+        return true;
+      } else if (responseData.error === 'Nepodařilo se aktualizovat známku') {
+        // No-op update (data beze změny) – nepovažujeme za chybu
+        console.log('Známka bez změny – ignorujeme');
         return true;
       } else {
         console.error('Chyba při ukládání známky:', responseData);
@@ -666,6 +702,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     if (stampSaved) {
       setEditingDefect(null);
     }
+    await variantListRef.current?.saveAll();
     setIsSavingAllChanges(false);
   };
 
@@ -1024,125 +1061,6 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     );
   })();
 
-  // Rozdělení na běžné a plus varianty
-  const grouped = {};
-  const plusVariants = [];
-  // Pro B zobrazuje i zděděné varianty z A také v edit módu,
-  // aby bylo možné nastavovat checkbox "Mám/Nemám" i pro ně.
-  const renderDefects = effectiveDefects;
-  renderDefects.forEach(def => {
-    if (!def.variantaVady) return;
-    if (def.variantaVady.includes(',')) {
-      plusVariants.push(def);
-      return;
-    }
-    // Hlavní varianta je první písmeno (A, B, ...) nebo číslo → číselné jdou do jedné skupiny
-    const isNum = /^\d+$/.test(def.variantaVady);
-    const lk = !isNum && def.variantaVady.match(/^([A-Z])/i);
-    const groupKey = isNum ? '__numeric__' : (lk ? lk[0] : '?');
-    // Alternativa: každé číslo jako vlastní skupina (odkomentovat + zakomentovat řádek výše):
-    // const groupKey = isNum ? def.variantaVady : (lk ? lk[0] : '?');
-    if (!grouped[groupKey]) grouped[groupKey] = [];
-    grouped[groupKey].push(def);
-  });
-
-  const groupedKeysSorted = Object.keys(grouped).sort((ka, kb) => {
-    if (ka === '__numeric__') return 1;
-    if (kb === '__numeric__') return -1;
-    return ka.localeCompare(kb);
-  });
-  // Alternativa pro individuální číselné skupiny (párovat s výše):
-  // const groupedKeysSorted = Object.keys(grouped).sort((ka, kb) => {
-  //   const na = /^\d+$/.test(ka), nb = /^\d+$/.test(kb);
-  //   if (na && nb) return parseInt(ka, 10) - parseInt(kb, 10);
-  //   if (na) return 1; if (nb) return -1;
-  //   return ka.localeCompare(kb);
-  // });
-  const groupedVariantsOrdered = groupedKeysSorted.flatMap(groupKey =>
-    grouped[groupKey].slice().sort(compareVariantsWithBracket)
-  );
-  const plusVariantsOrdered = plusVariants.slice();
-  // Jednotné pořadí všech variant pro konzistentní číslování a Fancybox
-  const allVariantsOrdered = [...groupedVariantsOrdered, ...plusVariantsOrdered];
-  const getImageNumber = (def) => {
-    const idx = allVariantsOrdered.indexOf(def);
-    return idx === -1 ? '?' : idx + 1;
-  };
-  const buildDefectDescriptionWithVariant = (def) => {
-    const variant = String(def?.variantaVady || "").trim();
-    const description = String(def?.popisVady || "").trim();
-    if (!variant) return description;
-    if (!description) return `[${variant}]`;
-    return `[${variant}] ${description}`;
-  };
-  const splitLeadingVariantToken = (text) => {
-    const value = typeof text === "string" ? text : String(text ?? "");
-    const match = value.match(/^\s*\[([^\]]+)\]([A-Za-z]?)(.*)$/s);
-    if (!match) {
-      return { variantToken: null, descriptionText: value };
-    }
-
-    const contentRaw = (match[1] || "").trim();
-    const suffixRaw = (match[2] || "").trim();
-    const rest = (match[3] || "").trimStart();
-    if (!contentRaw) {
-      return { variantToken: null, descriptionText: value };
-    }
-
-    // Podpora alternativního zápisu suffixu: [A(a)] -> [A]a, [B1(a)] -> [B1]a.
-    let content = contentRaw;
-    let suffix = suffixRaw;
-    if (!suffix) {
-      const bracketSuffixMatch = contentRaw.match(/^(.*?)\s*\(([A-Za-z])\)$/);
-      if (bracketSuffixMatch && bracketSuffixMatch[1]) {
-        content = bracketSuffixMatch[1].trim();
-        suffix = bracketSuffixMatch[2];
-      }
-    }
-
-    return {
-      variantToken: { content, suffix },
-      descriptionText: rest,
-    };
-  };
-
-  const renderVariantToken = (token, boldBracket) => {
-    if (!token || !token.content) return null;
-    return (
-      <>
-        {boldBracket ? <strong>{token.content}</strong> : <span>{token.content}</span>}
-        {token.suffix ? <span className="variant-suffix">{token.suffix}</span> : null}
-      </>
-    );
-  };
-  const getSubvariantHeadingLabel = (rawVariant) => {
-    const value = String(rawVariant || "").trim();
-    if (!value) return "";
-
-    // Pro nadpis podvariant dočasně skrýváme suffix zápisy typu A(a),
-    // aby se zde nevypisovalo [A]a. Data i render pod obrázkem suffix zachovávají.
-    const match = value.match(/^(.*?)\s*\(([A-Za-z])\)$/);
-    if (match && match[1]) {
-      return match[1].trim();
-      // Výhledově lze vrátit plný formát se suffixem, např. `${match[1].trim()}(${match[2]})`.
-    }
-
-    return value;
-  };
-  const normalizeVariantTokenForCaption = (text) => {
-    const value = typeof text === "string" ? text : String(text ?? "");
-    const { variantToken, descriptionText } = splitLeadingVariantToken(value);
-    if (!variantToken || !variantToken.content) return value;
-
-    const token = `[${variantToken.content}]${variantToken.suffix || ""}`;
-    return descriptionText ? `${token} - ${descriptionText}` : token;
-  };
-  const normalizeDefectOrderForSave = (value) => {
-    const raw = String(value ?? "").trim();
-    if (!raw) return "";
-    const parsed = Number(raw);
-    return Number.isFinite(parsed) ? parsed : "";
-  };
   const secondStudyBlockClass = isEditingAll ? 'study-note-block editing' : 'study-note-block';
   const isVerifiedStamp = Boolean(item?.overeno);
   const detailHeadingId = `stamp-detail-${item.idZnamky || id}-title`;
@@ -1153,80 +1071,6 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const normalizeImageSrc = (src) => {
     if (!src || typeof src !== "string") return "";
     return src[0] !== "/" && !src.startsWith("http") ? `/${src}` : src;
-  };
-
-  const parseDefectImagePathFlags = (src) => {
-    const raw = String(src ?? "").trim();
-    const isExplicitUnavailable = /\(n\/a\)\s*$/i.test(raw);
-    const value = raw.replace(/\(n\/a\)\s*$/i, "").trim();
-
-    if (!value) {
-      return {
-        normalizedPath: "",
-        hasImageDashedMarker: false,
-        hasBoxDashedMarker: false,
-        isExplicitNoImage: isExplicitUnavailable
-      };
-    }
-
-    if (/^(https?:|data:)/i.test(value)) {
-      return {
-        normalizedPath: value,
-        hasImageDashedMarker: false,
-        hasBoxDashedMarker: false,
-        isExplicitNoImage: isExplicitUnavailable
-      };
-    }
-
-    const parts = value.split("/");
-    const rawLastPart = parts[parts.length - 1] || "";
-    let lastPart = rawLastPart;
-    let hasBoxDashedMarker = false;
-
-    // Marker "!" na začátku názvu obrázku zapíná přerušované orámování celého boxu varianty.
-    if (lastPart.startsWith("!")) {
-      hasBoxDashedMarker = true;
-      lastPart = lastPart.slice(1);
-    }
-
-    const hasImageDashedMarker = lastPart.startsWith("_");
-    parts[parts.length - 1] = lastPart;
-
-    return {
-      normalizedPath: parts.join("/"),
-      hasImageDashedMarker,
-      hasBoxDashedMarker,
-      isExplicitNoImage: isExplicitUnavailable
-    };
-  };
-
-  const normalizeDefectImageSrc = (src) => {
-    const { normalizedPath, isExplicitNoImage } = parseDefectImagePathFlags(src);
-    const value = normalizedPath;
-    if (!value) return "";
-    if (isExplicitNoImage) return "/img/no-img.png";
-    if (/^(https?:|data:)/i.test(value)) return value;
-
-    const withoutLeadingSlash = value.replace(/^\/+/, "");
-    const withImgPrefix = withoutLeadingSlash.startsWith("img/")
-      ? withoutLeadingSlash
-      : `img/${withoutLeadingSlash}`;
-
-    const parts = withImgPrefix.split("/");
-    const lastPart = parts[parts.length - 1] || "";
-    const hasExtension = /\.[a-z0-9]{2,5}$/i.test(lastPart);
-    let normalized = withImgPrefix;
-    if (!hasExtension) {
-      const typoExtMatch = lastPart.match(/^(.*?)(jpe?g|png|webp|gif)$/i);
-      if (typoExtMatch && typoExtMatch[1]) {
-        const fixedLast = `${typoExtMatch[1]}.${typoExtMatch[2]}`;
-        parts[parts.length - 1] = fixedLast;
-        normalized = parts.join("/");
-      } else {
-        normalized = `${withImgPrefix}.jpg`;
-      }
-    }
-    return `/${normalized}`;
   };
 
   const getPreviewImageSrc = (stamp) => {
@@ -1293,41 +1137,6 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     );
   };
   const additionalStudyHeadingId = `${detailHeadingId}-study-after`;
-  // Fancybox galerie pro skupinu
-  const openFancybox = (flatIndex = 0, clickedSrc = '') => {
-    if (!allVariantsOrdered || allVariantsOrdered.length === 0) return;
-    const slides = allVariantsOrdered.map(def => {
-      const displayDescription = buildDefectDescriptionWithVariant(def);
-      const captionDescription = normalizeVariantTokenForCaption(displayDescription);
-      return {
-        src: normalizeDefectImageSrc(def.obrazekVady) || '/img/no-image.png',
-        caption:
-          `<div class='fancybox-caption-center'>`
-          + `<span class='fancybox-caption-variant'>${def.umisteniVady || ''}</span>`
-          + (captionDescription ? `<br /><span class='fancybox-caption-desc'>${captionDescription.replace(/\[\[\.\.\.\]\]/g, '')}</span>` : '')
-          + `</div>`
-      };
-    });
-    if (clickedSrc && slides[flatIndex]) {
-      slides[flatIndex] = {
-        ...slides[flatIndex],
-        src: clickedSrc,
-      };
-    }
-    Fancybox.show(slides, {
-      startIndex: flatIndex,
-      Toolbar: [ 'thumbs', 'zoom', 'close' ],
-      dragToClose: true,
-      animated: true,
-      compact: false,
-      showClass: 'fancybox-zoomIn',
-      hideClass: 'fancybox-zoomOut',
-      closeButton: 'top',
-      defaultType: 'image',
-      Carousel: { Thumbs: { showOnStart: false } },
-    });
-  };
-
   return (
     <article className="stamp-detail-block" aria-labelledby={detailHeadingId}>
       <div className="button-row">
@@ -2161,610 +1970,23 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             </>
           )}
           <div className="study-clear" />
-          {isEditingAll && isViewingBVariant && aStamp && (() => {
-            const aDefects = localDefects.filter(d => d.idZnamky === aStamp.idZnamky);
-            if (aDefects.length === 0) return null;
-            const excluded = item.variantyVylouceneZA || [];
-            return (
-              <div className="ktf-exclude-variants-box">
-                <strong>Varianty zděděné z A</strong> — odškrtni ty, které se u B nezobrazí:
-                <div className="ktf-exclude-variants-list">
-                  {aDefects.map(def => (
-                    <label key={getInheritedDefectKey(def)} className="ktf-exclude-variant-item">
-                      <input
-                        type="checkbox"
-                        checked={!isExcludedInheritedDefect(def, excluded)}
-                        onChange={(e) => {
-                          const defectKey = getInheritedDefectKey(def);
-                          const newExcluded = e.target.checked
-                            ? excluded.filter(v => v !== defectKey && v !== def.variantaVady)
-                            : [...excluded, defectKey];
-                          setItem(prev => ({ ...prev, variantyVylouceneZA: newExcluded }));
-                          saveTechnicalField('variantyVylouceneZA', newExcluded);
-                        }}
-                      />
-                      {def.variantaVady}{def.umisteniVady ? ` – ${def.umisteniVady}` : ''}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
-          {isEditingAll && (
-            <div className="ktf-tip-wrap" role="note" aria-label="Nápověda k editaci variant">
-              <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
-              <div className="ktf-tip-box ktf-tip-box-bulleted">
-                <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Vlož <code>[[...]]</code> kde chceš schovat text, před ní bude text vidět hned a text za ní se zobrazí jen po přejetí myší (…)</span>
-                <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">V adrese obrázku varianty: <code>_</code> na začátku názvu = čárkovaný obrázek ✧ <code>!</code> na začátku názvu = čárkovaný box varianty ✧ <code>!</code> je jen marker v adrese (soubor ukládej bez něj) ✧ <code>(n/a)</code> na konci adresy = trvale nedostupný obrázek</span>
-              </div>
-            </div>
-          )}
-          {/* Seskupení variant podle hlavní varianty (A, B, ...) */}
-          {groupedKeysSorted.map(group => {
-            const defs = grouped[group];
-            // Deduplicitace podle variantaVady
-            const uniqueDefsMap = new Map();
-            defs.forEach(def => {
-              if (def.variantaVady && !uniqueDefsMap.has(def.variantaVady)) {
-                uniqueDefsMap.set(def.variantaVady, def);
-              }
-            });
-            const uniqueDefs = Array.from(uniqueDefsMap.values());
-            // Přirozené řazení
-            const sortedDefs = uniqueDefs.slice().sort(naturalVariantSort);
-            // --- úprava číslování obrázků ---
-            const NO_IMAGE = '/img/no-image.png';
-            const subvariantLabels = (() => {
-              // Pouze skutečné podvarianty: délka větší než 1 nebo obsahují tečku
-              const seen = new Set();
-              return sortedDefs.filter(def => {
-                if (!def.variantaVady) return false;
-                if (def.variantaVady.length === 1) return false; // základní varianta (A, B, ...)
-                if (/^\d+$/.test(def.variantaVady)) return false; // číselné varianty 1, 2, 10 ... nejsou podvarianty
-                if (seen.has(def.variantaVady)) return false;
-                seen.add(def.variantaVady);
-                return true;
-              }).map(d => ({ label: getSubvariantHeadingLabel(d.variantaVady), bold: !!d.tucneVSeznamu }));
-            })();
-            const hasSubvariants = subvariantLabels.some(item => item.label.includes('.'));
-            const subvariantTitle = hasSubvariants ? 'Obsahuje podvarianty a subvarianty' : 'Obsahuje podvarianty';
-            const isNumericGroup = group === '__numeric__';
-            const numericNums = isNumericGroup
-              ? sortedDefs.map(d => parseInt(d.variantaVady, 10)).filter(n => !isNaN(n)).sort((a,b) => a-b)
-              : [];
-            const numericRangeLabel = isNumericGroup && numericNums.length > 0
-              ? (numericNums.length === 1
-                  ? `${numericNums[0]}`
-                  : `${numericNums[0]} - ${numericNums[numericNums.length - 1]}`)
-              : "";
-            const mainDef = sortedDefs.find(def => def.variantaVady &&
-              (def.variantaVady.length === 1 || /^\d+$/.test(def.variantaVady)));
-            const typVarianty = mainDef && mainDef.typVarianty ? mainDef.typVarianty : '';
-            const defaultVariantHeading = isNumericGroup
-              ? (
-                <>
-                  <span className="variant-subtitle-prefix">{numericNums.length === 1 ? "Varianta" : "Varianty"}</span>
-                  <span className="variant-subtitle-name">{numericRangeLabel}</span>
-                </>
-              )
-              : (
-                <>
-                  <span className="variant-subtitle-prefix">Varianta</span>
-                  <span className="variant-subtitle-name">{group}</span>
-                </>
-              );
-            return (
-              <section key={group} aria-labelledby={`${variantsHeadingBaseId}-${group}`}>
-                <h3 id={`${variantsHeadingBaseId}-${group}`} className="variant-subtitle">
-                  {defaultVariantHeading}
-                  {isEditingAll && isAdmin && mainDef ? (
-                    <>
-                      <span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span>
-                      <input
-                        type="text"
-                        className="variant-typ-edit-input"
-                        defaultValue={typVarianty}
-                        placeholder="typ varianty…"
-                        id={`typVarianty-input-${group}`}
-                      />
-                      <button
-                        className="ktf-btn-check"
-                        title="Uložit typ varianty"
-                        style={{ marginLeft: '4px', verticalAlign: 'middle' }}
-                        onClick={() => {
-                          const val = document.getElementById(`typVarianty-input-${group}`)?.value ?? '';
-                          saveDefectEdit(mainDef._id || mainDef.idVady, { ...mainDef, typVarianty: val });
-                        }}
-                      >✓</button>
-                    </>
-                  ) : (
-                    typVarianty && (
-                      <><span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span><span className="variant-type">{typVarianty}</span></>
-                    )
-                  )}
-                </h3>
-                {subvariantLabels.length > 0 && (
-                  <div className="variant-group-info">
-                    <span className="variant-group-info-icon" title={subvariantTitle}>
-                      <img src="/img/ico_podvarianty.png" alt="info" className="variant-group-info-icon" />
-                    </span>
-                    <span className="variant-group-info-text">{subvariantTitle}: {subvariantLabels.map((item, i) => (
-                      <span key={item.label + i}>{i > 0 && ', '}{item.bold ? <strong>{item.label}</strong> : item.label}</span>
-                    ))}</span>
-                  </div>
-                )}
-                <div className="variants">
-                  {/* Všechny výskyty variant včetně duplicit, v přirozeném pořadí */}
-                  {defs.slice().sort(compareVariantsWithBracket).map((def, i) => {
-                    const flatIndex = allVariantsOrdered.indexOf(def);
-                    const imagePathFlags = parseDefectImagePathFlags(def.obrazekVady);
-                    const isSpecial = imagePathFlags.hasImageDashedMarker;
-                    const isExplicitNoImage = imagePathFlags.isExplicitNoImage;
-                    const isSpecialBox = imagePathFlags.hasBoxDashedMarker;
-                    const displayDescription = buildDefectDescriptionWithVariant(def);
-                    const { variantToken, descriptionText } = splitLeadingVariantToken(displayDescription);
-                    return (
-                      <div
-                        key={def.idVady || `var-${i}`}
-                        className={`variant${isSpecialBox ? ' variant-special-box' : ''}`}
-                        style={isAdmin ? { borderBottom: `2px solid ${def.mam ? '#16a34a' : '#dc2626'}` } : {}}
-                      >
-                        <div className="variant-popis">
-                          {isEditingAll ? (
-                            <textarea
-                              placeholder="Umístění"
-                              defaultValue={def.umisteniVady || ''}
-                              className="edit-variant-textarea"
-                            />
-                          ) : (
-                            <>
-                              <span className="variant-popis-hlavni">{def.umisteniVady || ''}</span>
-                            </>
-                          )}
-                        </div>
-                        <div className="variant-img-bg variant-img-bg-pointer" onClick={(e) => openFancybox(flatIndex, e.currentTarget.querySelector('img')?.currentSrc || '')}>
-                          <img
-                            src={normalizeDefectImageSrc(def.obrazekVady) || NO_IMAGE}
-                            alt={def.idVady}
-                            className={`${isSpecial ? 'variant-img-special' : ''}${isExplicitNoImage ? ' variant-img-no-image' : ''}`.trim()}
-                            onError={e => { e.target.onerror = null; e.target.src = NO_IMAGE; }}
-                          />
-                        </div>
-                        {/* Editace URL obrázku vady */}
-                        {isEditingAll && (
-                          <div>
-                            <div className="edit-field-row">
-                              <input
-                                type="text"
-                                defaultValue={def.obrazekVady || ''}
-                                style={{
-                                  flex: 1,
-                                  minWidth: 0,
-                                  padding: '3px 5px',
-                                  border: '1px solid #d1d5db',
-                                  borderRadius: '3px',
-                                  fontSize: '11px',
-                                  background: '#fff'
-                                }}
-                                placeholder="https://example.com/obrazek.jpg"
-                                onBlur={e => {
-                                  let val = e.target.value;
-                                  if (val && val[0] !== '/' && !val.startsWith('http')) val = '/' + val;
-                                  if (val !== def.obrazekVady) {
-                                    saveDefectEdit(def._id, { ...def, obrazekVady: val });
-                                  }
-                                }}
-                              />
-                              <input
-                                type="number"
-                                data-field="poradiVady"
-                                defaultValue={def.poradiVady ?? ''}
-                                style={{ width: '26px', height: '26px', flexShrink: 0, borderRadius: '2px', textAlign: 'center', padding: '0', border: '1px solid #d1d5db', fontSize: '11px' }}
-                                min="0"
-                                step="1"
-                              />
-                            </div>
-                          </div>
-                        )}
-                        <div className="variant-label">
-                          {variantToken && (
-                            <span className={`variant-label-token${def.tucneVSeznamu ? ' variant-label-token-emph' : ''}`}>
-                              {renderVariantToken(variantToken, !!def.tucneVSeznamu)}
-                            </span>
-                          )}
-                          <span className="variant-label-prefix">obr.</span>{' '}{getImageNumber(def)}
-                        </div>
-                        {/* Editace nebo zobrazení popisu vady */}
-                        {isEditingAll ? (
-                          <div >
-                            <div className="edit-field-row" style={{marginBottom: '4px', display: 'flex', gap: '8px', alignItems: 'center'}}>
-                              <label title="Tučně v seznamu podvariant" style={{cursor:'pointer',display:'flex',alignItems:'center',gap:'2px',fontSize:'11px',flexShrink:0}}>
-                                <b>{'<b>'}</b>
-                                <input type="checkbox" data-field="tucneVSeznamu" defaultChecked={!!def.tucneVSeznamu} style={{width:'13px',height:'13px',cursor:'pointer'}} />
-                              </label>
-                              <span style={{fontSize:'12px',color:'#000',flexShrink:0,fontWeight:'bold'}}>[</span>
-                              <input
-                                type="text"
-                                placeholder="Varianta"
-                                defaultValue={def.variantaVady || ''}
-                                style={{
-                                  flex: 1,
-                                  minWidth: 0,
-                                  padding: '3px 5px',
-                                  border: '1px solid #d1d5db',
-                                  borderRadius: '3px',
-                                  fontSize: '11px',
-                                  background: '#fff'
-                                }}
-                              />
-                              <span style={{fontSize:'12px',color:'#000',flexShrink:0,fontWeight:'bold'}}>]</span>
-                              <label title="Mám tuto variantu" style={{cursor:'pointer',display:'flex',alignItems:'center',gap:'2px',fontSize:'11px',flexShrink:0}}>
-                                <span style={{color:'#16a34a',fontWeight:'bold'}}>✓</span>
-                                <input type="checkbox" data-field="mam" defaultChecked={!!def.mam} style={{width:'13px',height:'13px',cursor:'pointer'}}
-                                  onChange={e => {
-                                    if (isViewingBVariant && def.__inheritedFromA) {
-                                      saveInheritedMamForB(def, e.target.checked);
-                                      return;
-                                    }
-                                    saveDefectEdit(def._id || def.idVady, { ...def, mam: e.target.checked });
-                                  }}
-                                />
-                              </label>
-                            </div>
-                            <textarea
-                              defaultValue={def.popisVady || ''}
-                              rows={5}
-                              style={{
-                                width: '100%',
-                                padding: '6px',
-                                border: '1px solid #ddd',
-                                borderRadius: '4px',
-                                fontSize: '12px',
-                                resize: 'vertical',
-                                fontFamily: 'inherit'
-                              }}
-                              placeholder="Popis vady... (Ctrl+Enter pro uložení)"
-                              autoFocus
-                            />
-                            <div style={{ marginTop: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                              <button
-                                onClick={(e) => {
-                                  // Najdeme všechny input/textarea prvky v této variantě
-                                  const container = e.target.closest('.variant');
-                                  const variantInput = container.querySelector('input[placeholder="Varianta"]');
-                                  const umisteniInput = container.querySelector('textarea[placeholder="Umístění"]');
-                                  const popisTextarea = container.querySelector('textarea:not([placeholder="Umístění"])');
-                                  const imageInput = container.querySelector('input[placeholder="https://example.com/obrazek.jpg"]');
-                                  const orderInput = container.querySelector('input[data-field="poradiVady"]');
-                                  const boldCheckbox = container.querySelector('input[data-field="tucneVSeznamu"]');
-                                  const mamCheckbox = container.querySelector('input[data-field="mam"]');
-                                  if (isViewingBVariant && def.__inheritedFromA) {
-                                    saveInheritedMamForB(def, mamCheckbox?.checked ?? !!def.mam);
-                                    return;
-                                  }
-                                  // Uložíme všechny hodnoty najednou
-                                  saveDefectEdit(def._id || def.idVady, { 
-                                    ...def, 
-                                    variantaVady: variantInput?.value || '',
-                                    umisteniVady: umisteniInput?.value || '',
-                                    popisVady: popisTextarea?.value || '',
-                                    obrazekVady: imageInput?.value || '',
-                                    poradiVady: normalizeDefectOrderForSave(orderInput?.value),
-                                    tucneVSeznamu: boldCheckbox?.checked ?? !!def.tucneVSeznamu,
-                                    mam: mamCheckbox?.checked ?? !!def.mam
-                                  });
-                                }}
-                                className="ktf-btn-check"
-                              >
-                                ✓
-                              </button>
-                              <span className="edit-variant-help">Uloží vše</span>
-                              <button
-                                onClick={() => deleteDefect(def._id)}
-                                className="ktf-btn-delete"
-                                title="Smazat variantu z databáze"
-                              >
-                                🗑
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            {descriptionText && (() => {
-                              const SPLIT_REGEX = /\[\[\s*\.{3}\s*\]\]/;
-                              let parts = typeof descriptionText === 'string' ? descriptionText.split(SPLIT_REGEX) : [descriptionText];
-                              // Fallback: if split didn't match but exact literal exists, use indexOf split
-                              if (parts.length === 1 && typeof descriptionText === 'string') {
-                                const idxExact = descriptionText.indexOf('[[...]]');
-                                if (idxExact !== -1) {
-                                  parts = [descriptionText.slice(0, idxExact), descriptionText.slice(idxExact + '[[...]]'.length)];
-                                }
-                              }
-                              if (parts.length > 1) {
-                                // remove any stray markers left in parts as a safeguard
-                                const before = parts[0].replace(SPLIT_REGEX, '');
-                                const after = parts.slice(1).join('').replace(SPLIT_REGEX, '');
-                                // split parts prepared (no debug logs)
-                                return (
-                                  <div className="variant-popis-detail" style={{position: 'relative'}}>
-                                    <span className="variant-popis-short">{formatDefectDescription(before, { boldBracket: !!def.tucneVSeznamu })}</span>
-                                    <VariantTooltip tooltip={<span style={{fontSize: '13px'}}>{formatDefectDescription(after, { boldBracket: !!def.tucneVSeznamu })}</span>}>
-                                      …
-                                    </VariantTooltip>
-                                  </div>
-                                );
-                              }
-                              return (
-                                <div className="variant-popis-detail">{formatDefectDescription(descriptionText, { boldBracket: !!def.tucneVSeznamu })}</div>
-                              );
-                            })()}
-                            {isEditingAll && !def.popisVady && (
-                              <div style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic', marginTop: '4px' }}>
-                                Klikni na editační ikonu pro přidání popisu
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
-          {/* Speciální skupina pro varianty s + */}
-          {plusVariantsOrdered.length > 0 && (
-            <section aria-labelledby={`${variantsHeadingBaseId}-plus`}>
-              {(() => {
-                const plusVariantLabel = plusVariantsOrdered[0]?.variantaVady || "";
-                const isPlural = plusVariantLabel.includes(",");
-                const mainPlusDef = plusVariantsOrdered.find(def => def?.variantaVady) || plusVariantsOrdered[0];
-                const plusTypVarianty = mainPlusDef?.typVarianty || "";
-                return (
-              <h3 id={`${variantsHeadingBaseId}-plus`} className="variant-subtitle">
-                <>
-                  <span className="variant-subtitle-prefix">{isPlural ? "Varianty" : "Varianta"}</span>
-                  <span className="variant-subtitle-name">{plusVariantLabel}</span>
-                </>
-                {isEditingAll && isAdmin && mainPlusDef ? (
-                  <>
-                    <span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span>
-                    <input
-                      type="text"
-                      className="variant-typ-edit-input"
-                      defaultValue={plusTypVarianty}
-                      placeholder="typ varianty…"
-                      id="typVarianty-input-plus"
-                    />
-                    <button
-                      className="ktf-btn-check"
-                      title="Uložit typ varianty"
-                      style={{ marginLeft: '4px', verticalAlign: 'middle' }}
-                      onClick={() => {
-                        const val = document.getElementById('typVarianty-input-plus')?.value ?? '';
-                        saveDefectEdit(mainPlusDef._id || mainPlusDef.idVady, { ...mainPlusDef, typVarianty: val });
-                      }}
-                    >✓</button>
-                  </>
-                ) : (
-                  plusTypVarianty && (
-                    <><span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span><span className="variant-type">{plusTypVarianty}</span></>
-                  )
-                )}
-              </h3>
-                );
-              })()}
-              <div className="variants">
-                {plusVariantsOrdered.map((def, idx) => {
-                  const plusDefectId = def._id || def.idVady;
-                  const flatIndex = allVariantsOrdered.indexOf(def);
-                  const imagePathFlags = parseDefectImagePathFlags(def.obrazekVady);
-                  const isSpecial = imagePathFlags.hasImageDashedMarker;
-                  const isExplicitNoImage = imagePathFlags.isExplicitNoImage;
-                  const isSpecialBox = imagePathFlags.hasBoxDashedMarker;
-                  const displayDescription = buildDefectDescriptionWithVariant(def);
-                  const { variantToken, descriptionText } = splitLeadingVariantToken(displayDescription);
-                  return (
-                    <div
-                      key={def.idVady || def._id || `plusvar-${idx}`}
-                      className={`variant${isSpecialBox ? ' variant-special-box' : ''}`}
-                      style={isAdmin ? { borderBottom: `2px solid ${def.mam ? '#16a34a' : '#dc2626'}` } : {}}
-                    >
-                    <div className="variant-popis">
-                      {isEditingAll ? (
-                        <textarea
-                          placeholder="Umístění"
-                          defaultValue={def.umisteniVady || ''}
-                          className="edit-variant-textarea"
-                        />
-                      ) : (
-                        <>
-                          <span className="variant-popis-hlavni">{def.umisteniVady || ''}</span>
-                        </>
-                      )}
-                    </div>
-                    <div className="variant-img-bg variant-img-bg-pointer" onClick={(e) => openFancybox(flatIndex, e.currentTarget.querySelector('img')?.currentSrc || '')}>
-                      <img
-                        src={normalizeDefectImageSrc(def.obrazekVady) || '/img/no-image.png'}
-                        alt={def.idVady}
-                        className={`${isSpecial ? 'variant-img-special' : ''}${isExplicitNoImage ? ' variant-img-no-image' : ''}`.trim()}
-                        onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
-                      />
-                    </div>
-                    {/* Editace URL obrázku vady */}
-                    {isEditingAll && (
-                      <div>
-                        <div className="edit-field-row">
-                          <input
-                            type="text"
-                            defaultValue={def.obrazekVady || ''}
-                            style={{
-                              flex: 1,
-                              minWidth: 0,
-                              padding: '3px 5px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '3px',
-                              fontSize: '11px',
-                              background: '#fff'
-                            }}
-                            placeholder="https://example.com/obrazek.jpg"
-                            onBlur={e => {
-                              let val = e.target.value;
-                              if (val && val[0] !== '/' && !val.startsWith('http')) val = '/' + val;
-                              if (val !== def.obrazekVady) {
-                                saveDefectEdit(plusDefectId, { ...def, obrazekVady: val });
-                              }
-                            }}
-                          />
-                          <input
-                            type="number"
-                            data-field="poradiVady"
-                            defaultValue={def.poradiVady ?? ''}
-                            style={{ width: '26px', height: '26px', flexShrink: 0, borderRadius: '2px', textAlign: 'center', padding: '0', border: '1px solid #d1d5db', fontSize: '11px' }}
-                            min="0"
-                            step="1"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    <div className="variant-label">
-                      {variantToken && (
-                        <span className={`variant-label-token${def.tucneVSeznamu ? ' variant-label-token-emph' : ''}`}>
-                          {renderVariantToken(variantToken, !!def.tucneVSeznamu)}
-                        </span>
-                      )}
-                      <span className="variant-label-prefix">obr.</span>{' '}{getImageNumber(def)}
-                    </div>
-                    {/* Editace nebo zobrazení popisu vady */}
-                    {isEditingAll ? (
-                      <div >
-                        <div className="edit-field-row" style={{marginBottom: '4px'}}>
-                          <label title="Tučně v seznamu podvariant" style={{cursor:'pointer',display:'flex',alignItems:'center',gap:'2px',fontSize:'11px',flexShrink:0}}>
-                            <b>{'<b>'}</b>
-                            <input type="checkbox" data-field="tucneVSeznamu" defaultChecked={!!def.tucneVSeznamu} style={{width:'13px',height:'13px',cursor:'pointer'}} />
-                          </label>
-                          <span style={{fontSize:'12px',color:'#000',flexShrink:0,fontWeight:'bold'}}>[</span>
-                          <input
-                            type="text"
-                            placeholder="Varianta"
-                            defaultValue={def.variantaVady || ''}
-                            style={{
-                              flex: 1,
-                              minWidth: 0,
-                              padding: '3px 5px',
-                              border: '1px solid #d1d5db',
-                              borderRadius: '3px',
-                              fontSize: '11px',
-                              background: '#fff'
-                            }}
-                          />
-                          <span style={{fontSize:'12px',color:'#000',flexShrink:0,fontWeight:'bold'}}>]</span>
-                        </div>
-                        <textarea
-                          defaultValue={def.popisVady || ''}
-                          rows={5}
-                          style={{
-                            width: '100%',
-                            padding: '6px',
-                            border: '1px solid #ddd',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            resize: 'vertical',
-                            fontFamily: 'inherit'
-                          }}
-                          placeholder="Popis vady... (Ctrl+Enter pro uložení)"
-                          autoFocus
-                        />
-                        <div style={{ marginTop: '4px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <button
-                            onClick={(e) => {
-                              // Najdeme všechny input/textarea prvky v této variantě
-                              const container = e.target.closest('.variant');
-                              const variantInput = container.querySelector('input[placeholder=\"Varianta\"]');
-                              const umisteniInput = container.querySelector('textarea[placeholder=\"Umístění\"]');
-                              const popisTextarea = container.querySelector('textarea:not([placeholder=\"Umístění\"])');
-                              const imageInput = container.querySelector('input[placeholder=\"https://example.com/obrazek.jpg\"]');
-                              const orderInput = container.querySelector('input[data-field=\"poradiVady\"]');
-                              const boldCheckbox = container.querySelector('input[data-field=\"tucneVSeznamu\"]');
-                              // Uložíme všechny hodnoty najednou
-                              saveDefectEdit(plusDefectId, { 
-                                ...def, 
-                                variantaVady: variantInput?.value || '',
-                                umisteniVady: umisteniInput?.value || '',
-                                popisVady: popisTextarea?.value || '',
-                                obrazekVady: imageInput?.value || '',
-                                poradiVady: normalizeDefectOrderForSave(orderInput?.value),
-                                tucneVSeznamu: boldCheckbox?.checked ?? !!def.tucneVSeznamu
-                              });
-                            }}
-                            className="ktf-btn-check"
-                          >
-                            ✓
-                          </button>
-                          <span className="edit-variant-help">Uloží vše</span>
-                          <button
-                            onClick={() => deleteDefect(plusDefectId)}
-                            className="ktf-btn-delete"
-                            title="Smazat variantu z databáze"
-                          >
-                            🗑
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        {descriptionText && (() => {
-                          const SPLIT_REGEX = /\[\[\s*\.{3}\s*\]\]/;
-                          let parts = typeof descriptionText === 'string' ? descriptionText.split(SPLIT_REGEX) : [descriptionText];
-                          if (parts.length === 1 && typeof descriptionText === 'string') {
-                            const idxExact = descriptionText.indexOf('[[...]]');
-                            if (idxExact !== -1) {
-                              parts = [descriptionText.slice(0, idxExact), descriptionText.slice(idxExact + '[[...]]'.length)];
-                            }
-                          }
-                          if (parts.length > 1) {
-                            const before = parts[0].replace(SPLIT_REGEX, '');
-                            const after = parts.slice(1).join('').replace(SPLIT_REGEX, '');
-                            return (
-                              <div className="variant-popis-detail" style={{position: 'relative'}}>
-                                <span className="variant-popis-short">{formatDefectDescription(before, { boldBracket: !!def.tucneVSeznamu })}</span>
-                                <VariantTooltip tooltip={<span style={{fontSize: '13px'}}>{formatDefectDescription(after, { boldBracket: !!def.tucneVSeznamu })}</span>}>
-                                  …
-                                </VariantTooltip>
-                              </div>
-                            );
-                          }
-                          // If text is long, show clamped 5 lines and a tooltip with full text
-                          const renderedFull2 = formatDefectDescription(descriptionText, { boldBracket: !!def.tucneVSeznamu });
-                          const isLong2 = typeof descriptionText === 'string' && descriptionText.length > 500;
-                          if (isLong2) {
-                            return (
-                              <div className="variant-popis-detail" style={{position: 'relative'}}>
-                                <span className="variant-popis-short variant-popis-clamped">{renderedFull2}</span>
-                                <VariantTooltip tooltip={<div style={{fontSize: '13px'}}>{renderedFull2}</div>}>
-                                  …
-                                </VariantTooltip>
-                              </div>
-                            );
-                          }
-                          return (
-                            <div className="variant-popis-detail">{renderedFull2}</div>
-                          );
-                        })()}
-                        {isEditingAll && !def.popisVady && (
-                          <div style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic', marginTop: '4px' }}>
-                            Klikni na editační ikonu pro přidání popisu<br/>
-                            <span style={{color:'#b88', fontSize:'11px'}}>Podporuje HTML tagy, např. &lt;b&gt;tučně&lt;/b&gt;</span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  );
-                })}
-              </div>
-            </section>
-          )}
+          <VariantList
+            ref={variantListRef}
+            effectiveDefects={effectiveDefects}
+            isEditingAll={isEditingAll}
+            isAdmin={isAdmin}
+            isViewingBVariant={isViewingBVariant}
+            item={item}
+            aStampDefects={isViewingBVariant && aStamp ? localDefects.filter(d => d.idZnamky === aStamp.idZnamky) : []}
+            variantsHeadingBaseId={variantsHeadingBaseId}
+            saveDefectEdit={saveDefectEdit}
+            deleteDefect={deleteDefect}
+            onSaveInheritedMam={saveInheritedMamForB}
+            onExcludeChange={(newExcluded) => {
+              setItem(prev => ({ ...prev, variantyVylouceneZA: newExcluded }));
+              saveTechnicalField('variantyVylouceneZA', newExcluded);
+            }}
+          />
           <section className={secondStudyBlockClass} aria-labelledby={additionalStudyHeadingId}>
             <h2 id={additionalStudyHeadingId} className="sr-only">Doplňující popis studie</h2>
             {isEditingAll ? (

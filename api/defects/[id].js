@@ -82,8 +82,8 @@ export default async function handler(req, res) {
         );
       }
       
-      if (result.modifiedCount === 0) {
-        return res.status(400).json({ error: "Nepodařilo se aktualizovat vadu", result });
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ error: "Vada nenalezena", searchedId: id });
       }
       
       // Vrátíme aktualizovanou vadu
@@ -94,7 +94,7 @@ export default async function handler(req, res) {
         updatedDefect = await mongoose.connection.db.collection("defects").findOne({ idVady: id });
       }
       
-      console.log("Successfully updated defect:", id);
+      console.log("Successfully updated defect:", id, "modifiedCount:", result.modifiedCount);
       return res.status(200).json(updatedDefect);
     }
 

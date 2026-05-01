@@ -131,7 +131,7 @@ app.put("/api/stamps/:id", async (req, res) => {
       { $set: updateData }
     );
     
-    if (result.modifiedCount === 0) {
+    if (result.matchedCount === 0) {
       return res.status(400).json({ error: "Nepodařilo se aktualizovat známku" });
     }
     
@@ -259,8 +259,8 @@ app.put("/api/defects/:id", async (req, res) => {
       );
     }
     
-    if (result.modifiedCount === 0) {
-      return res.status(400).json({ error: "Nepodařilo se aktualizovat vadu" });
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Vada nenalezena", searchedId: id });
     }
     
     // Vrátíme aktualizovanou vadu
@@ -271,7 +271,7 @@ app.put("/api/defects/:id", async (req, res) => {
       updatedDefect = await mongoose.connection.db.collection("defects").findOne({ idVady: id });
     }
     
-    console.log("Successfully updated defect:", id);
+    console.log("Successfully updated defect:", id, "modifiedCount:", result.modifiedCount);
     res.json(updatedDefect);
   } catch (err) {
     console.error("Chyba při editaci vady:", err);
