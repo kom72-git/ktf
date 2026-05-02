@@ -37,16 +37,14 @@ function parseLiteratureEntries(rawValue) {
     .filter(Boolean)
     .map((line) => {
       const prefixMatch = line.match(LITERATURE_PREFIX_REGEX);
-      if (!prefixMatch) {
-        return null;
-      }
-
-      const bracketNumber = prefixMatch[1] || "";
-      const plainNumber = prefixMatch[2] || "";
-      const plainSuffix = prefixMatch[3] || "";
-      const textWithOptionalUrl = (prefixMatch[4] || "").trim();
-      const prefix = bracketNumber ? `[${bracketNumber}]` : `${plainNumber}${plainSuffix}`;
-      const number = bracketNumber || plainNumber;
+      const bracketNumber = prefixMatch?.[1] || "";
+      const plainNumber = prefixMatch?.[2] || "";
+      const plainSuffix = prefixMatch?.[3] || "";
+      const textWithOptionalUrl = prefixMatch ? (prefixMatch[4] || "").trim() : line;
+      const prefix = prefixMatch
+        ? (bracketNumber ? `[${bracketNumber}]` : `${plainNumber}${plainSuffix}`)
+        : "";
+      const number = prefixMatch ? (bracketNumber || plainNumber) : "";
       const urlMatch = textWithOptionalUrl.match(LITERATURE_URL_REGEX);
       const url = urlMatch ? urlMatch[1] : "";
       const cleanText = url
@@ -74,7 +72,7 @@ function parseLiteratureEntries(rawValue) {
     .filter(Boolean);
 }
 
-export default function DetailPage({ id, onBack, defects, isAdmin = false, fieldSuggestions = {}, allStamps = [] }) {
+export default function DetailPage({ id, onBack, defects, isAdmin = false, fieldSuggestions = {}, allStamps = [], onStampUpdated }) {
   const [item, setItem] = useState(null);
   const [localDefects, setLocalDefects] = useState(defects || []);
   const [isEditingAll, setIsEditingAll] = useState(false);
@@ -103,6 +101,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const variantListRef = useRef(null);
   const lastAutoSavedPrefillRef = useRef("");
   const isAutoSavingPrefillRef = useRef(false);
+  const applyUpdatedStamp = (updatedStamp) => {
+    setItem(updatedStamp);
+    if (typeof onStampUpdated === "function") {
+      onStampUpdated(updatedStamp);
+    }
+  };
 
   const buildImageAddressBase = (yearValue, catalogValue) => {
     const year = String(yearValue ?? "").trim();
@@ -556,7 +560,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       if (response.ok) {
         console.log('Známka úspěšně aktualizována');
-        setItem(responseData);
+        applyUpdatedStamp(responseData);
         return true;
       } else if (responseData.error === 'Nepodařilo se aktualizovat známku') {
         // No-op update (data beze změny) – nepovažujeme za chybu
@@ -594,7 +598,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       if (response.ok) {
         const updatedStamp = await response.json();
-        setItem(updatedStamp);
+        applyUpdatedStamp(updatedStamp);
         console.log(`Technický údaj ${field} uložen:`, value);
         
         // Zobraz dočasnou hlášku
@@ -637,7 +641,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       if (response.ok) {
         const updatedStamp = await response.json();
-        setItem(updatedStamp);
+        applyUpdatedStamp(updatedStamp);
         console.log(`Hlavní údaj ${field} uložen:`, value);
         return true;
       } else {
@@ -672,7 +676,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       if (response.ok) {
         const updatedStamp = await response.json();
-        setItem(updatedStamp);
+        applyUpdatedStamp(updatedStamp);
         console.log(`Studijní údaj ${field} uložen:`, value);
         
         // Zobraz dočasnou hlášku
@@ -943,6 +947,21 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const authorSuggestionValues = Array.isArray(fieldSuggestions?.obrazekAutor)
     ? fieldSuggestions.obrazekAutor
     : [];
+  const popisStudieSuggestionValues = Array.isArray(fieldSuggestions?.popisStudie)
+    ? fieldSuggestions.popisStudie
+    : [];
+  const popisStudie2SuggestionValues = Array.isArray(fieldSuggestions?.popisStudie2)
+    ? fieldSuggestions.popisStudie2
+    : [];
+  const literatureSuggestionValues = (() => {
+    const base = Array.isArray(fieldSuggestions?.literatura) ? fieldSuggestions.literatura : [];
+    const currentLiterature = typeof item?.literatura === "string" ? item.literatura : "";
+    const merged = new Set(base);
+    if (currentLiterature.trim()) {
+      merged.add(currentLiterature);
+    }
+    return Array.from(merged);
+  })();
   const authorSuggestionListId = authorSuggestionValues.length
     ? `detail-authors-options-${item.idZnamky || id || "default"}`
     : undefined;
@@ -1408,6 +1427,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             saveTechnicalField={saveTechnicalField}
             studyReferenceBlock={studyReferenceBlock}
             resolvedPopisStudie={resolvedPopisStudie}
+            popisStudieSuggestionValues={popisStudieSuggestionValues}
             item={item}
           />
           <div className="study-clear" />
@@ -1436,6 +1456,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             saveTechnicalField={saveTechnicalField}
             authorSuggestionListId={authorSuggestionListId}
             authorSuggestionValues={authorSuggestionValues}
+            literatureSuggestionValues={literatureSuggestionValues}
+            popisStudie2SuggestionValues={popisStudie2SuggestionValues}
             popisStudie2Display={popisStudie2Display}
             hasPopisStudie2Content={hasPopisStudie2Content}
             hasAuthors={hasAuthors}

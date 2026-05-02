@@ -236,6 +236,7 @@ export default function StampCatalog(props) {
     "popisObrazkuStudie",
     "popisStudie",
     "popisStudie2",
+    "literatura",
     "obrazekAutor",
     ];
     const collect = (field) => {
@@ -609,6 +610,18 @@ export default function StampCatalog(props) {
             isAdmin={isAdmin}
             fieldSuggestions={fieldSuggestions}
             allStamps={stamps}
+            onStampUpdated={(updatedStamp) => {
+              if (!updatedStamp || !updatedStamp.idZnamky) return;
+              setStamps((prev) => {
+                let found = false;
+                const next = prev.map((stamp) => {
+                  if (stamp.idZnamky !== updatedStamp.idZnamky) return stamp;
+                  found = true;
+                  return updatedStamp;
+                });
+                return found ? next : prev;
+              });
+            }}
           />
         ) : (
           <>

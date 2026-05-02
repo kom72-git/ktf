@@ -550,7 +550,12 @@ export default function AdminPanel({
               </div>
             </div>
             <form
-              onSubmit={e => { e.preventDefault(); if (onAddStamp) onAddStamp(newStampData); }}
+              onSubmit={e => {
+                e.preventDefault();
+                if (onAddStamp) {
+                  onAddStamp(newStampData);
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -750,110 +755,6 @@ export default function AdminPanel({
                   }}
                   list={hasSuggestions('schemaTF') ? getSuggestionListId('schemaTF') : undefined}
                   autoComplete="off"
-                />
-              </div>
-              <div className="label-top-input">
-                <label>Studie (text před čárkou)</label>
-                <input
-                  type="text"
-                  value={newStampData.Studie}
-                  onChange={e => setNewStampData({ ...newStampData, Studie: e.target.value })}
-                  list={hasSuggestions('Studie') ? getSuggestionListId('Studie') : undefined}
-                  autoComplete="off"
-                />
-              </div>
-              <div className="label-top-input">
-                <label>URL studie (část za čárkou)</label>
-                <input
-                  type="text"
-                  value={newStampData.studieUrl}
-                  onChange={e => setNewStampData({ ...newStampData, studieUrl: e.target.value })}
-                  placeholder="https://example.com/studie"
-                  list={hasSuggestions('studieUrl') ? getSuggestionListId('studieUrl') : undefined}
-                  autoComplete="off"
-                />
-              </div>
-              <div className="label-top-input">
-                <label>Popis studie</label>
-                <textarea
-                  value={newStampData.popisStudie}
-                  onChange={e => setNewStampData({ ...newStampData, popisStudie: e.target.value })}
-                  placeholder="Text popisu studie zobrazený v detailu"
-                  rows={4}
-                  className="admin-textarea-tall"
-                />
-                {hasSuggestions('popisStudie') && (
-                  <div className="admin-suggestions-mt">
-                    <select
-                      defaultValue=""
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (!value) return;
-                        setNewStampData(prev => ({ ...prev, popisStudie: value }));
-                        e.target.value = "";
-                      }}
-                      className="ktf-edit-input-tech"
-                    >
-                      <option value="">Vybrat dřívější popis…</option>
-                      {getSuggestionValues('popisStudie').map((value) => (
-                        <option key={value} value={value}>
-                          {value.length > 80 ? `${value.slice(0, 80)}…` : value}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-              <div className="label-top-input">
-                <label>Popis studie – část za variantami</label>
-                <textarea
-                  value={newStampData.popisStudie2}
-                  onChange={e => setNewStampData({ ...newStampData, popisStudie2: e.target.value })}
-                  placeholder="Doplňující text zobrazený pod blokem variant"
-                  rows={4}
-                  className="admin-textarea-tall"
-                />
-                {hasSuggestions('popisStudie2') && (
-                  <div className="admin-suggestions-mt">
-                    <select
-                      defaultValue=""
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (!value) return;
-                        setNewStampData(prev => ({ ...prev, popisStudie2: value }));
-                        e.target.value = "";
-                      }}
-                      className="ktf-edit-input-tech"
-                    >
-                      <option value="">Vybrat dřívější popis…</option>
-                      {getSuggestionValues('popisStudie2').map((value) => (
-                        <option key={value} value={value}>
-                          {value.length > 80 ? `${value.slice(0, 80)}…` : value}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-              <div className="label-top-input">
-                <label>Zdroj obrázků variant</label>
-                <input
-                  type="text"
-                  value={newStampData.obrazekAutor}
-                  onChange={e => setNewStampData({ ...newStampData, obrazekAutor: e.target.value })}
-                  placeholder="Např. Jana Nováková, Petr Dvořák"
-                  list={hasSuggestions('obrazekAutor') ? getSuggestionListId('obrazekAutor') : undefined}
-                  autoComplete="off"
-                />
-              </div>
-              <div className="label-top-input">
-                <label>Literatura</label>
-                <textarea
-                  value={newStampData.literatura}
-                  onChange={e => setNewStampData({ ...newStampData, literatura: e.target.value })}
-                  placeholder="1) Autor: Název...\n2) Autor: Název..."
-                  rows={4}
-                  className="admin-textarea-tall"
                 />
               </div>
               <div className="admin-modal-actions">

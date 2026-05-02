@@ -4,6 +4,8 @@
 import React from "react";
 import { replaceAbbreviations, formatPopisWithAll } from "../utils/formatovaniTextu.jsx";
 import ImageSources from "./ImageSources.jsx";
+import LiteratureTextarea from "./LiteratureTextarea.jsx";
+import StudyBlockTextarea from "./StudyBlockTextarea.jsx";
 
 // Interní helper pro vykreslení obsahu s abbrev (pole fragmentů nebo prostý string)
 function renderAbbrevContent(value, keyPrefix) {
@@ -587,8 +589,14 @@ export function StampStudyTopSection({
   saveTechnicalField,
   studyReferenceBlock,
   resolvedPopisStudie,
+  popisStudieSuggestionValues,
   item,
 }) {
+  const popisStudieValue =
+    typeof editStampData.popisStudie === "string"
+      ? editStampData.popisStudie
+      : (item.popisStudie || "");
+
   return isEditingAll ? (
     <>
       <div className="study-inline-note">
@@ -643,20 +651,19 @@ export function StampStudyTopSection({
       <div className="ktf-edit-study-popis-row ktf-edit-study-popis-row-full">
         <div className="label-top-input ktf-edit-row-full">
           <label htmlFor="edit-popis-studie">Popis studie</label>
-          <div className="edit-field-row ktf-edit-row-full">
-            <textarea
-              id="edit-popis-studie"
-              value={typeof editStampData.popisStudie === 'string' ? editStampData.popisStudie : (item.popisStudie || '')}
-              onChange={e => setEditStampData({ ...editStampData, popisStudie: e.target.value })}
-              className="ktf-edit-textarea-long ktf-edit-textarea-study"
-              placeholder="Popis konkrétní studie..."
-              rows={10}
-            />
-            <button
-              onClick={() => saveTechnicalField('popisStudie', editStampData.popisStudie || '')}
-              className="ktf-btn-check"
-            >✓</button>
-          </div>
+          <StudyBlockTextarea
+            id="edit-popis-studie"
+            value={popisStudieValue}
+            onChange={(nextValue) => setEditStampData({ ...editStampData, popisStudie: nextValue })}
+            onSave={(nextValue) => saveTechnicalField('popisStudie', nextValue)}
+            suggestionValues={popisStudieSuggestionValues}
+            rows={10}
+            placeholder="Popis konkrétní studie..."
+            textareaClassName="ktf-edit-textarea-long ktf-edit-textarea-study"
+            buttonClassName="ktf-btn-check"
+            selectClassName="ktf-edit-input-tech"
+            selectPlaceholder="Vložit dříve použitý blok popisu…"
+          />
           <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
             <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
             <div className="ktf-tip-box ktf-tip-box-bulleted">
@@ -692,6 +699,8 @@ export function StampStudyFooterSection({
   saveTechnicalField,
   authorSuggestionListId,
   authorSuggestionValues,
+  literatureSuggestionValues,
+  popisStudie2SuggestionValues,
   popisStudie2Display,
   hasPopisStudie2Content,
   hasAuthors,
@@ -701,26 +710,34 @@ export function StampStudyFooterSection({
   secondStudyBlockClass,
   additionalStudyHeadingId,
 }) {
+  const literatureEditValue =
+    typeof editStampData.literatura === "string"
+      ? editStampData.literatura
+      : (item.literatura || "");
+  const popisStudie2Value =
+    typeof editStampData.popisStudie2 === "string"
+      ? editStampData.popisStudie2
+      : popisStudie2Display;
+
   return (
     <section className={secondStudyBlockClass} aria-labelledby={additionalStudyHeadingId}>
       <h2 id={additionalStudyHeadingId} className="sr-only">Doplňující popis studie</h2>
       {isEditingAll ? (
         <div className="label-top-input ktf-edit-row-full">
           <label htmlFor="edit-popis-studie-2">Popis studie – část za variantami</label>
-          <div className="edit-field-row ktf-edit-row-full">
-            <textarea
-              id="edit-popis-studie-2"
-              value={typeof editStampData.popisStudie2 === 'string' ? editStampData.popisStudie2 : popisStudie2Display}
-              onChange={e => setEditStampData({ ...editStampData, popisStudie2: e.target.value })}
-              className="ktf-edit-textarea-long ktf-edit-textarea-study"
-              placeholder="Druhý blok popisu zobrazený za variantami"
-              rows={10}
-            />
-            <button
-              onClick={() => saveTechnicalField('popisStudie2', editStampData.popisStudie2 || '')}
-              className="ktf-btn-check"
-            >✓</button>
-          </div>
+          <StudyBlockTextarea
+            id="edit-popis-studie-2"
+            value={popisStudie2Value}
+            onChange={(nextValue) => setEditStampData({ ...editStampData, popisStudie2: nextValue })}
+            onSave={(nextValue) => saveTechnicalField('popisStudie2', nextValue)}
+            suggestionValues={popisStudie2SuggestionValues}
+            rows={10}
+            placeholder="Druhý blok popisu zobrazený za variantami"
+            textareaClassName="ktf-edit-textarea-long ktf-edit-textarea-study"
+            buttonClassName="ktf-btn-check"
+            selectClassName="ktf-edit-input-tech"
+            selectPlaceholder="Vložit dříve použitý blok (část za variantami)…"
+          />
           <div className="edit-field-row study-authors-row">
             <label htmlFor="edit-obrazek-autor" className="ktf-edit-inline-label">Zdroj obrázků:</label>
             <input
@@ -747,28 +764,27 @@ export function StampStudyFooterSection({
           </div>
           <div className="label-top-input ktf-edit-row-full edit-literature-block">
             <label htmlFor="edit-literatura">Literatura</label>
-            <div className="edit-field-row ktf-edit-row-full">
-              <textarea
-                id="edit-literatura"
-                value={typeof editStampData.literatura === 'string' ? editStampData.literatura : (item.literatura || '')}
-                onChange={e => setEditStampData({ ...editStampData, literatura: e.target.value })}
-                className="ktf-edit-textarea-long ktf-edit-textarea-study"
-                placeholder="[1] Autor: Název ...\n[2] Autor: Název ... https://..."
-                rows={5}
-              />
-              <button
-                onClick={() => saveTechnicalField('literatura', editStampData.literatura || '')}
-                className="ktf-btn-check"
-              >✓</button>
-            </div>
+            <LiteratureTextarea
+              id="edit-literatura"
+              value={literatureEditValue}
+              onChange={(nextValue) => setEditStampData({ ...editStampData, literatura: nextValue })}
+              onSave={(nextValue) => saveTechnicalField('literatura', nextValue)}
+              suggestionValues={literatureSuggestionValues}
+              resetKey={`${item?.idZnamky || 'none'}-${isEditingAll ? 'edit' : 'view'}-${literatureEditValue}`}
+              rows={5}
+              placeholder="[1] Autor: Název ...\n[2] Autor: Název ... https://..."
+              textareaClassName="ktf-edit-textarea-long ktf-edit-textarea-study"
+              buttonClassName="ktf-btn-check"
+              selectClassName="ktf-edit-input-tech"
+            />
             <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
               <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
               <div className="ktf-tip-box ktf-tip-box-bulleted">
-                <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Každou položku dej na nový řádek a začni <code>1)</code> (možno i např. <code>[1]</code> či <code>1.</code>) a klikací část vymezuj mezi <code>%...%</code></span>
-                <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Příklad:<br />
+                <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Příklady:<br />
                   <code>1) Pavel Hankovec: Dvě varianty aršíku INTERKOSMOS, Filatelie 1980/14 str. 440</code><br />
                   <code>2) Stanislav Pilař: Ještě k aršíku INTERKOSMOS 80, <strong>%</strong>Filatelie 1984/12 str. 361<strong>%</strong> https://example.com</code>
                 </span>
+                <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Každou položku dej na nový řádek. Klikací část vymezuj mezi <code>%...%</code>.</span>
               </div>
             </div>
           </div>
