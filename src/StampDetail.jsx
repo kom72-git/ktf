@@ -1195,8 +1195,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             </button>
             {isEditingAll && (
               <button
-                className="ktf-btn-confirm"
-                style={{ marginLeft: '8px' }}
+                className="ktf-btn-confirm detail-inline-offset"
                 onClick={saveAllChanges}
                 disabled={isSavingAllChanges}
               >
@@ -1205,8 +1204,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             )}
             {/* Tlačítko pro otevření modalu v admin panelu */}
             <button
-              className="ktf-btn-confirm"
-              style={{ marginLeft: '8px' }}
+              className="ktf-btn-confirm detail-inline-offset"
               onClick={() => {
                 if (window.setShowAddVariantModal) {
                   window.setShowAddVariantModal(id);
@@ -1219,8 +1217,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             </button>
             {isEditingAll && (
               <button
-                className="admin-edit-btn danger"
-                style={{ marginLeft: '8px' }}
+                className="admin-edit-btn danger detail-inline-offset"
                 onClick={deleteStampWithDefects}
                 disabled={isDeletingStamp}
                 title="Smazat známku z databáze včetně všech jejích variant"
@@ -1334,7 +1331,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
               defaultType: 'image'
             });
           }}>
-            <figure style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
+            <figure className="study-image-figure">
               <img
                 src={
                   (normalizedResolvedObrazekStudie && normalizedResolvedObrazekStudie[0] !== '/'
@@ -1354,8 +1351,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                       rows={3}
                       defaultValue={editStampData.popisObrazkuStudie || item.popisObrazkuStudie || ''}
                       onChange={e => setEditStampData({...editStampData, popisObrazkuStudie: e.target.value})}
-                      className="ktf-edit-input-long study-img-caption-input"
-                      style={{resize: 'vertical'}}
+                      className="ktf-edit-input-long study-img-caption-input study-img-caption-input-resizable"
                     />
                     <button
                       onClick={async () => {
@@ -1367,7 +1363,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     >✓</button>
                   </div>
                 ) : (
-                  <span className="study-img-caption-text" style={{pointerEvents: 'none'}} dangerouslySetInnerHTML={{__html: resolvedPopisObrazkuStudie || ''}} />
+                  <span className="study-img-caption-text study-img-caption-text-passive" dangerouslySetInnerHTML={{__html: resolvedPopisObrazkuStudie || ''}} />
                 )}
               </figcaption>
             </figure>
@@ -1474,21 +1470,21 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         const digitsMatch = String(deleteConfirmDigitInput).trim() === requiredDigits;
         return (
           <div className="ktf-modal-bg" onClick={() => setDeleteConfirmVisible(false)}>
-            <div className="ktf-modal" onClick={e => e.stopPropagation()} style={{maxWidth: 420}}>
-              <p style={{margin: 0, fontWeight: 600, fontSize: '1.05em'}}>Smazat tuto známku?</p>
-              <p style={{margin: 0}}>Budou smazány i všechny její varianty a deskové vady.</p>
-              <p style={{margin: 0}}>Mažete: <strong>{item.katalogCislo || item.idZnamky}</strong></p>
-              <p style={{margin: 0, color: '#555'}}>Pro potvrzení zadejte číselnou část katalogového čísla:</p>
+            <div className="ktf-modal detail-delete-modal" onClick={e => e.stopPropagation()}>
+              <p className="detail-delete-title">Smazat tuto známku?</p>
+              <p className="detail-delete-text">Budou smazány i všechny její varianty a deskové vady.</p>
+              <p className="detail-delete-text">Mažete: <strong>{item.katalogCislo || item.idZnamky}</strong></p>
+              <p className="detail-delete-hint">Pro potvrzení zadejte číselnou část katalogového čísla:</p>
               <input
                 type="text"
                 value={deleteConfirmDigitInput}
                 onChange={e => setDeleteConfirmDigitInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && digitsMatch) confirmDeleteStamp(); }}
                 autoFocus
-                style={{width: '100%', padding: '8px 10px', fontSize: '1em', border: '1px solid #ccc', borderRadius: 6, boxSizing: 'border-box'}}
+                className="detail-delete-input"
               />
-              <div style={{display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4}}>
-                <button onClick={() => setDeleteConfirmVisible(false)} className="back-btn" style={{marginBottom: 0}}>Zrušit</button>
+              <div className="detail-delete-actions">
+                <button onClick={() => setDeleteConfirmVisible(false)} className="back-btn detail-delete-cancel">Zrušit</button>
                 <button onClick={confirmDeleteStamp} className="admin-edit-btn danger" disabled={!digitsMatch}>Smazat</button>
               </div>
             </div>

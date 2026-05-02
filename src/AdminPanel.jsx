@@ -503,25 +503,10 @@ export default function AdminPanel({
       <>
       {/* Admin Login Popup */}
       {showAdminLogin && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999
-        }}>
-          <div style={{
-            background: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-          }}>
-            <h3 style={{marginTop: 0}}>Admin přístup</h3>
+        <div className="admin-login-overlay">
+          <div className="admin-login-modal">
+            <h3 className="admin-login-title">Admin přístup</h3>
+            <div className="admin-login-input-row">
             <input
               type="password"
               placeholder="Heslo"
@@ -531,43 +516,22 @@ export default function AdminPanel({
                   handleAdminLogin(e.target.value);
                 }
               }}
-              style={{
-                width: '200px',
-                padding: '8px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                marginRight: '8px'
-              }}
+              className="admin-login-input"
             />
             <button
               onClick={(e) => {
-                const popup = e.target.closest('div[style*="position: fixed"]');
+                const popup = e.target.closest('.admin-login-overlay');
                 const input = popup.querySelector('input[type="password"]');
                 handleAdminLogin(input?.value || '');
               }}
-              style={{
-                background: '#3b82f6',
-                color: 'white',
-                border: 'none',
-                padding: '8px 16px',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
+              className="admin-login-confirm"
             >
               OK
             </button>
-            <br/><br/>
+            </div>
             <button
               onClick={() => setShowAdminLogin(false)}
-              style={{
-                background: '#6b7280',
-                color: 'white',
-                border: 'none',
-                padding: '6px 12px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
+              className="admin-login-cancel"
             >
               Zrušit
             </button>
@@ -622,7 +586,7 @@ export default function AdminPanel({
                 />
               </div>
               <div className="label-top-input">
-                <label>Katalogové číslo <span style={{ fontWeight: 400, fontSize: '0.9em', color: '#475569' }}>(pro přepočet adres použij Enter)</span></label>
+                <label>Katalogové číslo <span className="admin-label-hint">(pro přepočet adres použij Enter)</span></label>
                 <input
                   type="text"
                   value={newStampData.katalogCislo}
@@ -816,10 +780,10 @@ export default function AdminPanel({
                   onChange={e => setNewStampData({ ...newStampData, popisStudie: e.target.value })}
                   placeholder="Text popisu studie zobrazený v detailu"
                   rows={4}
-                  style={{ minHeight: 120 }}
+                  className="admin-textarea-tall"
                 />
                 {hasSuggestions('popisStudie') && (
-                  <div style={{ marginTop: 8 }}>
+                  <div className="admin-suggestions-mt">
                     <select
                       defaultValue=""
                       onChange={(e) => {
@@ -847,10 +811,10 @@ export default function AdminPanel({
                   onChange={e => setNewStampData({ ...newStampData, popisStudie2: e.target.value })}
                   placeholder="Doplňující text zobrazený pod blokem variant"
                   rows={4}
-                  style={{ minHeight: 120 }}
+                  className="admin-textarea-tall"
                 />
                 {hasSuggestions('popisStudie2') && (
-                  <div style={{ marginTop: 8 }}>
+                  <div className="admin-suggestions-mt">
                     <select
                       defaultValue=""
                       onChange={(e) => {
@@ -889,10 +853,10 @@ export default function AdminPanel({
                   onChange={e => setNewStampData({ ...newStampData, literatura: e.target.value })}
                   placeholder="1) Autor: Název...\n2) Autor: Název..."
                   rows={4}
-                  style={{ minHeight: 120 }}
+                  className="admin-textarea-tall"
                 />
               </div>
-              <div style={{marginTop: '16px', display: 'flex', gap: '12px'}}>
+              <div className="admin-modal-actions">
                 <button type="submit" className="ktf-btn-confirm">Přidat</button>
                 <button type="button" className="ktf-btn-cancel" onClick={() => setShowAddModal(false)}>Zrušit</button>
               </div>
@@ -910,8 +874,8 @@ export default function AdminPanel({
   {/* MODAL pro přidání varianty/deskové vady */}
   {showAddVariantModal && (
         <div className="ktf-modal-bg" onClick={() => setShowAddVariantModal(false)}>
-          <div className="ktf-modal" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ marginBottom: 8 }}>Přidat variantu/deskovou vadu</h3>
+          <div className="ktf-modal ktf-modal-narrow" onClick={e => e.stopPropagation()}>
+            <h3 className="admin-modal-h3">Přidat variantu/deskovou vadu</h3>
             <form onSubmit={e => { e.preventDefault(); handleAddVariant(); }}>
               <div className="label-top-input">
                 <label>ID známky</label>
@@ -919,18 +883,17 @@ export default function AdminPanel({
               </div>
               <div className="label-top-input">
                 <label>Umístění</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'nowrap', width: '100%' }}>
+                <div className="admin-location-row">
                   <input
                     type="text"
                     value={newVariantData.umisteniVady}
                     onChange={e => setNewVariantData(v => ({ ...v, umisteniVady: e.target.value }))}
-                    className="ktf-edit-input-tech"
-                    style={{ flex: '1 1 0', minWidth: 0 }}
+                    className="ktf-edit-input-tech admin-location-input"
                     list={variantSuggestions.umisteniVady.length ? "variant-umisteni-options" : undefined}
                     autoComplete="off"
                   />
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-start' }}>
-                    <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+                  <div className="admin-location-btns">
+                    <div className="admin-location-prefix-row">
                       {LOCATION_PREFIX_OPTIONS.map((option) => {
                         const isPrefixActive = getLocationPrefix(newVariantData.umisteniVady) === option.text;
                         return (
@@ -938,19 +901,7 @@ export default function AdminPanel({
                             key={option.text}
                             type="button"
                             onClick={() => applyLocationPrefix(option.text)}
-                            style={{
-                              border: isPrefixActive ? '1px solid #2563eb' : '1px solid #cbd5e1',
-                              background: isPrefixActive ? '#dbeafe' : '#f8fafc',
-                              color: isPrefixActive ? '#1d4ed8' : '#334155',
-                              borderRadius: 4,
-                              width: 16,
-                              height: 13,
-                              padding: 0,
-                              fontSize: 10,
-                              fontWeight: 700,
-                              lineHeight: 1,
-                              cursor: 'pointer'
-                            }}
+                            className={`admin-location-prefix-btn${isPrefixActive ? ' active' : ''}`}
                             title={`Doplnit ${option.text.trim()}`}
                             aria-label={`Doplnit ${option.text.trim()}`}
                           >
@@ -959,7 +910,7 @@ export default function AdminPanel({
                         );
                       })}
                     </div>
-                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                    <div className="admin-location-chips-row">
                       {QUICK_LOCATION_CHIPS.map((chip) => {
                         const locationWithoutPrefix = String(newVariantData.umisteniVady || '').trim().replace(/^\s*(nad|pod|vlevo od|vpravo od)(?:\s+|$)/i, '');
                         const isActive = locationWithoutPrefix.toUpperCase() === chip;
@@ -968,16 +919,7 @@ export default function AdminPanel({
                             key={chip}
                             type="button"
                             onClick={() => applyLocationChip(chip)}
-                            style={{
-                              border: isActive ? '1px solid #2563eb' : '1px solid #cbd5e1',
-                              background: isActive ? '#dbeafe' : '#f8fafc',
-                              color: isActive ? '#1d4ed8' : '#334155',
-                              borderRadius: 999,
-                              padding: '2px 6px',
-                              fontSize: 10,
-                              lineHeight: 1,
-                              cursor: 'pointer'
-                            }}
+                            className={`admin-location-chip-btn${isActive ? ' active' : ''}`}
                             title={`Vyplnit ${chip}`}
                           >
                             {chip}
@@ -990,7 +932,7 @@ export default function AdminPanel({
               </div>
               <div className="label-top-input">
                 <label>
-                  Obrázek vady <span style={{ fontWeight: 400, fontSize: '0.86em', color: '#64748b' }}>(adresa se doplňuje automaticky)</span>
+                  Obrázek vady <span className="admin-label-subhint">(adresa se doplňuje automaticky)</span>
                 </label>
                 <input
                   type="text"
@@ -1003,10 +945,10 @@ export default function AdminPanel({
                   placeholder="automaticky předvyplneno"
                 />
               </div>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
-                <div className="label-top-input" style={{ flex: '0 0 132px', marginBottom: 0 }}>
+              <div className="admin-variant-row">
+                <div className="label-top-input admin-varianta-field">
                   <label>Varianta</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div className="admin-input-with-stepper">
                     <input
                       type="text"
                       value={newVariantData.variantaVady}
@@ -1017,30 +959,18 @@ export default function AdminPanel({
                           updateVariantDataWithImageSync({}, { forceImageSync: true });
                         }
                       }}
-                      className="ktf-edit-input-tech"
-                      style={{ flex: '1 1 0', minWidth: 0, marginBottom: 0 }}
+                      className="ktf-edit-input-tech admin-input-flex"
                       list={variantSuggestions.variantaVady.length ? "variant-varianta-options" : undefined}
                       autoComplete="off"
                       required
                     />
-                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+                    <div className="admin-stepper-btns">
                       <button
                         type="button"
                         onClick={() => stepVariantLetter(1)}
                         aria-label="Další písmeno varianty"
                         title="Další písmeno (A-H)"
-                        style={{
-                          width: 18,
-                          height: 14,
-                          lineHeight: 1,
-                          fontSize: 9,
-                          border: '1px solid #cbd5e1',
-                          borderRadius: 4,
-                          background: '#f8fafc',
-                          color: '#334155',
-                          padding: 0,
-                          cursor: 'pointer'
-                        }}
+                        className="admin-stepper-btn"
                       >
                         ▲
                       </button>
@@ -1049,27 +979,16 @@ export default function AdminPanel({
                         onClick={() => stepVariantLetter(-1)}
                         aria-label="Předchozí písmeno varianty"
                         title="Předchozí písmeno (A-H)"
-                        style={{
-                          width: 18,
-                          height: 14,
-                          lineHeight: 1,
-                          fontSize: 9,
-                          border: '1px solid #cbd5e1',
-                          borderRadius: 4,
-                          background: '#f8fafc',
-                          color: '#334155',
-                          padding: 0,
-                          cursor: 'pointer'
-                        }}
+                        className="admin-stepper-btn"
                       >
                         ▼
                       </button>
                     </div>
                   </div>
                 </div>
-                <div className="label-top-input" style={{ width: 88, marginBottom: 0 }}>
+                <div className="label-top-input admin-poradi-field">
                   <label>Pořadí</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div className="admin-input-with-stepper">
                     <input
                       type="text"
                       inputMode="numeric"
@@ -1085,27 +1004,15 @@ export default function AdminPanel({
                           updateVariantDataWithImageSync({}, { forceImageSync: true });
                         }
                       }}
-                      className="ktf-edit-input-tech"
-                      style={{ width: 42, minWidth: 42, marginBottom: 0, textAlign: 'center' }}
+                      className="ktf-edit-input-tech admin-poradi-input"
                     />
-                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2 }}>
+                    <div className="admin-stepper-btns">
                       <button
                         type="button"
                         onClick={() => stepVariantOrder(1)}
                         aria-label="Zvýšit pořadí varianty"
                         title="Zvýšit pořadí"
-                        style={{
-                          width: 18,
-                          height: 14,
-                          lineHeight: 1,
-                          fontSize: 9,
-                          border: '1px solid #cbd5e1',
-                          borderRadius: 4,
-                          background: '#f8fafc',
-                          color: '#334155',
-                          padding: 0,
-                          cursor: 'pointer'
-                        }}
+                        className="admin-stepper-btn"
                       >
                         ▲
                       </button>
@@ -1114,33 +1021,22 @@ export default function AdminPanel({
                         onClick={() => stepVariantOrder(-1)}
                         aria-label="Snížit pořadí varianty"
                         title="Snížit pořadí"
-                        style={{
-                          width: 18,
-                          height: 14,
-                          lineHeight: 1,
-                          fontSize: 9,
-                          border: '1px solid #cbd5e1',
-                          borderRadius: 4,
-                          background: '#f8fafc',
-                          color: '#334155',
-                          padding: 0,
-                          cursor: 'pointer'
-                        }}
+                        className="admin-stepper-btn"
                       >
                         ▼
                       </button>
                     </div>
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, paddingBottom: 8 }}>
+                <div className="admin-checkbox-row">
                   <input
                     type="checkbox"
                     id="variant-mam-checkbox"
                     checked={newVariantData.mam}
                     onChange={e => setNewVariantData(v => ({ ...v, mam: e.target.checked }))}
-                    style={{ width: 18, height: 18, cursor: 'pointer' }}
+                    className="admin-checkbox"
                   />
-                  <label htmlFor="variant-mam-checkbox" style={{ cursor: 'pointer', marginBottom: 0, fontSize: '14px' }}>
+                  <label htmlFor="variant-mam-checkbox" className="admin-checkbox-label">
                     ✓ Mám
                   </label>
                 </div>
@@ -1170,7 +1066,7 @@ export default function AdminPanel({
                   ))}
                 </datalist>
               )}
-              <div style={{ display: 'flex', gap: 12, marginTop: 18 }}>
+              <div className="admin-modal-actions">
                 <button type="submit" className="ktf-btn-confirm" disabled={isSubmittingVariant}>
                   {isSubmittingVariant ? 'Ukládám…' : 'Přidat variantu'}
                 </button>

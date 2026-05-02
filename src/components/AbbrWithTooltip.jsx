@@ -90,7 +90,6 @@ export default function AbbrWithTooltip({ abbr, title }) {
       onFocus={showTooltip}
       onBlur={hideTooltip}
       onClick={showTooltip}
-      style={{ display: "inline-block", position: "relative" }}
     >
       <abbr className="ktf-abbr-tooltip-abbr" aria-label={title}>
         {abbr}

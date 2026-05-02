@@ -76,7 +76,6 @@ export default function StampBoxList({
 
           return (
             <div key={key} className="stamp-card stamp-card-pointer"
-              style={{ position: 'relative' }}
               onClick={() => {
                 if (isSingle) {
                   onNavigateToDetail(item.idZnamky);
@@ -85,7 +84,7 @@ export default function StampBoxList({
                 }
               }}>
               {!isSingle && (
-                <button className="stamp-box-toggle" title="Rozbalit box" style={{ right: 2, top: 2, position: 'absolute' }}
+                <button className="stamp-box-toggle stamp-box-toggle-tight" title="Rozbalit box"
                   onClick={e => { e.stopPropagation(); handleToggleBox(key); }}
                 >+</button>
               )}
@@ -106,7 +105,7 @@ export default function StampBoxList({
               <div className="stamp-bottom">
                 <div>Katalog: <span className="catalog">{renderCatalogDisplay(katalogText)}</span></div>
                 {isSingle && (
-                  <span className="details-link" style={{ marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}>detaily</span>
+                  <span className="details-link details-link-offset">detaily</span>
                 )}
               </div>
             </div>
@@ -133,10 +132,9 @@ export default function StampBoxList({
           const stripeClass = stripeMap.get(key) === 1 ? 'stamp-card-grouped-alt' : 'stamp-card-grouped';
           return expandedCards.map(({ item, katalogText }, idx) => (
             <div key={key + '-' + idx} className={`stamp-card ${stripeClass} stamp-card-pointer`}
-              style={{ position: 'relative' }}
               onClick={() => onNavigateToDetail(item.idZnamky)}>
               {idx === 0 && (
-                <button className="stamp-box-toggle" title="Sloučit boxy" style={{ right: 2, top: 2, position: 'absolute' }}
+                <button className="stamp-box-toggle stamp-box-toggle-tight" title="Sloučit boxy"
                   onClick={e => { e.stopPropagation(); handleToggleBox(key); }}
                 >−</button>
               )}
@@ -156,7 +154,7 @@ export default function StampBoxList({
               </div>
               <div className="stamp-bottom">
                 <div>Katalog: <span className="catalog">{renderCatalogDisplay(katalogText || item.katalogCislo)}</span></div>
-                <span className="details-link" style={{ marginLeft: 8, color: '#2563eb', textDecoration: 'underline', cursor: 'pointer' }}>detaily</span>
+                <span className="details-link details-link-offset">detaily</span>
               </div>
             </div>
           ));

@@ -614,7 +614,7 @@ export default function StampCatalog(props) {
           <>
             {/* Tlačítko pro přidání nové známky pro admina */}
             {isAdmin && (
-              <div style={{textAlign: 'right', marginBottom: '12px'}}>
+              <div className="catalog-admin-add-row">
                 <button className="ktf-btn-confirm" onClick={() => setShowAddModal(true)}>
                   + Přidat známku
                 </button>

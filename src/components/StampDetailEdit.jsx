@@ -76,7 +76,7 @@ export function StampTitleSection({
               ✓
             </button>
           </div>
-          <div className="label-top-input edit-title-subfield" style={{ marginTop: 8 }}>
+          <div className="label-top-input edit-title-subfield edit-emise-skupina-row">
             <label htmlFor="edit-emise-skupina">Skupina emise (jen pro filtr)</label>
             <div className="edit-field-row">
               <input
@@ -229,7 +229,7 @@ export function StampCatalogNumberSection({
               ) : (
                 renderCatalogLinkWithPreview(aStamp, aStamp.katalogCislo)
               )}
-              <span style={{ display: "inline-block", margin: "0 12px", color: "#6b7280" }}>|</span>
+              <span className="detail-catalog-separator">|</span>
               {currentIsA ? (
                 renderCatalogLinkWithPreview(bStamp, bStamp.katalogCislo)
               ) : (
@@ -241,7 +241,7 @@ export function StampCatalogNumberSection({
               <strong>{renderCatalogDisplay(item.katalogCislo, item.idZnamky || "item-stamp")}</strong>
               {companionStamp && companionStamp.katalogCislo && (
                 <>
-                  <span style={{ display: "inline-block", margin: "0 12px", color: "#6b7280" }}>|</span>
+                  <span className="detail-catalog-separator">|</span>
                   {renderCatalogLinkWithPreview(companionStamp, companionStamp.katalogCislo)}
                 </>
               )}
@@ -640,7 +640,7 @@ export function StampStudyTopSection({
         </div>
       </div>
       {/* --- POPIS STUDIE --- */}
-      <div className="ktf-edit-study-popis-row" style={{width: '100%'}}>
+      <div className="ktf-edit-study-popis-row ktf-edit-study-popis-row-full">
         <div className="label-top-input ktf-edit-row-full">
           <label htmlFor="edit-popis-studie">Popis studie</label>
           <div className="edit-field-row ktf-edit-row-full">
@@ -745,7 +745,7 @@ export function StampStudyFooterSection({
               className="ktf-btn-check"
             >✓</button>
           </div>
-          <div className="label-top-input ktf-edit-row-full" style={{ marginTop: 18 }}>
+          <div className="label-top-input ktf-edit-row-full edit-literature-block">
             <label htmlFor="edit-literatura">Literatura</label>
             <div className="edit-field-row ktf-edit-row-full">
               <textarea

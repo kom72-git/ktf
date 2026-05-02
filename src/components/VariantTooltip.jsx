@@ -58,8 +58,7 @@ export default function VariantTooltip({ children, tooltip }) {
 
   return (
     <span
-      className="variant-tooltip-wrapper"
-      style={{ position: "relative", display: "inline", width: "auto" }}
+      className="variant-tooltip-wrapper variant-tooltip-wrapper-inline"
     >
       <span ref={triggerRef} className="variant-tooltip-trigger" {...triggerProps}>
         {children}

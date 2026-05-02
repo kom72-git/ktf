@@ -135,7 +135,7 @@ export default function Help() {
                 <li>
                   V popisu u jednotlivých variant se může objevit značka
                   <span className="help-ui-sample">
-                    <VariantTooltip tooltip={<span style={{ fontSize: "13px" }}>Ukázka plného popisu DV</span>}>
+                    <VariantTooltip tooltip={<span className="variant-tooltip-content">Ukázka plného popisu DV</span>}>
                       …
                     </VariantTooltip>
                   </span>

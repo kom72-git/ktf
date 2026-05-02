@@ -159,9 +159,9 @@ function renderDefectDescription(descriptionText, tucneVSeznamu) {
     const before = parts[0].replace(SPLIT_REGEX, "");
     const after = parts.slice(1).join("").replace(SPLIT_REGEX, "");
     return (
-      <div className="variant-popis-detail" style={{ position: "relative" }}>
+      <div className="variant-popis-detail">
         <span className="variant-popis-short">{formatDefectDescription(before, { boldBracket: !!tucneVSeznamu })}</span>
-        <VariantTooltip tooltip={<span style={{ fontSize: "13px" }}>{formatDefectDescription(after, { boldBracket: !!tucneVSeznamu })}</span>}>
+        <VariantTooltip tooltip={<span className="variant-tooltip-content">{formatDefectDescription(after, { boldBracket: !!tucneVSeznamu })}</span>}>
           …
         </VariantTooltip>
       </div>
@@ -170,9 +170,9 @@ function renderDefectDescription(descriptionText, tucneVSeznamu) {
   const rendered = formatDefectDescription(descriptionText, { boldBracket: !!tucneVSeznamu });
   if (typeof descriptionText === "string" && descriptionText.length > 500) {
     return (
-      <div className="variant-popis-detail" style={{ position: "relative" }}>
+      <div className="variant-popis-detail">
         <span className="variant-popis-short variant-popis-clamped">{rendered}</span>
-        <VariantTooltip tooltip={<div style={{ fontSize: "13px" }}>{rendered}</div>}>…</VariantTooltip>
+        <VariantTooltip tooltip={<div className="variant-tooltip-content">{rendered}</div>}>…</VariantTooltip>
       </div>
     );
   }
@@ -391,14 +391,14 @@ const VariantList = forwardRef(function VariantList({
                 type="text"
                 value={edits.obrazekVady ?? ""}
                 onChange={e => updateEdit(key, "obrazekVady", e.target.value)}
-                style={{ flex: 1, minWidth: 0, padding: "3px 5px", border: "1px solid #d1d5db", borderRadius: "3px", fontSize: "11px", background: "#fff" }}
+                className="variant-edit-inline-input"
                 placeholder="https://example.com/obrazek.jpg"
               />
               <input
                 type="number"
                 value={edits.poradiVady ?? ""}
                 onChange={e => updateEdit(key, "poradiVady", e.target.value)}
-                style={{ width: "26px", height: "26px", flexShrink: 0, borderRadius: "2px", textAlign: "center", padding: "0", border: "1px solid #d1d5db", fontSize: "11px" }}
+                className="variant-edit-order-input"
                 min="0" step="1"
               />
             </div>
@@ -414,27 +414,27 @@ const VariantList = forwardRef(function VariantList({
         </div>
         {isEditingAll ? (
           <div>
-            <div className="edit-field-row" style={{ marginBottom: "4px", display: "flex", gap: "8px", alignItems: "center" }}>
-              <label title="Tučně v seznamu podvariant" style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "2px", fontSize: "11px", flexShrink: 0 }}>
+            <div className="edit-field-row variant-edit-controls-row">
+              <label title="Tučně v seznamu podvariant" className="variant-edit-flag-label">
                 <b>{"<b>"}</b>
                 <input
                   type="checkbox"
                   checked={!!edits.tucneVSeznamu}
                   onChange={e => updateEdit(key, "tucneVSeznamu", e.target.checked)}
-                  style={{ width: "13px", height: "13px", cursor: "pointer" }}
+                  className="variant-edit-flag-checkbox"
                 />
               </label>
-              <span style={{ fontSize: "12px", color: "#000", flexShrink: 0, fontWeight: "bold" }}>[</span>
+              <span className="variant-edit-bracket">[</span>
               <input
                 type="text"
                 placeholder="Varianta"
                 value={edits.variantaVady ?? ""}
                 onChange={e => updateEdit(key, "variantaVady", e.target.value)}
-                style={{ flex: 1, minWidth: 0, padding: "3px 5px", border: "1px solid #d1d5db", borderRadius: "3px", fontSize: "11px", background: "#fff" }}
+                className="variant-edit-inline-input"
               />
-              <span style={{ fontSize: "12px", color: "#000", flexShrink: 0, fontWeight: "bold" }}>]</span>
-              <label title="Mám tuto variantu" style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "2px", fontSize: "11px", flexShrink: 0 }}>
-                <span style={{ color: "#16a34a", fontWeight: "bold" }}>✓</span>
+              <span className="variant-edit-bracket">]</span>
+              <label title="Mám tuto variantu" className="variant-edit-flag-label">
+                <span className="variant-edit-check-mark">✓</span>
                 <input
                   type="checkbox"
                   checked={!!edits.mam}
@@ -443,7 +443,7 @@ const VariantList = forwardRef(function VariantList({
                     updateEdit(key, "mam", newVal);
                     if (isViewingBVariant && def.__inheritedFromA) onSaveInheritedMam(def, newVal);
                   }}
-                  style={{ width: "13px", height: "13px", cursor: "pointer" }}
+                  className="variant-edit-flag-checkbox"
                 />
               </label>
             </div>
@@ -451,10 +451,10 @@ const VariantList = forwardRef(function VariantList({
               value={edits.popisVady ?? ""}
               onChange={e => updateEdit(key, "popisVady", e.target.value)}
               rows={5}
-              style={{ width: "100%", padding: "6px", border: "1px solid #ddd", borderRadius: "4px", fontSize: "12px", resize: "vertical", fontFamily: "inherit" }}
+              className="variant-edit-description"
               placeholder="Popis vady..."
             />
-            <div style={{ marginTop: "4px", display: "flex", gap: "8px", alignItems: "center" }}>
+            <div className="variant-edit-actions">
               <button
                 onClick={() => {
                   if (isViewingBVariant && def.__inheritedFromA) { onSaveInheritedMam(def, edits.mam); return; }
@@ -564,9 +564,8 @@ const VariantList = forwardRef(function VariantList({
                   <span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span>
                   <input type="text" className="variant-typ-edit-input" defaultValue={typVarianty} placeholder="typ varianty…" id={`typVarianty-input-${group}`} />
                   <button
-                    className="ktf-btn-check"
+                    className="ktf-btn-check variant-type-save-button"
                     title="Uložit typ varianty"
-                    style={{ marginLeft: "4px", verticalAlign: "middle" }}
                     onClick={() => {
                       const val = document.getElementById(`typVarianty-input-${group}`)?.value ?? "";
                       saveDefectEdit(mainDef._id || mainDef.idVady, { ...mainDef, typVarianty: val });
@@ -613,9 +612,8 @@ const VariantList = forwardRef(function VariantList({
                     <span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span>
                     <input type="text" className="variant-typ-edit-input" defaultValue={plusTypVarianty} placeholder="typ varianty…" id="typVarianty-input-plus" />
                     <button
-                      className="ktf-btn-check"
+                      className="ktf-btn-check variant-type-save-button"
                       title="Uložit typ varianty"
-                      style={{ marginLeft: "4px", verticalAlign: "middle" }}
                       onClick={() => {
                         const val = document.getElementById("typVarianty-input-plus")?.value ?? "";
                         saveDefectEdit(mainPlusDef._id || mainPlusDef.idVady, { ...mainPlusDef, typVarianty: val });

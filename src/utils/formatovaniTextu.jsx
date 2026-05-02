@@ -116,7 +116,7 @@ export function replaceAbbreviations(text) {
       result.push(abbr);
     } else if (ZKRATKY_TOOLTIPY[abbr]) {
       result.push(
-        <span style={{ pointerEvents: "auto" }} key={`${idx}-${abbr}`}>
+        <span className="ktf-abbr-inline-interactive" key={`${idx}-${abbr}`}>
           <AbbrWithTooltip abbr={abbr} title={ZKRATKY_TOOLTIPY[abbr]} />
         </span>
       );
