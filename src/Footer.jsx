@@ -174,6 +174,13 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
                 </a>
                 <span className="footer-divider footer-divider-tight">|</span>
                 <a
+                  href="#/chybenka"
+                  className="footer-link"
+                >
+                  Chyběnka
+                </a>
+                <span className="footer-divider footer-divider-tight">|</span>
+                <a
                   href="#"
                   className="footer-link footer-link-danger"
                   onClick={e => {

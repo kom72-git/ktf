@@ -2610,3 +2610,134 @@ input.admin-checkbox { width: 18px; height: 18px; cursor: pointer; }
   }
 
 }
+
+/* Stránka Chyběnka */
+.missing-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.missing-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.missing-summary {
+  margin: 8px 0;
+  color: #1f2937;
+}
+
+.missing-note {
+  margin: 0 0 12px;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.missing-copy-state {
+  margin: 8px 0;
+  color: #065f46;
+  font-weight: 600;
+}
+
+.missing-error {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.missing-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.missing-emission-block {
+  background: #fff;
+  border: 1px solid #d9dde3;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.missing-emission-title {
+  margin: 0 0 12px;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.missing-stamp-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.missing-stamp-row {
+  display: grid;
+  grid-template-columns: minmax(74px, auto) 1fr;
+  align-items: start;
+  gap: 12px;
+  border-top: 1px dashed #e5e7eb;
+  padding-top: 8px;
+}
+
+.missing-stamp-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.missing-stamp-link {
+  font-weight: 700;
+  color: var(--color-link, #1d4ed8);
+  white-space: nowrap;
+  min-width: 74px;
+}
+
+.missing-variant-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.missing-variant-line {
+  display: block;
+  font-size: 0.92rem;
+  color: #1f2937;
+}
+
+.missing-variant-label {
+  font-weight: 700;
+}
+
+.missing-variant-detail {
+  font-size: 0.88rem;
+  color: #4b5563;
+}
+
+@media (max-width: 760px) {
+  .missing-page {
+    padding: 16px;
+  }
+
+  .missing-stamp-link {
+    min-width: 0;
+  }
+
+  .missing-stamp-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .missing-variant-list {
+    display: flex;
+  }
+}

@@ -65,6 +65,10 @@ function buildDefectDescriptionWithVariant(def) {
   return `[${variant}] ${description}`;
 }
 
+function isSharedVariantLabel(label) {
+  return String(label || "").includes(",");
+}
+
 function splitLeadingVariantToken(text) {
   const value = typeof text === "string" ? text : String(text ?? "");
   const match = value.match(/^\s*\[([^\]]+)\]([A-Za-z]?)(.*)$/s);
@@ -352,6 +356,9 @@ const VariantList = forwardRef(function VariantList({
     const edits = defectEdits[key] || {};
     const flatIndex = allVariantsOrdered.indexOf(def);
     const { hasImageDashedMarker: isSpecial, isExplicitNoImage, hasBoxDashedMarker: isSpecialBox } = parseDefectImagePathFlags(def.obrazekVady);
+    const variantLabelForMam = edits.variantaVady ?? def?.variantaVady;
+    const showMamControl = !isSharedVariantLabel(variantLabelForMam);
+    const hasMamBottomBorder = isAdmin && showMamControl;
     const displayDescription = buildDefectDescriptionWithVariant(def);
     const { variantToken, descriptionText } = splitLeadingVariantToken(displayDescription);
 
@@ -359,7 +366,7 @@ const VariantList = forwardRef(function VariantList({
       <div
         key={def.idVady || def._id || `${keyPrefix}-${i}`}
         className={`variant${isSpecialBox ? " variant-special-box" : ""}`}
-        style={isAdmin ? { borderBottom: `2px solid ${def.mam ? "#16a34a" : "#dc2626"}` } : {}}
+        style={hasMamBottomBorder ? { borderBottom: `2px solid ${def.mam ? "#16a34a" : "#dc2626"}` } : {}}
       >
         <div className="variant-popis">
           {isEditingAll ? (
@@ -433,19 +440,21 @@ const VariantList = forwardRef(function VariantList({
                 className="variant-edit-inline-input"
               />
               <span className="variant-edit-bracket">]</span>
-              <label title="Mám tuto variantu" className="variant-edit-flag-label">
-                <span className="variant-edit-check-mark">✓</span>
-                <input
-                  type="checkbox"
-                  checked={!!edits.mam}
-                  onChange={e => {
-                    const newVal = e.target.checked;
-                    updateEdit(key, "mam", newVal);
-                    if (isViewingBVariant && def.__inheritedFromA) onSaveInheritedMam(def, newVal);
-                  }}
-                  className="variant-edit-flag-checkbox"
-                />
-              </label>
+              {showMamControl ? (
+                <label title="Mám tuto variantu" className="variant-edit-flag-label">
+                  <span className="variant-edit-check-mark">✓</span>
+                  <input
+                    type="checkbox"
+                    checked={!!edits.mam}
+                    onChange={e => {
+                      const newVal = e.target.checked;
+                      updateEdit(key, "mam", newVal);
+                      if (isViewingBVariant && def.__inheritedFromA) onSaveInheritedMam(def, newVal);
+                    }}
+                    className="variant-edit-flag-checkbox"
+                  />
+                </label>
+              ) : null}
             </div>
             <textarea
               value={edits.popisVady ?? ""}
