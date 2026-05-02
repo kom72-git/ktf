@@ -1,4 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Header from "./Header";
+import Footer from "./Footer";
 
 function getApiBase() {
   return (
@@ -32,6 +35,7 @@ function formatDefectInline(defect) {
 }
 
 export default function MissingChecklist() {
+  const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [stamps, setStamps] = useState([]);
   const [defects, setDefects] = useState([]);
@@ -196,64 +200,85 @@ export default function MissingChecklist() {
 
   if (!isAdmin) {
     return (
-      <main className="missing-page">
-        <h1>Chyběnka</h1>
-        <p>Tato stránka je dostupná pouze v admin režimu.</p>
-        <a href="#/" className="back-btn">← Zpět</a>
-      </main>
+      <div className="page-bg">
+        <Header navigate={navigate} />
+        <main className="main">
+          <section className="stamp-detail-block missing-page" aria-labelledby="missing-page-title">
+            <div className="detail-title help-main-title-wrap">
+              <h1 id="missing-page-title" className="detail-title-text">Chyběnka</h1>
+            </div>
+            <p>Tato stránka je dostupná pouze v admin režimu.</p>
+            <button type="button" className="back-btn" onClick={() => navigate("/")}>← Zpět</button>
+          </section>
+        </main>
+        <Footer />
+      </div>
     );
   }
 
   return (
-    <main className="missing-page">
-      <div className="missing-header-row">
-        <a href="#/" className="back-btn">← Zpět</a>
-        <button type="button" className="ktf-btn-confirm" onClick={handleCopy}>Kopírovat text</button>
-      </div>
+    <div className="page-bg">
+      <Header navigate={navigate} />
+      <main className="main">
+        <section className="stamp-detail-block missing-page" aria-labelledby="missing-page-title">
+          <div className="missing-header-row">
+            <button type="button" className="back-btn" onClick={() => navigate("/")}>← Zpět</button>
+            <button type="button" className="back-btn" onClick={() => navigate("/prehled-variant")}>Přehled variant</button>
+            <button type="button" className="ktf-btn-confirm" onClick={handleCopy}>Kopírovat text</button>
+          </div>
 
-      <h1>Chyběnka</h1>
-      <p className="missing-summary">
-        Chybějící varianty: <strong>{totalMissingVariants}</strong> | Známky s chybějícími variantami: <strong>{totalMissingStamps}</strong>
-      </p>
-      {copyState ? <p className="missing-copy-state">{copyState}</p> : null}
+          <div className="detail-title help-main-title-wrap">
+            <h1 id="missing-page-title" className="detail-title-text">Chyběnka</h1>
+          </div>
+          <p className="missing-summary">
+            Chybějící varianty: <strong>{totalMissingVariants}</strong> | Známky s chybějícími variantami: <strong>{totalMissingStamps}</strong>
+          </p>
+          {copyState ? <p className="missing-copy-state">{copyState}</p> : null}
 
-      {loading ? <p>Načítám…</p> : null}
-      {!loading && error ? <p className="missing-error">{error}</p> : null}
+          {loading ? <p>Načítám…</p> : null}
+          {!loading && error ? <p className="missing-error">{error}</p> : null}
 
-      {!loading && !error && emissionGroups.length === 0 ? (
-        <p>Aktuálně není evidovaná žádná chybějící varianta.</p>
-      ) : null}
+          {!loading && !error && emissionGroups.length === 0 ? (
+            <p>Aktuálně není evidovaná žádná chybějící varianta.</p>
+          ) : null}
 
-      {!loading && !error && emissionGroups.length > 0 ? (
-        <div className="missing-list">
-          {emissionGroups.map((group) => (
-            <section key={group.emissionKey} className="missing-emission-block">
-              <h2 className="missing-emission-title">
-                {group.emise || "(bez emise)"} ({group.rok || "?"})
-              </h2>
-              <ul className="missing-stamp-list">
-                {group.stamps.map((stampRow) => (
-                  <li key={stampRow.stampId} className="missing-stamp-row">
-                    <a href={`#/detail/${stampRow.stampId}`} className="missing-stamp-link">
-                      {stampRow.stamp?.katalogCislo || stampRow.stampId}
-                    </a>
-                    <ul className="missing-variant-list">
-                      {stampRow.missingItems.map((item) => (
-                        <li key={item.variantLabel} className={`missing-variant-line missing-variant-${item.type}`}>
-                          <span className="missing-variant-label">{item.variantLabel}</span>
-                          {item.type === "partial" ? (
-                            <span className="missing-variant-detail"> - {item.defects.map((d) => formatDefectInline(d)).join("; ")}</span>
-                          ) : null}
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ))}
-        </div>
-      ) : null}
-    </main>
+          {!loading && !error && emissionGroups.length > 0 ? (
+            <div className="missing-list">
+              {emissionGroups.map((group) => (
+                <section key={group.emissionKey} className="missing-emission-block">
+                  <h2 className="missing-emission-title">
+                    {group.emise || "(bez emise)"} ({group.rok || "?"})
+                  </h2>
+                  <ul className="missing-stamp-list">
+                    {group.stamps.map((stampRow) => (
+                      <li key={stampRow.stampId} className="missing-stamp-row">
+                        <a href={`#/detail/${stampRow.stampId}`} className="missing-stamp-link">
+                          {stampRow.stamp?.katalogCislo || stampRow.stampId}
+                        </a>
+                        <ul className="missing-variant-list">
+                          {stampRow.missingItems.map((item) => (
+                            <li key={item.variantLabel} className={`missing-variant-line missing-variant-${item.type} variant-overview-line`}>
+                              <span className="missing-variant-label">{item.variantLabel}</span>
+                              {item.type === "partial" ? (
+                                <ul className="variant-overview-defect-list">
+                                  {item.defects.map((d, i) => (
+                                    <li key={i} className="variant-overview-defect-item">{formatDefectInline(d)}</li>
+                                  ))}
+                                </ul>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          ) : null}
+        </section>
+      </main>
+      <Footer />
+    </div>
   );
 }

@@ -82,6 +82,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const [savedCaption, setSavedCaption] = useState(false);
   const [isSavingHidden, setIsSavingHidden] = useState(false);
   const [isSavingVerified, setIsSavingVerified] = useState(false);
+  const [isRepublishing, setIsRepublishing] = useState(false);
   const [isSavingAllChanges, setIsSavingAllChanges] = useState(false);
   const [isDeletingStamp, setIsDeletingStamp] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
@@ -623,7 +624,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   };
 
   // Funkce pro uložení hlavních informací
-  const saveMainField = async (field, value) => {
+  const saveMainField = async (fieldOrObj, value) => {
+    const fields = typeof fieldOrObj === 'object' ? fieldOrObj : { [fieldOrObj]: value };
     try {
       const API_BASE =
         import.meta.env.VITE_API_BASE ||
@@ -636,13 +638,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       const response = await fetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: value })
+        body: JSON.stringify(fields)
       });
 
       if (response.ok) {
         const updatedStamp = await response.json();
         applyUpdatedStamp(updatedStamp);
-        console.log(`Hlavní údaj ${field} uložen:`, value);
+        console.log(`Hlavní údaj uložen:`, fields);
         return true;
       } else {
         const errorData = await response.json();
@@ -760,7 +762,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     const previous = Boolean(editStampData.isHidden);
     setEditStampData((prev) => ({ ...prev, isHidden: nextHidden }));
     setIsSavingHidden(true);
-    const saved = await saveMainField('isHidden', nextHidden);
+    const fieldsToSave = { isHidden: nextHidden };
+    // První zveřejnění: nastavit publishedAt (nikdy nepřepisovat při dalším přepínání)
+    if (!nextHidden && !item.publishedAt && !editStampData.publishedAt) {
+      fieldsToSave.publishedAt = new Date().toISOString();
+    }
+    const saved = await saveMainField(fieldsToSave);
     setIsSavingHidden(false);
     if (!saved) {
       setEditStampData((prev) => ({ ...prev, isHidden: previous }));
@@ -768,6 +775,28 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     }
     const notification = document.createElement('div');
     notification.textContent = 'Uloženo';
+    notification.className = 'ktf-notification';
+    document.body.appendChild(notification);
+    setTimeout(() => {
+      if (document.body.contains(notification)) {
+        document.body.removeChild(notification);
+      }
+    }, 1500);
+  };
+
+  const handleRepublish = async () => {
+    const now = new Date().toISOString();
+    const previous = editStampData.publishedAt || item.publishedAt;
+    setEditStampData((prev) => ({ ...prev, publishedAt: now }));
+    setIsRepublishing(true);
+    const saved = await saveMainField('publishedAt', now);
+    setIsRepublishing(false);
+    if (!saved) {
+      setEditStampData((prev) => ({ ...prev, publishedAt: previous }));
+      return;
+    }
+    const notification = document.createElement('div');
+    notification.textContent = 'Přepublikováno';
     notification.className = 'ktf-notification';
     document.body.appendChild(notification);
     setTimeout(() => {
@@ -1255,6 +1284,16 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
               />
               {isSavingHidden ? 'ukládám…' : 'zveřejněno'}
             </label>
+            {!Boolean(editStampData.isHidden) && (
+              <button
+                className="admin-edit-btn detail-inline-offset"
+                onClick={handleRepublish}
+                disabled={isRepublishing}
+                title="Přepsat datum publikování na teď — posune emisi na vrchol katalogu"
+              >
+                {isRepublishing ? 'ukládám…' : '↑ Přepublikovat'}
+              </button>
+            )}
             <label
               className="hide-stamp-toggle verified-toggle"
             >

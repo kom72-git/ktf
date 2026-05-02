@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, useParams, useNavigate } from "react-router-
 import StampCatalog from "./StampCatalog";
 import Help from "./Help";
 import MissingChecklist from "./MissingChecklist";
+import VariantOverview from "./VariantOverview";
 
 export default function Router() {
   return (
@@ -14,6 +15,7 @@ export default function Router() {
         <Route path="/emise/:slug" element={<CatalogWrapper />} />
         <Route path="/detail/:id" element={<DetailWrapper />} />
         <Route path="/chybenka" element={<MissingChecklist />} />
+        <Route path="/prehled-variant" element={<VariantOverview />} />
         <Route path="/napoveda" element={<Help />} />
       </Routes>
     </HashRouter>

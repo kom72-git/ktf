@@ -23,7 +23,12 @@ import {
 } from "./utils/obrazekCesta.js";
 import "./App.css";
 
-
+// Pomocná fce: vrátí čas (ms) pro řazení podle data publikování.
+// Primárně používá publishedAt; pokud není, odvozen timestamp z MongoDB ObjectId.
+function getPublishTime(item) {
+  if (item.publishedAt) return new Date(item.publishedAt).getTime();
+  return parseInt(item._id.substring(0, 8), 16) * 1000;
+}
 
 export default function StampCatalog(props) {
   const HOMEPAGE_BOX_LIMIT = 12; // 👈 zde měň výchozí počet zobrazených boxů/emisí na HomePage
@@ -290,7 +295,7 @@ export default function StampCatalog(props) {
       catalog === "all" &&
       !query
     ) {
-      arr = [...arr].sort((a, b) => b._id.localeCompare(a._id));
+      arr = [...arr].sort((a, b) => getPublishTime(b) - getPublishTime(a));
     }
     return arr;
   }, [query, year, emission, catalog, stamps]);
@@ -312,7 +317,7 @@ export default function StampCatalog(props) {
     };
 
     const emissionMap = new Map();
-    const sortedStamps = [...filtered].sort((a, b) => b._id.localeCompare(a._id));
+    const sortedStamps = [...filtered].sort((a, b) => getPublishTime(b) - getPublishTime(a));
     sortedStamps.forEach(item => {
       const key = `${item.emise}|${item.rok}`;
       if (!emissionMap.has(key)) {
@@ -328,7 +333,7 @@ export default function StampCatalog(props) {
 
       if (isHomepageDefault) {
         if (homeSortMode === "db") {
-          return itemB._id.localeCompare(itemA._id);
+          return getPublishTime(itemB) - getPublishTime(itemA);
         }
 
         if (homeSortMode === "alpha") {
