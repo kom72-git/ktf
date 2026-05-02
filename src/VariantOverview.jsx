@@ -53,6 +53,113 @@ function formatDefect(defect) {
   return "bez popisu";
 }
 
+function collectCaseInsensitiveRanges(text, needle) {
+  const hay = String(text || "");
+  const q = String(needle || "");
+  if (!hay || !q) return [];
+
+  const hayLower = hay.toLowerCase();
+  const qLower = q.toLowerCase();
+  const ranges = [];
+  let from = 0;
+
+  while (from < hayLower.length) {
+    const idx = hayLower.indexOf(qLower, from);
+    if (idx === -1) break;
+    ranges.push([idx, idx + q.length]);
+    from = idx + q.length;
+  }
+
+  return ranges;
+}
+
+function collectCompactRanges(text, needleCompact) {
+  const hay = String(text || "");
+  const q = String(needleCompact || "");
+  if (!hay || !q) return [];
+
+  const compactChars = [];
+  const mapCompactToOriginal = [];
+  for (let i = 0; i < hay.length; i += 1) {
+    const ch = hay[i];
+    if (/\s/.test(ch)) continue;
+    compactChars.push(ch.toLowerCase());
+    mapCompactToOriginal.push(i);
+  }
+
+  const compact = compactChars.join("");
+  const qLower = q.toLowerCase();
+  const ranges = [];
+  let from = 0;
+
+  while (from < compact.length) {
+    const idx = compact.indexOf(qLower, from);
+    if (idx === -1) break;
+    const startOriginal = mapCompactToOriginal[idx];
+    const endOriginal = mapCompactToOriginal[idx + q.length - 1] + 1;
+    ranges.push([startOriginal, endOriginal]);
+    from = idx + q.length;
+  }
+
+  return ranges;
+}
+
+function mergeRanges(ranges) {
+  if (!ranges.length) return [];
+  const sorted = [...ranges].sort((a, b) => a[0] - b[0]);
+  const merged = [sorted[0]];
+
+  for (let i = 1; i < sorted.length; i += 1) {
+    const [start, end] = sorted[i];
+    const last = merged[merged.length - 1];
+    if (start <= last[1]) {
+      last[1] = Math.max(last[1], end);
+    } else {
+      merged.push([start, end]);
+    }
+  }
+
+  return merged;
+}
+
+function renderHighlightedText(text, query) {
+  const value = String(text || "");
+  const needle = String(query || "").trim();
+  if (!needle) return value;
+
+  const needleCompact = needle.replace(/\s+/g, "");
+  const hasSpaces = needle !== needleCompact;
+
+  const exactRanges = collectCaseInsensitiveRanges(value, needle);
+  const ranges = exactRanges.length > 0
+    ? exactRanges
+    : (!hasSpaces ? collectCompactRanges(value, needleCompact) : []);
+
+  const merged = mergeRanges(ranges);
+  if (!merged.length) return value;
+
+  const nodes = [];
+  let cursor = 0;
+
+  merged.forEach(([start, end], index) => {
+    if (start > cursor) {
+      nodes.push(<React.Fragment key={`t-${index}-${cursor}`}>{value.slice(cursor, start)}</React.Fragment>);
+    }
+    nodes.push(
+      <span key={`m-${index}-${start}`} className="variant-overview-inline-highlight">
+        {value.slice(start, end)}
+      </span>
+    );
+    cursor = end;
+  });
+
+  if (cursor < value.length) {
+    nodes.push(<React.Fragment key={`t-end-${cursor}`}>{value.slice(cursor)}</React.Fragment>);
+  }
+
+  return <>{nodes}</>;
+}
+
 export default function VariantOverview() {
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -314,17 +421,24 @@ export default function VariantOverview() {
               <button type="button" className="ktf-btn-confirm" onClick={handleCopy}>Kopírovat text</button>
             </div>
 
-            <div className="variant-overview-filter-row">
-              <label htmlFor="variant-overview-filter" className="variant-overview-filter-label">Zvýraznit text:</label>
-              <input
-                id="variant-overview-filter"
-                type="text"
-                className="variant-overview-filter-input"
-                value={highlightQuery}
-                onChange={(e) => setHighlightQuery(e.target.value)}
-                placeholder="např. [A], ZP1, ZP 1, tečka"
-              />
-              <button type="button" className="back-btn" onClick={() => setHighlightQuery("")}>Vymazat</button>
+            <div className="variant-overview-filter-panel">
+              <div className="variant-overview-filter-row">
+                <label htmlFor="variant-overview-filter" className="variant-overview-filter-label">Zvýraznit text:</label>
+                <input
+                  id="variant-overview-filter"
+                  type="text"
+                  className="variant-overview-filter-input"
+                  value={highlightQuery}
+                  onChange={(e) => setHighlightQuery(e.target.value)}
+                  placeholder="např. [A], ZP1, ZP 1, tečka"
+                />
+                <button type="button" className="back-btn" onClick={() => setHighlightQuery("")}>Vymazat</button>
+              </div>
+              {String(highlightQuery || "").trim() ? (
+                <p className="variant-overview-match-summary variant-overview-match-summary-top">
+                  Shody pro filtr <strong>{highlightQuery}</strong>: <strong>{matchedByCustomFilterCount}</strong>
+                </p>
+              ) : null}
             </div>
           </div>
 
@@ -335,14 +449,6 @@ export default function VariantOverview() {
           <p className="missing-summary">
             Varianty celkem: <strong>{totalVariantCount}</strong>
           </p>
-          <p className="variant-overview-hint">
-            Zvýraznění funguje podle textu nahoře (bez ohledu na velikost písmen; navíc toleruje mezery, takže `ZP1` najde i `ZP 1`).
-          </p>
-          {String(highlightQuery || "").trim() ? (
-            <p className="variant-overview-match-summary">
-              Shody pro filtr <strong>{highlightQuery}</strong>: <strong>{matchedByCustomFilterCount}</strong>
-            </p>
-          ) : null}
           {copyState ? <p className="missing-copy-state">{copyState}</p> : null}
 
           {loading ? <p>Načítám…</p> : null}
@@ -387,11 +493,11 @@ export default function VariantOverview() {
                                 key={variant.variantLabel}
                                 className={`missing-variant-line variant-overview-line${isCustomMatch ? " variant-overview-line-custom" : ""}`}
                               >
-                                <span className="missing-variant-label">{variant.variantLabel}</span>
+                                <span className="missing-variant-label">{renderHighlightedText(variant.variantLabel, highlightQuery)}</span>
                                 {isCustomMatch ? <span className="variant-overview-flag variant-overview-flag-custom"> shoda</span> : null}
                                 <ul className="variant-overview-defect-list">
                                   {defectLines.map((line, i) => (
-                                    <li key={i} className="variant-overview-defect-item">{line}</li>
+                                    <li key={i} className="variant-overview-defect-item">{renderHighlightedText(line, highlightQuery)}</li>
                                   ))}
                                 </ul>
                               </li>
