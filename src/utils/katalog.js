@@ -7,11 +7,12 @@ function normalizeCatalogPrefix(value) {
 
 function parseCatalogNumber(katalogCislo) {
   const fromString = String(katalogCislo || "").trim();
-  const match = fromString.match(/^([\s\S]*?)(\d+)([A-Za-z]*)$/);
+  const match = fromString.match(/^([\s\S]*?)(\d+(?:\/\d+)?)([A-Za-z]*)$/);
   if (!match) {
     return {
       prefix: normalizeCatalogPrefix(fromString),
       number: NaN,
+      numberTail: NaN,
       suffix: "",
       original: fromString,
     };
@@ -19,9 +20,11 @@ function parseCatalogNumber(katalogCislo) {
   const rawPrefix = match[1] || "";
   const rawNumber = match[2] || "0";
   const rawSuffix = match[3] || "";
+  const [basePart, tailPart] = rawNumber.split("/");
   return {
     prefix: normalizeCatalogPrefix(rawPrefix),
-    number: Number(rawNumber),
+    number: Number(basePart),
+    numberTail: tailPart ? Number(tailPart) : NaN,
     suffix: rawSuffix.toUpperCase(),
     original: fromString,
   };
@@ -51,6 +54,15 @@ export function katalogSort(a, b) {
 
   if (hasNumberA && hasNumberB && parsedA.number !== parsedB.number) {
     return parsedA.number - parsedB.number;
+  }
+
+  const hasTailA = Number.isFinite(parsedA.numberTail);
+  const hasTailB = Number.isFinite(parsedB.numberTail);
+  if (hasTailA !== hasTailB) {
+    return hasTailA ? 1 : -1;
+  }
+  if (hasTailA && hasTailB && parsedA.numberTail !== parsedB.numberTail) {
+    return parsedA.numberTail - parsedB.numberTail;
   }
 
   const prefixCompare = parsedA.prefix.localeCompare(parsedB.prefix, undefined, {

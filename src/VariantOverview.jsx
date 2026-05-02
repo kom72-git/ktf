@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
+import { katalogSort } from "./utils/katalog.js";
 
 function getApiBase() {
   return (
@@ -12,13 +13,6 @@ function getApiBase() {
       ? ""
       : "http://localhost:3001")
   );
-}
-
-function sortByCatalog(a, b) {
-  return String(a || "").localeCompare(String(b || ""), "cs", {
-    numeric: true,
-    sensitivity: "base",
-  });
 }
 
 function sortDefects(a, b) {
@@ -158,13 +152,16 @@ export default function VariantOverview() {
     });
 
     stampRows.sort((a, b) => {
+      const catalogCmp = katalogSort(a.stamp, b.stamp);
+      if (catalogCmp !== 0) return catalogCmp;
+
       const yearDiff = Number(a.stamp?.rok || 0) - Number(b.stamp?.rok || 0);
       if (yearDiff !== 0) return yearDiff;
-      const emiseCmp = String(a.stamp?.emise || "").localeCompare(String(b.stamp?.emise || ""), "cs", {
+
+      return String(a.stamp?.emise || "").localeCompare(String(b.stamp?.emise || ""), "cs", {
         sensitivity: "base",
+        numeric: true,
       });
-      if (emiseCmp !== 0) return emiseCmp;
-      return sortByCatalog(a.stamp?.katalogCislo, b.stamp?.katalogCislo);
     });
 
     const groups = [];

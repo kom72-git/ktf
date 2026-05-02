@@ -247,6 +247,42 @@ const VariantList = forwardRef(function VariantList({
     });
   };
 
+  const clearDirtyKey = (key) => {
+    setDirtyKeys(prev => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  };
+
+  const saveCheckboxChangeImmediately = async (def, key, edits, field, value) => {
+    const nextEdits = { ...edits, [field]: value };
+
+    if (def.__inheritedFromA) {
+      if (!isViewingBVariant || field !== "mam") return;
+      const saved = await onSaveInheritedMam(def, value);
+      if (saved) clearDirtyKey(key);
+      return;
+    }
+
+    const defectId = def._id || def.idVady;
+    if (!defectId) return;
+
+    const saved = await saveDefectEdit(defectId, {
+      ...def,
+      variantaVady: nextEdits.variantaVady,
+      umisteniVady: nextEdits.umisteniVady,
+      popisVady: nextEdits.popisVady,
+      obrazekVady: nextEdits.obrazekVady,
+      poradiVady: normalizeDefectOrderForSave(nextEdits.poradiVady),
+      tucneVSeznamu: nextEdits.tucneVSeznamu,
+      mam: nextEdits.mam,
+    }, { silent: true });
+
+    if (saved) clearDirtyKey(key);
+  };
+
   // Seskupení variant
   const grouped = {};
   const plusVariants = [];
@@ -427,7 +463,11 @@ const VariantList = forwardRef(function VariantList({
                 <input
                   type="checkbox"
                   checked={!!edits.tucneVSeznamu}
-                  onChange={e => updateEdit(key, "tucneVSeznamu", e.target.checked)}
+                  onChange={e => {
+                    const newVal = e.target.checked;
+                    updateEdit(key, "tucneVSeznamu", newVal);
+                    saveCheckboxChangeImmediately(def, key, edits, "tucneVSeznamu", newVal);
+                  }}
                   className="variant-edit-flag-checkbox"
                 />
               </label>
@@ -449,7 +489,7 @@ const VariantList = forwardRef(function VariantList({
                     onChange={e => {
                       const newVal = e.target.checked;
                       updateEdit(key, "mam", newVal);
-                      if (isViewingBVariant && def.__inheritedFromA) onSaveInheritedMam(def, newVal);
+                      saveCheckboxChangeImmediately(def, key, edits, "mam", newVal);
                     }}
                     className="variant-edit-flag-checkbox"
                   />

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
+import { katalogSort } from "./utils/katalog.js";
 
 function getApiBase() {
   return (
@@ -18,6 +19,43 @@ function isSharedVariantLabel(label) {
   return String(label || "").includes(",");
 }
 
+function parseCatalogAB(catalogValue) {
+  const text = String(catalogValue || "").trim();
+  const match = text.match(/^([A-ZČŘŽŠĚÚŮ]+)\s*([\d/]+)([A-Z])$/i);
+  if (!match) return null;
+  return {
+    prefix: (match[1] || "").trim().toUpperCase(),
+    number: match[2],
+    suffix: (match[3] || "").trim().toUpperCase(),
+  };
+}
+
+function getInheritedDefectKey(defect) {
+  return (
+    defect?._id?.toString()
+    || defect?.idVady
+    || `${defect?.variantaVady || ""}||${defect?.umisteniVady || ""}`
+  );
+}
+
+function isExcludedInheritedDefect(defect, excludedList) {
+  const defectKey = getInheritedDefectKey(defect);
+  const legacyVariantKey = defect?.variantaVady || "";
+  return excludedList.includes(defectKey) || (legacyVariantKey && excludedList.includes(legacyVariantKey));
+}
+
+function resolveInheritedMam(mamMap, defect) {
+  const defectKey = getInheritedDefectKey(defect);
+  if (Object.prototype.hasOwnProperty.call(mamMap, defectKey)) {
+    return !!mamMap[defectKey];
+  }
+  const legacyVariantKey = defect?.variantaVady || "";
+  if (legacyVariantKey && Object.prototype.hasOwnProperty.call(mamMap, legacyVariantKey)) {
+    return !!mamMap[legacyVariantKey];
+  }
+  return false;
+}
+
 function sortDefects(a, b) {
   return String(a.umisteniVady || "").localeCompare(String(b.umisteniVady || ""), "cs", {
     numeric: true,
@@ -25,9 +63,16 @@ function sortDefects(a, b) {
   });
 }
 
+function stripAnnotations(text) {
+  return String(text || "")
+    .replace(/\[\[[^\]]*\]\]/g, "")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+}
+
 function formatDefectInline(defect) {
-  const where = String(defect?.umisteniVady || "").trim();
-  const desc = String(defect?.popisVady || "").trim();
+  const where = stripAnnotations(defect?.umisteniVady);
+  const desc = stripAnnotations(defect?.popisVady);
   if (where && desc) return `${where} - ${desc}`;
   if (where) return where;
   if (desc) return desc;
@@ -86,10 +131,60 @@ export default function MissingChecklist() {
   // emissionGroups: [ { emissionKey, rok, emise, stamps: [ { stampId, stamp, missingItems } ] } ]
   const emissionGroups = useMemo(() => {
     const stampById = new Map((stamps || []).map((s) => [s.idZnamky, s]));
+    const defectsByStampId = new Map();
+    (defects || []).forEach((defect) => {
+      const stampId = defect?.idZnamky;
+      if (!stampId) return;
+      if (!defectsByStampId.has(stampId)) defectsByStampId.set(stampId, []);
+      defectsByStampId.get(stampId).push(defect);
+    });
+
+    const stampByPairKey = new Map();
+    (stamps || []).forEach((stamp) => {
+      const parsed = parseCatalogAB(stamp?.katalogCislo);
+      if (!parsed) return;
+      const pairKey = `${stamp?.rok || ""}|${stamp?.emise || ""}|${parsed.prefix}|${parsed.number}|${parsed.suffix}`;
+      stampByPairKey.set(pairKey, stamp);
+    });
+
+    const effectiveDefects = [];
+    (stamps || []).forEach((stamp) => {
+      const stampId = stamp?.idZnamky;
+      if (!stampId) return;
+
+      const ownDefects = defectsByStampId.get(stampId) || [];
+      const parsed = parseCatalogAB(stamp?.katalogCislo);
+      if (!parsed || parsed.suffix !== "B") {
+        effectiveDefects.push(...ownDefects);
+        return;
+      }
+
+      const aPairKey = `${stamp?.rok || ""}|${stamp?.emise || ""}|${parsed.prefix}|${parsed.number}|A`;
+      const aStamp = stampByPairKey.get(aPairKey);
+      if (!aStamp?.idZnamky) {
+        effectiveDefects.push(...ownDefects);
+        return;
+      }
+
+      const excludedFromA = Array.isArray(stamp?.variantyVylouceneZA) ? stamp.variantyVylouceneZA : [];
+      const inheritedMamMap = (stamp?.variantyMamZA && typeof stamp.variantyMamZA === "object") ? stamp.variantyMamZA : {};
+      const aDefects = defectsByStampId.get(aStamp.idZnamky) || [];
+      const inheritedDefects = aDefects
+        .filter((d) => !isExcludedInheritedDefect(d, excludedFromA))
+        .map((d) => ({
+          ...d,
+          idZnamky: stampId,
+          mam: resolveInheritedMam(inheritedMamMap, d),
+          __inheritedFromA: true,
+          __inheritedKey: getInheritedDefectKey(d),
+        }));
+
+      effectiveDefects.push(...ownDefects, ...inheritedDefects);
+    });
 
     // Seskup VŠECHNY vady (mam=true i false) podle stampId+variantaVady
     const defectsByKey = new Map();
-    (defects || []).forEach((defect) => {
+    effectiveDefects.forEach((defect) => {
       const variantLabel = String(defect?.variantaVady || "").trim();
       if (!variantLabel) return;
       if (isSharedVariantLabel(variantLabel)) return;
@@ -109,14 +204,31 @@ export default function MissingChecklist() {
 
       if (!stampMissingMap.has(stampId)) stampMissingMap.set(stampId, []);
 
+      const totalCount = varDefects.length;
+      const missingCount = varDefects.filter((d) => !d.mam).length;
+      const ownedCount = totalCount - missingCount;
       const allMissing = varDefects.every((d) => !d.mam);
       if (allMissing) {
         // Celá varianta chybí – stačí zobrazit jen písmeno varianty
-        stampMissingMap.get(stampId).push({ type: "whole", variantLabel, defects: [] });
+        stampMissingMap.get(stampId).push({
+          type: "whole",
+          variantLabel,
+          defects: [],
+          ownedCount,
+          totalCount,
+          missingCount,
+        });
       } else {
         // Jen část sub-vad chybí – zobraz konkrétní chybějící vady
         const missing = varDefects.filter((d) => !d.mam).sort(sortDefects);
-        stampMissingMap.get(stampId).push({ type: "partial", variantLabel, defects: missing });
+        stampMissingMap.get(stampId).push({
+          type: "partial",
+          variantLabel,
+          defects: missing,
+          ownedCount,
+          totalCount,
+          missingCount,
+        });
       }
     });
 
@@ -132,13 +244,15 @@ export default function MissingChecklist() {
     });
 
     stampRows.sort((a, b) => {
+      const catalogCmp = katalogSort(a.stamp, b.stamp);
+      if (catalogCmp !== 0) return catalogCmp;
+
       const yearDiff = Number(a.stamp?.rok || 0) - Number(b.stamp?.rok || 0);
       if (yearDiff !== 0) return yearDiff;
-      const emiseCmp = String(a.stamp?.emise || "").localeCompare(String(b.stamp?.emise || ""), "cs");
-      if (emiseCmp !== 0) return emiseCmp;
-      return String(a.stamp?.katalogCislo || "").localeCompare(String(b.stamp?.katalogCislo || ""), "cs", {
-        numeric: true,
+
+      return String(a.stamp?.emise || "").localeCompare(String(b.stamp?.emise || ""), "cs", {
         sensitivity: "base",
+        numeric: true,
       });
     });
 
@@ -177,9 +291,12 @@ export default function MissingChecklist() {
         const lines = group.stamps.flatMap((stampRow) => {
           const kat = stampRow.stamp?.katalogCislo || stampRow.stampId;
           return stampRow.missingItems.map((item) => {
-            if (item.type === "whole") return `\u2022 ${kat} ${item.variantLabel}`;
+            const ratio = Number.isFinite(item.totalCount) && item.totalCount > 0
+              ? ` (${item.ownedCount}/${item.totalCount})`
+              : "";
+            if (item.type === "whole") return `\u2022 ${kat} ${item.variantLabel}${ratio}`;
             const detail = item.defects.map((d) => formatDefectInline(d)).join("; ");
-            return `\u2022 ${kat} ${item.variantLabel} - ${detail}`;
+            return `\u2022 ${kat} ${item.variantLabel}${ratio} - ${detail}`;
           });
         });
         return [header, ...lines].join("\n");
@@ -258,7 +375,17 @@ export default function MissingChecklist() {
                         <ul className="missing-variant-list">
                           {stampRow.missingItems.map((item) => (
                             <li key={item.variantLabel} className={`missing-variant-line missing-variant-${item.type} variant-overview-line`}>
-                              <span className="missing-variant-label">{item.variantLabel}</span>
+                              <div className="missing-variant-head">
+                                <span className="missing-variant-label">
+                                  {item.variantLabel}
+                                  {Number.isFinite(item.totalCount) && item.totalCount > 0 ? (
+                                    <span className="missing-variant-ratio"> ({item.ownedCount}/{item.totalCount})</span>
+                                  ) : null}
+                                </span>
+                                <span className={`missing-variant-state missing-variant-state-${item.type}`}>
+                                  {item.type === "whole" ? "chybí celá" : "částečně"}
+                                </span>
+                              </div>
                               {item.type === "partial" ? (
                                 <ul className="variant-overview-defect-list">
                                   {item.defects.map((d, i) => (
