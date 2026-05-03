@@ -62,9 +62,13 @@ export default async function handler(req, res) {
         if (req.method === 'PUT') {
           const updateData = { ...(req.body || {}) };
           delete updateData._id;
+          const updatePayload = {
+            ...updateData,
+            updatedAt: new Date().toISOString(),
+          };
           const result = await mongoose.connection.db.collection("stamps").updateOne(
             { idZnamky: pathArray[1] },
-            { $set: updateData }
+            { $set: updatePayload }
           );
           if (!result.matchedCount) {
             return res.status(404).json({ error: "Známka nenalezena" });

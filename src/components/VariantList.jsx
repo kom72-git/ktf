@@ -7,6 +7,7 @@ import { Fancybox } from "@fancyapps/ui";
 import VariantTooltip from "./VariantTooltip.jsx";
 import { formatDefectDescription } from "../utils/formatovaniTextu.jsx";
 import { naturalVariantSort, compareVariantsWithBracket } from "../utils/katalog.js";
+import { formatVariantLocationDisplay } from "../utils/formatovaniUdaju.js";
 
 // --- Helper funkce (přesunuty ze StampDetail) ---
 
@@ -314,7 +315,7 @@ const VariantList = forwardRef(function VariantList({
         src: normalizeDefectImageSrc(def.obrazekVady) || NO_IMAGE,
         caption:
           `<div class='fancybox-caption-center'>` +
-          `<span class='fancybox-caption-variant'>${def.umisteniVady || ""}</span>` +
+          `<span class='fancybox-caption-variant'>${formatVariantLocationDisplay(def.umisteniVady) || ""}</span>` +
           (caption ? `<br /><span class='fancybox-caption-desc'>${caption.replace(/\[\[\.\.\.\]\]/g, "")}</span>` : "") +
           `</div>`,
       };
@@ -383,6 +384,14 @@ const VariantList = forwardRef(function VariantList({
   }), [allVariantsOrdered, defectEdits, dirtyKeys, onSaveInheritedMam, saveDefectEdit]);
 
   const excluded = item?.variantyVylouceneZA || [];
+  const inheritedDefectsOrdered = (aStampDefects || []).slice().sort(compareVariantsWithBracket);
+  const inheritedDisplayCounts = inheritedDefectsOrdered.reduce((acc, def) => {
+    const displayVariant = String(def?.variantaVady || "").trim();
+    const displayLocation = formatVariantLocationDisplay(def?.umisteniVady) || "";
+    const displayKey = `${displayVariant}||${displayLocation}`;
+    acc[displayKey] = (acc[displayKey] || 0) + 1;
+    return acc;
+  }, {});
 
   if (!effectiveDefects.length && !isEditingAll) return null;
 
@@ -413,7 +422,7 @@ const VariantList = forwardRef(function VariantList({
               className="edit-variant-textarea"
             />
           ) : (
-            <span className="variant-popis-hlavni">{def.umisteniVady || ""}</span>
+            <span className="variant-popis-hlavni">{formatVariantLocationDisplay(def.umisteniVady) || ""}</span>
           )}
         </div>
         <div
@@ -538,22 +547,32 @@ const VariantList = forwardRef(function VariantList({
         <div className="ktf-exclude-variants-box">
           <strong>Varianty zděděné z A</strong> — odškrtni ty, které se u B nezobrazí:
           <div className="ktf-exclude-variants-list">
-            {aStampDefects.map(def => (
-              <label key={getDefectKey(def)} className="ktf-exclude-variant-item">
-                <input
-                  type="checkbox"
-                  checked={!isExcludedFromA(def, excluded)}
-                  onChange={e => {
-                    const defectKey = getDefectKey(def);
-                    const newExcluded = e.target.checked
-                      ? excluded.filter(v => v !== defectKey && v !== def.variantaVady)
-                      : [...excluded, defectKey];
-                    onExcludeChange(newExcluded);
-                  }}
-                />
-                {def.variantaVady}{def.umisteniVady ? ` – ${def.umisteniVady}` : ""}
-              </label>
-            ))}
+            {inheritedDefectsOrdered.map(def => {
+              const displayVariant = String(def?.variantaVady || "").trim();
+              const displayLocation = formatVariantLocationDisplay(def?.umisteniVady) || "";
+              const displayKey = `${displayVariant}||${displayLocation}`;
+              const hasVisibleDuplicate = (inheritedDisplayCounts[displayKey] || 0) > 1;
+              const orderValue = def?.poradiVady;
+              const hasOrderValue = orderValue !== null && orderValue !== undefined && String(orderValue).trim() !== "";
+              const orderSuffix = hasVisibleDuplicate && hasOrderValue ? ` (${orderValue})` : "";
+
+              return (
+                <label key={getDefectKey(def)} className="ktf-exclude-variant-item">
+                  <input
+                    type="checkbox"
+                    checked={!isExcludedFromA(def, excluded)}
+                    onChange={e => {
+                      const defectKey = getDefectKey(def);
+                      const newExcluded = e.target.checked
+                        ? excluded.filter(v => v !== defectKey && v !== def.variantaVady)
+                        : [...excluded, defectKey];
+                      onExcludeChange(newExcluded);
+                    }}
+                  />
+                  {displayVariant}{displayLocation ? ` – ${displayLocation}` : ""}{orderSuffix}
+                </label>
+              );
+            })}
           </div>
         </div>
       )}
@@ -591,7 +610,7 @@ const VariantList = forwardRef(function VariantList({
         const numericRangeLabel = numericNums.length > 0
           ? (numericNums.length === 1 ? `${numericNums[0]}` : `${numericNums[0]} - ${numericNums[numericNums.length - 1]}`)
           : "";
-        const mainDef = sortedDefs.find(def => def.variantaVady && (def.variantaVady.length === 1 || /^\d+$/.test(def.variantaVady)));
+        const mainDef = sortedDefs.find(def => def.variantaVady && (def.variantaVady.length === 1 || /^\d+$/.test(def.variantaVady))) || sortedDefs[0];
         const typVarianty = mainDef?.typVarianty || "";
         const heading = isNumericGroup ? (
           <>
@@ -608,7 +627,7 @@ const VariantList = forwardRef(function VariantList({
           <section key={group} aria-labelledby={`${variantsHeadingBaseId}-${group}`}>
             <h3 id={`${variantsHeadingBaseId}-${group}`} className="variant-subtitle">
               {heading}
-              {isEditingAll && isAdmin && mainDef ? (
+              {isEditingAll && isAdmin ? (
                 <>
                   <span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span>
                   <input type="text" className="variant-typ-edit-input" defaultValue={typVarianty} placeholder="typ varianty…" id={`typVarianty-input-${group}`} />

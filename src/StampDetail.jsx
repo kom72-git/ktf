@@ -18,6 +18,13 @@ import {
   normalizeStampImagePath,
   normalizeStampImagePathForStorage
 } from "./utils/obrazekCesta.js";
+import {
+  formatNakladDisplay,
+  formatNominalDisplay,
+  formatRozmerDisplay,
+  formatTiskovaFormaDisplay,
+  formatZoubkovaniDisplay,
+} from "./utils/formatovaniUdaju.js";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import "./fancybox-responsive.css";
 import ImageSources from "./components/ImageSources.jsx";
@@ -161,6 +168,31 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const renderTechnicalValue = (field, value) => {
     if (value === null || value === undefined || value === "") {
       return "";
+    }
+
+    if (field === 'naklad') {
+      const formatted = formatNakladDisplay(value);
+      return typeof formatted === "string" ? replaceAbbreviations(formatted) : formatted;
+    }
+
+    if (field === 'rozmer') {
+      const formatted = formatRozmerDisplay(value);
+      return typeof formatted === "string" ? replaceAbbreviations(formatted) : formatted;
+    }
+
+    if (field === 'zoubkovani') {
+      const formatted = formatZoubkovaniDisplay(value);
+      return typeof formatted === "string" ? replaceAbbreviations(formatted) : formatted;
+    }
+
+    if (field === 'nominal') {
+      const formatted = formatNominalDisplay(value);
+      return typeof formatted === "string" ? replaceAbbreviations(formatted) : formatted;
+    }
+
+    if (field === 'tiskovaForma') {
+      const formatted = formatTiskovaFormaDisplay(value);
+      return typeof formatted === "string" ? replaceAbbreviations(formatted) : formatted;
     }
 
     if (technicalTooltipExcludedFields.has(field)) {
@@ -431,6 +463,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       if (response.ok) {
         console.log('Vada úspěšně aktualizována');
+        const nowIso = new Date().toISOString();
         const savedDefect = responseData && typeof responseData === 'object'
           ? responseData
           : { ...updatedData, _id: actualId, idVady: actualId };
@@ -438,6 +471,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           const currentId = defect._id?.toString() || defect.idVady;
           return currentId === actualId.toString() ? savedDefect : defect;
         }));
+        setItem((prev) => (prev ? { ...prev, updatedAt: nowIso } : prev));
         // Zobraz dočasnou hlášku
         if (!silent) {
           const notification = document.createElement('div');
@@ -457,11 +491,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         // Některé verze backendu vrací tuto hlášku i při no-op update (data již odpovídají DB).
         // V takovém případě bereme výsledek jako úspěch, aby nevznikala falešná chyba v UI.
         if (errorMessage === 'Nepodařilo se aktualizovat vadu') {
+          const nowIso = new Date().toISOString();
           const savedDefect = { ...updatedData, _id: actualId, idVady: actualId };
           setLocalDefects((prev) => prev.map((defect) => {
             const currentId = defect._id?.toString() || defect.idVady;
             return currentId === actualId.toString() ? savedDefect : defect;
           }));
+          setItem((prev) => (prev ? { ...prev, updatedAt: nowIso } : prev));
           if (!silent) {
             const notification = document.createElement('div');
             notification.textContent = 'Uloženo';
@@ -503,11 +539,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         : `${API_BASE}/api/defects/${actualId}`;
       const response = await fetch(apiUrl, { method: 'DELETE' });
       if (response.ok) {
+        const nowIso = new Date().toISOString();
         // Odstraníme z lokálního stavu
         setLocalDefects(prev => prev.filter(d => {
           const dId = d._id?.toString() || d.idVady;
           return dId !== actualId.toString();
         }));
+        setItem((prev) => (prev ? { ...prev, updatedAt: nowIso } : prev));
       } else {
         const raw = await response.text();
         let errorMessage = 'Neznámá chyba';
@@ -1505,6 +1543,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             literatureEntries={literatureEntries}
             secondStudyBlockClass={secondStudyBlockClass}
             additionalStudyHeadingId={additionalStudyHeadingId}
+            lastEditedAt={item?.updatedAt}
           />
         </section>
       )}

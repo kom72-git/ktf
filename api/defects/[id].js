@@ -66,6 +66,7 @@ export default async function handler(req, res) {
       
       const updateData = { ...req.body };
       delete updateData._id;
+      const nowIso = new Date().toISOString();
       
       let result;
       try {
@@ -79,6 +80,13 @@ export default async function handler(req, res) {
         result = await mongoose.connection.db.collection("defects").updateOne(
           { idVady: id },
           { $set: updateData }
+        );
+      }
+
+      if (defect?.idZnamky) {
+        await mongoose.connection.db.collection("stamps").updateOne(
+          { idZnamky: defect.idZnamky },
+          { $set: { updatedAt: nowIso } }
         );
       }
       
@@ -99,6 +107,13 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'DELETE') {
+      let defect;
+      try {
+        defect = await mongoose.connection.db.collection("defects").findOne({ _id: new mongoose.Types.ObjectId(id) });
+      } catch (idError) {
+        defect = await mongoose.connection.db.collection("defects").findOne({ idVady: id });
+      }
+
       let result;
       try {
         result = await mongoose.connection.db.collection("defects").deleteOne({ _id: new mongoose.Types.ObjectId(id) });
@@ -107,6 +122,12 @@ export default async function handler(req, res) {
       }
       if (result.deletedCount === 0) {
         return res.status(404).json({ error: "Vada nenalezena nebo již smazána" });
+      }
+      if (defect?.idZnamky) {
+        await mongoose.connection.db.collection("stamps").updateOne(
+          { idZnamky: defect.idZnamky },
+          { $set: { updatedAt: new Date().toISOString() } }
+        );
       }
       console.log("Successfully deleted defect:", id);
       return res.status(200).json({ success: true, deletedId: id });

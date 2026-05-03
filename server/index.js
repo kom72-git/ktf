@@ -125,10 +125,15 @@ app.put("/api/stamps/:id", async (req, res) => {
     
     const updateData = { ...req.body };
     delete updateData._id;
+    const nowIso = new Date().toISOString();
+    const updatePayload = {
+      ...updateData,
+      updatedAt: new Date().toISOString(),
+    };
     
     const result = await mongoose.connection.db.collection("stamps").updateOne(
       { idZnamky: id },
-      { $set: updateData }
+      { $set: updatePayload }
     );
     
     if (result.matchedCount === 0) {
@@ -245,6 +250,7 @@ app.put("/api/defects/:id", async (req, res) => {
     
     const updateData = { ...req.body };
     delete updateData._id;
+    const nowIso = new Date().toISOString();
     
     let result;
     try {
@@ -256,6 +262,13 @@ app.put("/api/defects/:id", async (req, res) => {
       result = await mongoose.connection.db.collection("defects").updateOne(
         { idVady: id },
         { $set: updateData }
+      );
+    }
+
+    if (defect?.idZnamky) {
+      await mongoose.connection.db.collection("stamps").updateOne(
+        { idZnamky: defect.idZnamky },
+        { $set: { updatedAt: nowIso } }
       );
     }
     
@@ -282,6 +295,13 @@ app.put("/api/defects/:id", async (req, res) => {
 app.delete("/api/defects/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    let defect;
+    try {
+      defect = await mongoose.connection.db.collection("defects").findOne({ _id: new mongoose.Types.ObjectId(id) });
+    } catch (idError) {
+      defect = await mongoose.connection.db.collection("defects").findOne({ idVady: id });
+    }
+
     let result;
     try {
       result = await mongoose.connection.db.collection("defects").deleteOne({ _id: new mongoose.Types.ObjectId(id) });
@@ -291,6 +311,13 @@ app.delete("/api/defects/:id", async (req, res) => {
 
     if (result.deletedCount === 0) {
       return res.status(404).json({ error: "Vada nenalezena nebo již smazána" });
+    }
+
+    if (defect?.idZnamky) {
+      await mongoose.connection.db.collection("stamps").updateOne(
+        { idZnamky: defect.idZnamky },
+        { $set: { updatedAt: new Date().toISOString() } }
+      );
     }
 
     console.log("Successfully deleted defect:", id);

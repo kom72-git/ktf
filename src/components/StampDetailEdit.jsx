@@ -3,6 +3,7 @@
 // Stav (editStampData) a ukladací funkce zůstávají v rodiči StampDetail.jsx.
 import React from "react";
 import { replaceAbbreviations, formatPopisWithAll } from "../utils/formatovaniTextu.jsx";
+import { formatDateTimeDisplay } from "../utils/formatovaniUdaju.js";
 import ImageSources from "./ImageSources.jsx";
 import LiteratureTextarea from "./LiteratureTextarea.jsx";
 import StudyBlockTextarea from "./StudyBlockTextarea.jsx";
@@ -709,6 +710,7 @@ export function StampStudyFooterSection({
   literatureEntries,
   secondStudyBlockClass,
   additionalStudyHeadingId,
+  lastEditedAt,
 }) {
   const literatureEditValue =
     typeof editStampData.literatura === "string"
@@ -718,6 +720,15 @@ export function StampStudyFooterSection({
     typeof editStampData.popisStudie2 === "string"
       ? editStampData.popisStudie2
       : popisStudie2Display;
+  const lastEditedDisplay = formatDateTimeDisplay(lastEditedAt);
+  const lastEditedText = lastEditedDisplay || "žádná";
+  const lastEditedMatch = lastEditedDisplay
+    ? lastEditedDisplay.match(/^(.*)\s(\d{1,2}:\d{2})$/)
+    : null;
+  const lastEditedDate = lastEditedMatch
+    ? lastEditedMatch[1].trim().replace(/\s+v(?:e)?$/u, "")
+    : "";
+  const lastEditedTime = lastEditedMatch ? lastEditedMatch[2] : "";
 
   return (
     <section className={secondStudyBlockClass} aria-labelledby={additionalStudyHeadingId}>
@@ -880,6 +891,17 @@ export function StampStudyFooterSection({
           )}
         </>
       )}
+      <div className="study-meta-footer">
+        <span className="study-meta-footer-label">Poslední editace:</span>
+        {lastEditedMatch ? (
+          <>
+            <span className="study-meta-footer-date">{lastEditedDate}</span>
+            <span className="study-meta-footer-value">({lastEditedTime})</span>
+          </>
+        ) : (
+          <span className="study-meta-footer-value">{lastEditedText}</span>
+        )}
+      </div>
     </section>
   );
 }
