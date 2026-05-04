@@ -31,6 +31,8 @@ import "./fancybox-responsive.css";
 import ImageSources from "./components/ImageSources.jsx";
 import VariantList from "./components/VariantList.jsx";
 import { StampImageEditRow, StampCatalogNumberSection, StampTitleSection, StampTechnicalSpecSection, StampStudyTopSection, StampStudyFooterSection } from "./components/StampDetailEdit.jsx";
+import StampStavControl from "./components/StampStavControl.jsx";
+import { getStavFromStamp, stavToIsHidden } from "./utils/stavUtils.js";
 
 const LITERATURE_PREFIX_REGEX = /^\s*(?:\[(\d+)\]|(\d+)([.)]))\s*(.*)$/;
 const LITERATURE_URL_REGEX = /(https?:\/\/[^\s]+)/i;
@@ -277,6 +279,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           literatura: data.literatura || '',
           obrazekAutor: data.obrazekAutor || '',
           isHidden: Boolean(data.isHidden),
+          stav: getStavFromStamp(data),
           overeno: Boolean(data.overeno),
           variantyVylouceneZA: data.variantyVylouceneZA || [],
           variantyMamZA: data.variantyMamZA || {}
@@ -823,20 +826,21 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     setIsDeletingStamp(false);
   };
 
-  const handleVisibilityToggle = async (isPublished) => {
-    const nextHidden = !isPublished;
-    const previous = Boolean(editStampData.isHidden);
-    setEditStampData((prev) => ({ ...prev, isHidden: nextHidden }));
+  const handleStavChange = async (newStav) => {
+    const previousStav = editStampData.stav;
+    const previousHidden = editStampData.isHidden;
+    const nextHidden = stavToIsHidden(newStav);
+    setEditStampData((prev) => ({ ...prev, stav: newStav, isHidden: nextHidden }));
     setIsSavingHidden(true);
-    const fieldsToSave = { isHidden: nextHidden };
-    // První zveřejnění: nastavit publishedAt (nikdy nepřepisovat při dalším přepínání)
+    const fieldsToSave = { stav: newStav, isHidden: nextHidden };
+    // První přechod z interní: nastavit publishedAt (nikdy nepřepisovat při dalším přepínání)
     if (!nextHidden && !item.publishedAt && !editStampData.publishedAt) {
       fieldsToSave.publishedAt = new Date().toISOString();
     }
     const saved = await saveMainField(fieldsToSave);
     setIsSavingHidden(false);
     if (!saved) {
-      setEditStampData((prev) => ({ ...prev, isHidden: previous }));
+      setEditStampData((prev) => ({ ...prev, stav: previousStav, isHidden: previousHidden }));
       return;
     }
     const notification = document.createElement('div');
@@ -1252,6 +1256,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     );
   };
   const additionalStudyHeadingId = `${detailHeadingId}-study-after`;
+  const isPripravaStamp = (editStampData.stav || getStavFromStamp(item)) === 'priprava';
   return (
     <article className="stamp-detail-block" aria-labelledby={detailHeadingId}>
       <div className="button-row">
@@ -1298,6 +1303,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     popisStudie2: item.popisStudie2 || '',
                     literatura: item.literatura || '',
                     isHidden: Boolean(item.isHidden),
+                    stav: getStavFromStamp(item),
                     overeno: Boolean(item.overeno)
                   });
                   setIsEditingAll(false);
@@ -1339,18 +1345,12 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 {isDeletingStamp ? 'Mažu…' : '🗑 Smazat známku'}
               </button>
             )}
-            <label
-              className="hide-stamp-toggle"
-            >
-              <input
-                type="checkbox"
-                checked={!Boolean(editStampData.isHidden)}
-                onChange={(e) => handleVisibilityToggle(e.target.checked)}
-                disabled={isSavingHidden}
-              />
-              {isSavingHidden ? 'ukládám…' : 'zveřejněno'}
-            </label>
-            {!Boolean(editStampData.isHidden) && (
+            <StampStavControl
+              stav={editStampData.stav || getStavFromStamp(editStampData)}
+              onChange={handleStavChange}
+              disabled={isSavingHidden}
+            />
+            {editStampData.stav !== 'interni' && (
               <button
                 className="admin-edit-btn detail-inline-offset"
                 onClick={handleRepublish}
@@ -1456,17 +1456,24 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             });
           }}>
             <figure className="study-image-figure">
-              <img
-                src={
-                  (normalizedResolvedObrazekStudie && normalizedResolvedObrazekStudie[0] !== '/'
-                    ? '/' + normalizedResolvedObrazekStudie
-                    : normalizedResolvedObrazekStudie)
-                  || '/img/no-image.png'
-                }
-                alt={item.emise}
-                className="stamp-detail-img stamp-detail-img-main"
-                onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
-              />
+              <div className="detail-study-image-frame">
+                {isPripravaStamp && (
+                  <span className="stamp-unpublished-ribbon detail-study-ribbon" title="Známka je ve stavu V přípravě">
+                    V PŘÍPRAVĚ
+                  </span>
+                )}
+                <img
+                  src={
+                    (normalizedResolvedObrazekStudie && normalizedResolvedObrazekStudie[0] !== '/'
+                      ? '/' + normalizedResolvedObrazekStudie
+                      : normalizedResolvedObrazekStudie)
+                    || '/img/no-image.png'
+                  }
+                  alt={item.emise}
+                  className="stamp-detail-img stamp-detail-img-main"
+                  onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
+                />
+              </div>
               {/* Popisek pod obrázkem studie */}
               <figcaption className={`study-img-caption${savedCaption ? ' ktf-saved-highlight' : ''}`}>
                 {isEditingAll ? (

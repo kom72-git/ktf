@@ -21,10 +21,13 @@ async function connectToDatabase() {
   }
 }
 
-function includeHiddenForRequest(req) {
-  const host = String(req.headers["x-forwarded-host"] || req.headers.host || "").toLowerCase();
-  return host.includes("localhost") || host.includes("127.0.0.1") || host.includes("app.github.dev");
-}
+// Dotaz pro veřejné výpisy: skryje 'interni' a legacy isHidden: true.
+const publicStampsQuery = {
+  $nor: [
+    { stav: 'interni' },
+    { stav: { $exists: false }, isHidden: true }
+  ]
+};
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -39,15 +42,8 @@ export default async function handler(req, res) {
   try {
     await connectToDatabase();
     console.log("Getting stamps from database...");
-    const includeHidden = includeHiddenForRequest(req);
-    const query = includeHidden
-      ? {}
-      : {
-          $or: [
-            { isHidden: { $exists: false } },
-            { isHidden: false }
-          ]
-        };
+    const includeHidden = false; // stav-based filter is always applied
+    const query = publicStampsQuery;
     const stamps = await mongoose.connection.db.collection("stamps").find(query).toArray();
     console.log("Found stamps:", stamps.length);
     return res.status(200).json(stamps);

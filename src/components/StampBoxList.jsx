@@ -16,6 +16,7 @@ export default function StampBoxList({
   onNavigateToDetail,
   onNavigateToEmission,
 }) {
+
   // Předpočítat střídající se pruhy pro sousedící rozbalené boxy
   const stripeMap = new Map();
   let stripeCounter = 0;
@@ -34,6 +35,9 @@ export default function StampBoxList({
       {boxesToRender.flatMap(([key, items]) => {
         const sortedItems = [...items].sort(katalogSort);
         const item = sortedItems[0];
+        const pripravaCount = sortedItems.reduce((sum, stamp) => sum + (stamp?.stav === 'priprava' ? 1 : 0), 0);
+        const hasAnyPriprava = pripravaCount > 0;
+        const showUnpublishedHint = hasAnyPriprava;
         const allSameBaseKey = sortedItems.length > 1 &&
           sortedItems.every(s => getCatalogBaseKey(s) === getCatalogBaseKey(sortedItems[0]));
         const isSingle = sortedItems.length === 1 || allSameBaseKey;
@@ -75,7 +79,7 @@ export default function StampBoxList({
           }
 
           return (
-            <div key={key} className="stamp-card stamp-card-pointer"
+            <div key={key} className={`stamp-card stamp-card-pointer${showUnpublishedHint ? " stamp-card-unpublished" : ""}`}
               onClick={() => {
                 if (isSingle) {
                   onNavigateToDetail(item.idZnamky);
@@ -83,6 +87,11 @@ export default function StampBoxList({
                   onNavigateToEmission(slug, rok, key);
                 }
               }}>
+              {showUnpublishedHint && (
+                <span className="stamp-unpublished-ribbon" title="Nepublikované známky v této emisi">
+                  {isSingle ? "V PŘÍPRAVĚ" : `V PŘÍPRAVĚ ${pripravaCount}/${sortedItems.length}`}
+                </span>
+              )}
               {!isSingle && (
                 <button className="stamp-box-toggle stamp-box-toggle-tight" title="Rozbalit box"
                   onClick={e => { e.stopPropagation(); handleToggleBox(key); }}
@@ -131,8 +140,13 @@ export default function StampBoxList({
 
           const stripeClass = stripeMap.get(key) === 1 ? 'stamp-card-grouped-alt' : 'stamp-card-grouped';
           return expandedCards.map(({ item, katalogText }, idx) => (
-            <div key={key + '-' + idx} className={`stamp-card ${stripeClass} stamp-card-pointer`}
+            <div
+              key={key + '-' + idx}
+              className={`stamp-card ${stripeClass} stamp-card-pointer${item?.stav === 'priprava' ? " stamp-card-unpublished" : ""}`}
               onClick={() => onNavigateToDetail(item.idZnamky)}>
+              {item?.stav === 'priprava' && (
+                <span className="stamp-unpublished-ribbon" title="Známka je nepublikovaná">V PŘÍPRAVĚ</span>
+              )}
               {idx === 0 && (
                 <button className="stamp-box-toggle stamp-box-toggle-tight" title="Sloučit boxy"
                   onClick={e => { e.stopPropagation(); handleToggleBox(key); }}

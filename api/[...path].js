@@ -19,10 +19,13 @@ async function connectToDatabase() {
   }
 }
 
-function includeHiddenForRequest(req) {
-  const host = String(req.headers["x-forwarded-host"] || req.headers.host || "").toLowerCase();
-  return host.includes("localhost") || host.includes("127.0.0.1") || host.includes("app.github.dev");
-}
+// Dotaz pro veřejné výpisy: skryje 'interni' a legacy isHidden: true.
+const publicStampsQuery = {
+  $nor: [
+    { stav: 'interni' },
+    { stav: { $exists: false }, isHidden: true }
+  ]
+};
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -45,17 +48,8 @@ export default async function handler(req, res) {
       return res.status(200).json({ message: "API běží" });
     }
     if (pathArray[0] === 'stamps') {
-      const includeHidden = includeHiddenForRequest(req);
       if (pathArray.length === 1) {
-        const query = includeHidden
-          ? {}
-          : {
-              $or: [
-                { isHidden: { $exists: false } },
-                { isHidden: false }
-              ]
-            };
-        const stamps = await mongoose.connection.db.collection("stamps").find(query).toArray();
+        const stamps = await mongoose.connection.db.collection("stamps").find(publicStampsQuery).toArray();
         console.log("Loaded stamps:", stamps.length);
         return res.status(200).json(stamps);
       } else {
@@ -81,16 +75,7 @@ export default async function handler(req, res) {
           return res.status(405).json({ error: "Metoda není podporována" });
         }
 
-        const query = includeHidden
-          ? { idZnamky: pathArray[1] }
-          : {
-              idZnamky: pathArray[1],
-              $or: [
-                { isHidden: { $exists: false } },
-                { isHidden: false }
-              ]
-            };
-        const stamp = await mongoose.connection.db.collection("stamps").findOne(query);
+        const stamp = await mongoose.connection.db.collection("stamps").findOne({ idZnamky: pathArray[1] });
         if (!stamp) return res.status(404).json({ error: "Známka nenalezena" });
         return res.status(200).json(stamp);
       }

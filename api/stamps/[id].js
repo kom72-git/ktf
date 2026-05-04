@@ -19,9 +19,15 @@ async function connectToDatabase() {
   }
 }
 
-function includeHiddenForRequest(req) {
-  const host = String(req.headers["x-forwarded-host"] || req.headers.host || "").toLowerCase();
-  return host.includes("localhost") || host.includes("127.0.0.1") || host.includes("app.github.dev");
+// Dotaz pro veřejné výpisy: skryje 'interni' a legacy isHidden: true.
+function publicStampQuery(id) {
+  return {
+    idZnamky: id,
+    $nor: [
+      { stav: 'interni' },
+      { stav: { $exists: false }, isHidden: true }
+    ]
+  };
 }
 
 export default async function handler(req, res) {
@@ -80,18 +86,7 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: "Metoda není podporována" });
     }
 
-    const includeHidden = includeHiddenForRequest(req);
-    const query = includeHidden
-      ? { idZnamky: id }
-      : {
-          idZnamky: id,
-          $or: [
-            { isHidden: { $exists: false } },
-            { isHidden: false }
-          ]
-        };
-
-    const stamp = await mongoose.connection.db.collection("stamps").findOne(query);
+    const stamp = await mongoose.connection.db.collection("stamps").findOne(publicStampQuery(id));
     
     if (!stamp) {
       console.log("Stamp not found for id:", id);
