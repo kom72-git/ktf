@@ -1,4 +1,7 @@
-const EXTENSION_RE = /\.[a-z0-9]{2,5}$/i;
+// Rozpoznáváme pouze skutečné obrazové přípony.
+// Zabrání to chybě, kdy katalogové číslo s tečkou (např. A2864.5A)
+// bylo omylem považováno za soubor už s příponou.
+const EXTENSION_RE = /\.(?:jpe?g|png|webp|gif|avif|svg)$/i;
 const UNAVAILABLE_IMAGE_SUFFIX_RE = /\(n\/a\)\s*$/i;
 
 function hasExplicitExtension(value) {

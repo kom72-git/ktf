@@ -138,6 +138,46 @@ export function formatTiskovaFormaDisplay(value) {
   return normalizeTimesBetweenNumbers(value);
 }
 
+/**
+ * Normalizuje datum vydání do kanonického formátu "D. M. YYYY".
+ * Přijímá různé varianty zápisu:
+ *   "18.05.1983"   → "18. 5. 1983"
+ *   "18.5. 1983"   → "18. 5. 1983"
+ *   "18.5.1983"    → "18. 5. 1983"
+ *   "1983-05-18"   → "18. 5. 1983"
+ *   "18. 5. 1983"  → "18. 5. 1983"  (beze změny)
+ */
+export function normalizeDatumVydani(value) {
+  if (!value) return value;
+  const str = String(value).trim();
+  if (!str) return str;
+
+  let day, month, year;
+
+  // ISO formát: YYYY-MM-DD
+  const isoMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (isoMatch) {
+    [, year, month, day] = isoMatch;
+  } else {
+    // Český formát: D.M.YYYY nebo D. M. YYYY apod.
+    const czMatch = str.match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})$/);
+    if (czMatch) {
+      [, day, month, year] = czMatch;
+    } else {
+      // Nerozpoznaný formát – vrátit beze změny
+      return str;
+    }
+  }
+
+  const d = parseInt(day, 10);
+  const m = parseInt(month, 10);
+  const y = parseInt(year, 10);
+
+  if (d < 1 || d > 31 || m < 1 || m > 12 || y < 1800 || y > 2100) return str;
+
+  return `${d}. ${m}. ${y}`;
+}
+
 export function formatDateTimeDisplay(value) {
   if (!value) return "";
   const date = new Date(value);

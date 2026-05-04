@@ -24,6 +24,7 @@ import {
   formatRozmerDisplay,
   formatTiskovaFormaDisplay,
   formatZoubkovaniDisplay,
+  normalizeDatumVydani,
 } from "./utils/formatovaniUdaju.js";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import "./fancybox-responsive.css";
@@ -109,10 +110,33 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const variantListRef = useRef(null);
   const lastAutoSavedPrefillRef = useRef("");
   const isAutoSavingPrefillRef = useRef(false);
-  const applyUpdatedStamp = (updatedStamp) => {
-    setItem(updatedStamp);
-    if (typeof onStampUpdated === "function") {
-      onStampUpdated(updatedStamp);
+  const applyUpdatedStamp = (updatedStamp, options = {}) => {
+    const { touchNow = false } = options;
+    const nowIso = new Date().toISOString();
+    let nextStamp = null;
+
+    setItem((prev) => {
+      const merged = {
+        ...(prev || {}),
+        ...(updatedStamp || {}),
+      };
+
+      const prevMs = Date.parse(prev?.updatedAt || "");
+      const incomingMs = Date.parse(updatedStamp?.updatedAt || "");
+
+      if (touchNow) {
+        merged.updatedAt = nowIso;
+      } else if (Number.isFinite(prevMs) && (!Number.isFinite(incomingMs) || incomingMs < prevMs)) {
+        // Nikdy nevracej UI na starší datum editace, pokud backend vrátí zastaralý payload.
+        merged.updatedAt = prev.updatedAt;
+      }
+
+      nextStamp = merged;
+      return merged;
+    });
+
+    if (typeof onStampUpdated === "function" && nextStamp) {
+      onStampUpdated(nextStamp);
     }
   };
 
@@ -168,6 +192,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const renderTechnicalValue = (field, value) => {
     if (value === null || value === undefined || value === "") {
       return "";
+    }
+
+    if (field === 'datumVydani') {
+      return normalizeDatumVydani(value) ?? value;
     }
 
     if (field === 'naklad') {
@@ -425,11 +453,11 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       }
       console.log('Using ID for API:', actualId);
 
-      // Pro lokální vývoj použijeme server API
-      const isLocal = window.location.hostname === 'localhost';
-      const apiUrl = isLocal 
-        ? `${API_BASE}/api/defects/${actualId}` // Lokální API server.
-        : `/api/defects/${actualId}`; // Vercel
+      // Mimo Vercel vždy použijeme explicitní API_BASE (funguje i pro 127.0.0.1 a vlastní host).
+      const isVercel = window.location.hostname.endsWith('vercel.app');
+      const apiUrl = isVercel
+        ? `/api/defects/${actualId}`
+        : `${API_BASE}/api/defects/${actualId}`;
       
       console.log('API URL:', apiUrl);
 
@@ -581,10 +609,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           ? ""
           : "http://localhost:3001");
 
-      const isLocal = window.location.hostname === 'localhost';
-      const apiUrl = isLocal 
-        ? `${API_BASE}/api/stamps/${id}`
-        : `/api/stamps/${id}`;
+      const isVercel = window.location.hostname.endsWith('vercel.app');
+      const apiUrl = isVercel
+        ? `/api/stamps/${id}`
+        : `${API_BASE}/api/stamps/${id}`;
       
       console.log('Stamp API URL:', apiUrl);
 
@@ -599,7 +627,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       if (response.ok) {
         console.log('Známka úspěšně aktualizována');
-        applyUpdatedStamp(responseData);
+        applyUpdatedStamp(responseData, { touchNow: true });
         return true;
       } else if (responseData.error === 'Nepodařilo se aktualizovat známku') {
         // No-op update (data beze změny) – nepovažujeme za chybu
@@ -637,7 +665,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       if (response.ok) {
         const updatedStamp = await response.json();
-        applyUpdatedStamp(updatedStamp);
+        applyUpdatedStamp(updatedStamp, { touchNow: true });
         console.log(`Technický údaj ${field} uložen:`, value);
         
         // Zobraz dočasnou hlášku
@@ -681,7 +709,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       if (response.ok) {
         const updatedStamp = await response.json();
-        applyUpdatedStamp(updatedStamp);
+        applyUpdatedStamp(updatedStamp, { touchNow: true });
         console.log(`Hlavní údaj uložen:`, fields);
         return true;
       } else {
@@ -716,7 +744,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       if (response.ok) {
         const updatedStamp = await response.json();
-        applyUpdatedStamp(updatedStamp);
+        applyUpdatedStamp(updatedStamp, { touchNow: true });
         console.log(`Studijní údaj ${field} uložen:`, value);
         
         // Zobraz dočasnou hlášku

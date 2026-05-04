@@ -3,7 +3,7 @@
 // Stav (editStampData) a ukladací funkce zůstávají v rodiči StampDetail.jsx.
 import React from "react";
 import { replaceAbbreviations, formatPopisWithAll } from "../utils/formatovaniTextu.jsx";
-import { formatDateTimeDisplay } from "../utils/formatovaniUdaju.js";
+import { formatDateTimeDisplay, normalizeDatumVydani } from "../utils/formatovaniUdaju.js";
 import ImageSources from "./ImageSources.jsx";
 import LiteratureTextarea from "./LiteratureTextarea.jsx";
 import StudyBlockTextarea from "./StudyBlockTextarea.jsx";
@@ -303,6 +303,10 @@ export function StampTechnicalSpecSection({
                 type="text"
                 value={editStampData.datumVydani}
                 onChange={(e) => setEditStampData({...editStampData, datumVydani: e.target.value})}
+                onBlur={(e) => {
+                  const normalized = normalizeDatumVydani(e.target.value);
+                  if (normalized !== e.target.value) setEditStampData((prev) => ({...prev, datumVydani: normalized}));
+                }}
                 className="ktf-edit-input-tech"
                 list={hasSuggestions('datumVydani') ? getSuggestionListId('datumVydani') : undefined}
                 autoComplete="off"
