@@ -1382,6 +1382,54 @@ input.admin-checkbox { width: 18px; height: 18px; cursor: pointer; }
   width: auto;
   height: auto;
 }
+.spec-tf-block {
+  margin-top: 0;
+}
+.spec-tf-title {
+  font-weight: 700;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+.spec-tf-media-wrap {
+  margin-left: 0;
+  margin-top: 10px;
+}
+.spec-tf-media-wrap .tf-img {
+  display: block;
+  margin: 0;
+  max-width: min(320px, 100%);
+  max-height: 220px;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+}
+.spec-tf-edit-row {
+  margin-top: 10px;
+}
+.tf-img-missing {
+  border: 1px dashed #6b7280 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: none;
+  opacity: 1;
+}
+
+/* Globální fallback styl pro obrázek, když se použije /img/no-image.png */
+img[src*="/img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special),
+img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special) {
+  border: 1px dashed #6b7280 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+.stamp-detail-img-main[src="/img/no-image.png"],
+.stamp-detail-img-main[src$="/img/no-image.png"] {
+  border: 1px dashed #6b7280 !important;
+  border-radius: 8px !important;
+  background: #ffffff !important;
+}
 .variant-general-note {
   font-size: 0.95em;
   color: #666;
@@ -2692,6 +2740,10 @@ input.admin-checkbox { width: 18px; height: 18px; cursor: pointer; }
     max-height: 120px !important;
     display: block;
     margin: 0 auto 8px auto;
+  }
+  .spec-tf-media-wrap {
+    margin-left: 0 !important;
+    margin-top: 8px !important;
   }
 
 }
