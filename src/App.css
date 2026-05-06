@@ -1888,11 +1888,11 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
 }
 
 .detail-study-ribbon {
-  top: 35px;
-  left: -30px;
-  transform: rotate(-45deg);
-  font-size: 0.7rem;
-  padding: 7px 36px;
+  top: 30px;
+  left: -31px;
+  width: 140px;
+  height: 24px;
+  padding: 0;
 }
 
 /* Popisek pod obrázkem studie v detailu známky */
@@ -2281,22 +2281,42 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.22);
 }
 
+.stamp-card-internal {
+  border-color: #9ca3af;
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.22);
+}
+
 .stamp-unpublished-ribbon {
   position: absolute;
-  top: 33px;
-  left: -28px;
+  top: 30px;
+  left: -31px;
   z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transform: rotate(-45deg);
-  transform-origin: center;
   background: linear-gradient(90deg, #f59e0b 0%, #ea580c 100%);
   color: #ffffff;
   font-size: 0.64rem;
   letter-spacing: 0.04em;
   font-weight: 800;
   line-height: 1;
-  padding: 6px 34px;
+  width: 140px;
+  height: 24px;
+  padding: 0;
   pointer-events: none;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.stamp-unpublished-ribbon-fixed {
+  width: 140px;
+  height: 24px;
+  box-sizing: border-box;
+}
+
+.stamp-unpublished-ribbon-internal {
+  background: linear-gradient(90deg, #6b7280 0%, #374151 100%);
 }
 .stamp-img-bg {
   /*background: linear-gradient(135deg, #dcdbdb 60%, #f7f7f7 100%);*/

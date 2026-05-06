@@ -8,6 +8,7 @@ import EmissionTitleAbbr from "./EmissionTitleAbbr.jsx";
 import { normalizeStampImagePath } from "../utils/obrazekCesta.js";
 import { katalogSort, emissionToSlug, getCatalogBaseKey, formatGroupedCatalogText, renderCatalogDisplay } from "../utils/katalog.js";
 import { renderEmissionTitleWithPragaSuffix } from "../utils/formatovaniTextu.jsx";
+import { getStavFromStamp } from "../utils/stavUtils.js";
 
 export default function StampBoxList({
   boxesToRender,
@@ -35,12 +36,25 @@ export default function StampBoxList({
       {boxesToRender.flatMap(([key, items]) => {
         const sortedItems = [...items].sort(katalogSort);
         const item = sortedItems[0];
-        const pripravaCount = sortedItems.reduce((sum, stamp) => sum + (stamp?.stav === 'priprava' ? 1 : 0), 0);
+        const interniCount = sortedItems.reduce((sum, stamp) => sum + (getStavFromStamp(stamp) === 'interni' ? 1 : 0), 0);
+        const pripravaCount = sortedItems.reduce((sum, stamp) => sum + (getStavFromStamp(stamp) === 'priprava' ? 1 : 0), 0);
+        const hasAnyInterni = interniCount > 0;
         const hasAnyPriprava = pripravaCount > 0;
-        const showUnpublishedHint = hasAnyPriprava;
+        const showUnpublishedHint = hasAnyInterni || hasAnyPriprava;
+        const useInterniRibbon = hasAnyInterni;
+        const ribbonClass = useInterniRibbon
+          ? "stamp-unpublished-ribbon stamp-unpublished-ribbon-internal"
+          : "stamp-unpublished-ribbon";
+        const ribbonTitle = useInterniRibbon
+          ? "Interní známky v této emisi"
+          : "Nepublikované známky v této emisi";
         const allSameBaseKey = sortedItems.length > 1 &&
           sortedItems.every(s => getCatalogBaseKey(s) === getCatalogBaseKey(sortedItems[0]));
         const isSingle = sortedItems.length === 1 || allSameBaseKey;
+        const ribbonClassWithGeometry = `${ribbonClass}${isSingle ? " stamp-unpublished-ribbon-fixed" : ""}`;
+        const ribbonText = useInterniRibbon
+          ? (isSingle ? "INTERNÍ" : `INTERNÍ ${interniCount}/${sortedItems.length}`)
+          : (isSingle ? "V PŘÍPRAVĚ" : `V PŘÍPRAVĚ ${pripravaCount}/${sortedItems.length}`);
         const [emise, rok] = key.split('|');
         // Pro slug použijeme emiseSkupina (pokud existuje), jinak emise – stejná logika jako getEmissionFilterName v katalogu.
         // Zajišťuje, že proklik na emisi správně najde skupinu emise přes slugToEmission.
@@ -79,7 +93,7 @@ export default function StampBoxList({
           }
 
           return (
-            <div key={key} className={`stamp-card stamp-card-pointer${showUnpublishedHint ? " stamp-card-unpublished" : ""}`}
+            <div key={key} className={`stamp-card stamp-card-pointer${showUnpublishedHint ? " stamp-card-unpublished" : ""}${useInterniRibbon ? " stamp-card-internal" : ""}`}
               onClick={() => {
                 if (isSingle) {
                   onNavigateToDetail(item.idZnamky);
@@ -88,8 +102,8 @@ export default function StampBoxList({
                 }
               }}>
               {showUnpublishedHint && (
-                <span className="stamp-unpublished-ribbon" title="Nepublikované známky v této emisi">
-                  {isSingle ? "V PŘÍPRAVĚ" : `V PŘÍPRAVĚ ${pripravaCount}/${sortedItems.length}`}
+                <span className={ribbonClassWithGeometry} title={ribbonTitle}>
+                  {ribbonText}
                 </span>
               )}
               {!isSingle && (
@@ -139,39 +153,45 @@ export default function StampBoxList({
           });
 
           const stripeClass = stripeMap.get(key) === 1 ? 'stamp-card-grouped-alt' : 'stamp-card-grouped';
-          return expandedCards.map(({ item, katalogText }, idx) => (
-            <div
-              key={key + '-' + idx}
-              className={`stamp-card ${stripeClass} stamp-card-pointer${item?.stav === 'priprava' ? " stamp-card-unpublished" : ""}`}
-              onClick={() => onNavigateToDetail(item.idZnamky)}>
-              {item?.stav === 'priprava' && (
-                <span className="stamp-unpublished-ribbon" title="Známka je nepublikovaná">V PŘÍPRAVĚ</span>
-              )}
-              {idx === 0 && (
-                <button className="stamp-box-toggle stamp-box-toggle-tight" title="Sloučit boxy"
-                  onClick={e => { e.stopPropagation(); handleToggleBox(key); }}
-                >−</button>
-              )}
-              <div className="stamp-img-bg">
-                {item.obrazek ? (
-                  <img
-                    src={normalizeStampImagePath(item.obrazek, item.rok)}
-                    alt={item.emise}
-                    onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
-                  />
-                ) : (
-                  <div className="stamp-img-missing">obrázek chybí</div>
+          return expandedCards.map(({ item, katalogText }, idx) => {
+            const itemStav = getStavFromStamp(item);
+            return (
+              <div
+                key={key + '-' + idx}
+                className={`stamp-card ${stripeClass} stamp-card-pointer${(itemStav === 'priprava' || itemStav === 'interni') ? " stamp-card-unpublished" : ""}${itemStav === 'interni' ? " stamp-card-internal" : ""}`}
+                onClick={() => onNavigateToDetail(item.idZnamky)}>
+                {itemStav === 'priprava' && (
+                  <span className="stamp-unpublished-ribbon stamp-unpublished-ribbon-fixed" title="Známka je nepublikovaná">V PŘÍPRAVĚ</span>
                 )}
+                {itemStav === 'interni' && (
+                  <span className="stamp-unpublished-ribbon stamp-unpublished-ribbon-internal stamp-unpublished-ribbon-fixed" title="Známka je interní">INTERNÍ</span>
+                )}
+                {idx === 0 && (
+                  <button className="stamp-box-toggle stamp-box-toggle-tight" title="Sloučit boxy"
+                    onClick={e => { e.stopPropagation(); handleToggleBox(key); }}
+                  >−</button>
+                )}
+                <div className="stamp-img-bg">
+                  {item.obrazek ? (
+                    <img
+                      src={normalizeStampImagePath(item.obrazek, item.rok)}
+                      alt={item.emise}
+                      onError={e => { e.target.onerror = null; e.target.src = '/img/no-image.png'; }}
+                    />
+                  ) : (
+                    <div className="stamp-img-missing">obrázek chybí</div>
+                  )}
+                </div>
+                <div className="stamp-title stamp-title-abbr">
+                  <EmissionTitleAbbr>{renderEmissionTitleWithPragaSuffix(item.emise, item.rok)}</EmissionTitleAbbr>
+                </div>
+                <div className="stamp-bottom">
+                  <div>Katalog: <span className="catalog">{renderCatalogDisplay(katalogText || item.katalogCislo)}</span></div>
+                  <span className="details-link details-link-offset">detaily</span>
+                </div>
               </div>
-              <div className="stamp-title stamp-title-abbr">
-                <EmissionTitleAbbr>{renderEmissionTitleWithPragaSuffix(item.emise, item.rok)}</EmissionTitleAbbr>
-              </div>
-              <div className="stamp-bottom">
-                <div>Katalog: <span className="catalog">{renderCatalogDisplay(katalogText || item.katalogCislo)}</span></div>
-                <span className="details-link details-link-offset">detaily</span>
-              </div>
-            </div>
-          ));
+            );
+          });
         }
       })}
     </div>

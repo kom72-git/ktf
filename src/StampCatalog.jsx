@@ -796,9 +796,12 @@ export default function StampCatalog(props) {
         showAddModal={showAddModal}
         setShowAddModal={setShowAddModal}
         onAddStamp={async (stampData) => {
+          const defaultIsHidden = stampData.isHidden ?? true;
+          const normalizedStav = stampData.stav || (defaultIsHidden ? 'interni' : 'zverejneno');
           const normalizedStampData = {
             ...stampData,
-            isHidden: stampData.isHidden ?? true,
+            stav: normalizedStav,
+            isHidden: defaultIsHidden,
             obrazek: normalizeStampImagePathForStorage(stampData.obrazek, stampData.rok),
             obrazekStudie: normalizeStampImagePathForStorage(stampData.obrazekStudie, stampData.rok),
             schemaTF: normalizeStampImagePathForStorage(stampData.schemaTF, stampData.rok)

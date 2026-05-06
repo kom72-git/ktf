@@ -45,6 +45,11 @@ app.post("/api/stamps", async (req, res) => {
   try {
   console.log('[API] Přijatý request body:', req.body);
   const newStamp = { ...req.body };
+  const defaultIsHidden = typeof newStamp.isHidden === 'boolean' ? newStamp.isHidden : true;
+  if (!newStamp.stav) {
+    newStamp.stav = defaultIsHidden ? 'interni' : 'zverejneno';
+  }
+  newStamp.isHidden = newStamp.stav === 'interni';
   // Vždy ignoruj idZnamky z frontendu
   delete newStamp.idZnamky;
       // Vždy generuj idZnamky pouze ve formátu cz-YYYY-NN podle roku

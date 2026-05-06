@@ -7,13 +7,31 @@ export const STAV_OPTIONS = [
   { value: 'zverejneno', label: 'Zveřejněno' },
 ];
 
+function normalizeStavValue(rawStav) {
+  if (rawStav === null || rawStav === undefined) return '';
+  const normalized = String(rawStav)
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+
+  if (!normalized) return '';
+
+  if (normalized === 'interni' || normalized === 'internal') return 'interni';
+  if (normalized === 'priprava' || normalized === 'v priprave' || normalized === 'v_priprave') return 'priprava';
+  if (normalized === 'zverejneno' || normalized === 'zverejnena' || normalized === 'publikovano' || normalized === 'published') return 'zverejneno';
+
+  return '';
+}
+
 /**
  * Odvodí stav z dat známky — s fallbackem na legacy pole `isHidden`.
  * @param {object} stamp
  * @returns {'interni'|'priprava'|'zverejneno'}
  */
 export function getStavFromStamp(stamp) {
-  if (stamp?.stav) return stamp.stav;
+  const normalizedStav = normalizeStavValue(stamp?.stav);
+  if (normalizedStav) return normalizedStav;
   return stamp?.isHidden ? 'interni' : 'zverejneno';
 }
 

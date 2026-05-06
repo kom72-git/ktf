@@ -1256,7 +1256,9 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     );
   };
   const additionalStudyHeadingId = `${detailHeadingId}-study-after`;
-  const isPripravaStamp = (editStampData.stav || getStavFromStamp(item)) === 'priprava';
+  const currentStav = editStampData.stav || getStavFromStamp(item);
+  const isPripravaStamp = currentStav === 'priprava';
+  const isInterniStamp = currentStav === 'interni';
   return (
     <article className="stamp-detail-block" aria-labelledby={detailHeadingId}>
       <div className="button-row">
@@ -1458,8 +1460,13 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             <figure className="study-image-figure">
               <div className="detail-study-image-frame">
                 {isPripravaStamp && (
-                  <span className="stamp-unpublished-ribbon detail-study-ribbon" title="Známka je ve stavu V přípravě">
+                  <span className="stamp-unpublished-ribbon stamp-unpublished-ribbon-fixed detail-study-ribbon" title="Známka je ve stavu V přípravě">
                     V PŘÍPRAVĚ
+                  </span>
+                )}
+                {isInterniStamp && (
+                  <span className="stamp-unpublished-ribbon stamp-unpublished-ribbon-internal stamp-unpublished-ribbon-fixed detail-study-ribbon" title="Známka je ve stavu Interní">
+                    INTERNÍ
                   </span>
                 )}
                 <img
