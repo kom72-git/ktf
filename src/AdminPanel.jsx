@@ -62,6 +62,11 @@ export default function AdminPanel({
     variantaVady: [],
     umisteniVady: []
   });
+  const getAdminAuthHeaders = () => {
+    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+    if (!isAdmin || !adminPassword) return {};
+    return { 'X-Admin-Password': adminPassword };
+  };
   const getLocationPrefix = (value) => {
     const match = String(value ?? "").match(/^\s*(nad|pod|vlevo od|vpravo od)(?:\s+|$)/i);
     return match ? `${match[1].toLowerCase()} ` : "";
@@ -365,7 +370,7 @@ export default function AdminPanel({
             : window.location.hostname.endsWith("vercel.app")
             ? ""
             : "http://localhost:3001");
-        const response = await fetch(`${API_BASE}/api/stamps/${idZnamky}`);
+        const response = await fetch(`${API_BASE}/api/stamps/${idZnamky}`, { headers: getAdminAuthHeaders() });
         if (response.ok) {
           const stamp = await response.json();
           if (stamp && stamp.rok && stamp.katalogCislo) {
@@ -399,7 +404,7 @@ export default function AdminPanel({
             : window.location.hostname.endsWith("vercel.app")
             ? ""
             : "http://localhost:3001");
-        const response = await fetch(`${API_BASE}/api/stamps/${idZnamky}`);
+        const response = await fetch(`${API_BASE}/api/stamps/${idZnamky}`, { headers: getAdminAuthHeaders() });
         if (response.ok) {
           const stamp = await response.json();
           if (stamp && stamp.rok && stamp.katalogCislo) {

@@ -112,6 +112,11 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const variantListRef = useRef(null);
   const lastAutoSavedPrefillRef = useRef("");
   const isAutoSavingPrefillRef = useRef(false);
+  const getAdminAuthHeaders = () => {
+    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+    if (!isAdmin || !adminPassword) return {};
+    return { 'X-Admin-Password': adminPassword };
+  };
   const applyUpdatedStamp = (updatedStamp, options = {}) => {
     const { touchNow = false } = options;
     const nowIso = new Date().toISOString();
@@ -240,7 +245,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         : window.location.hostname.endsWith("vercel.app")
         ? "" // Pro Vercel používáme relativní cesty, backend bude na stejné doméně
         : "http://localhost:3001"); // Lokální vývoj
-    fetch(`${API_BASE}/api/stamps/${id}`)
+    fetch(`${API_BASE}/api/stamps/${id}`, { headers: getAdminAuthHeaders() })
       .then(async (res) => {
         if (!res.ok) {
           const error = new Error("Známka nenalezena");
@@ -291,7 +296,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           onBack();
         }
       });
-  }, [id, onBack]);
+  }, [id, onBack, isAdmin]);
 
   useEffect(() => {
     setLocalDefects(defects || []);
@@ -706,7 +711,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       const response = await fetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAdminAuthHeaders(),
+        },
         body: JSON.stringify(fields)
       });
 
@@ -741,7 +749,10 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       const response = await fetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAdminAuthHeaders(),
+        },
         body: JSON.stringify({ [field]: value })
       });
 

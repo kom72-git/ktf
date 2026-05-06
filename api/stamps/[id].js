@@ -30,10 +30,21 @@ function publicStampQuery(id) {
   };
 }
 
+function getAdminSecret() {
+  return process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD || '';
+}
+
+function isAdminRequest(req) {
+  const expected = getAdminSecret();
+  if (!expected) return false;
+  const provided = req.headers['x-admin-password'];
+  return typeof provided === 'string' && provided === expected;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Password');
   
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -86,7 +97,9 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: "Metoda není podporována" });
     }
 
-    const stamp = await mongoose.connection.db.collection("stamps").findOne(publicStampQuery(id));
+    const includeInternalForAdmin = isAdminRequest(req);
+    const stampQuery = includeInternalForAdmin ? { idZnamky: id } : publicStampQuery(id);
+    const stamp = await mongoose.connection.db.collection("stamps").findOne(stampQuery);
     
     if (!stamp) {
       console.log("Stamp not found for id:", id);

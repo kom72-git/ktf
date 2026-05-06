@@ -29,10 +29,21 @@ const publicStampsQuery = {
   ]
 };
 
+function getAdminSecret() {
+  return process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD || '';
+}
+
+function isAdminRequest(req) {
+  const expected = getAdminSecret();
+  if (!expected) return false;
+  const provided = req.headers['x-admin-password'];
+  return typeof provided === 'string' && provided === expected;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Password');
   
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -42,8 +53,8 @@ export default async function handler(req, res) {
   try {
     await connectToDatabase();
     console.log("Getting stamps from database...");
-    const includeHidden = false; // stav-based filter is always applied
-    const query = publicStampsQuery;
+    const includeInternalForAdmin = isAdminRequest(req);
+    const query = includeInternalForAdmin ? {} : publicStampsQuery;
     const stamps = await mongoose.connection.db.collection("stamps").find(query).toArray();
     console.log("Found stamps:", stamps.length);
     return res.status(200).json(stamps);

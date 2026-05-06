@@ -116,6 +116,12 @@ export default function StampCatalog(props) {
     window.dispatchEvent(new Event('ktf-admin-refresh'));
   };
 
+  const getAdminAuthHeaders = () => {
+    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
+    if (!isAdmin || !adminPassword) return {};
+    return { 'X-Admin-Password': adminPassword };
+  };
+
   // (Synchronizace s URL už není potřeba, vše je řízeno routerem)
 
   // ...zbytek kódu beze změny...
@@ -128,7 +134,9 @@ export default function StampCatalog(props) {
         : window.location.hostname.endsWith("vercel.app")
         ? "" // Pro Vercel používáme relativní cesty, backend bude na stejné doméně
         : "http://localhost:3001"); // Lokální vývoj
-        fetch(`${API_BASE}/api/stamps`)
+    const adminHeaders = getAdminAuthHeaders();
+
+    fetch(`${API_BASE}/api/stamps`, { headers: adminHeaders })
       .then(res => {
         console.log('Stamps response:', res);
         return res.json();
@@ -148,7 +156,7 @@ export default function StampCatalog(props) {
         setDefects(data);
       })
       .catch(err => console.error("Chyba při načítání vad:", err));
-  }, []);
+  }, [isAdmin]);
 
   useEffect(() => {
     const openLogin = () => setShowAdminLogin(true);
@@ -817,7 +825,10 @@ export default function StampCatalog(props) {
           try {
             const response = await fetch(`${API_BASE}/api/stamps`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: {
+                'Content-Type': 'application/json',
+                ...getAdminAuthHeaders(),
+              },
               body: JSON.stringify(normalizedStampData)
             });
             if (response.ok) {
