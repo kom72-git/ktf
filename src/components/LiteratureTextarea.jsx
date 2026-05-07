@@ -79,7 +79,12 @@ export default function LiteratureTextarea({
 
   const handleChange = (event) => {
     setFilterTouched(true);
-    onChange(formatLiteratureLines(event.target.value));
+    const raw = event.target.value;
+    const formatted = formatLiteratureLines(raw);
+    // Preserve trailing space so the user can type naturally at the end of a line
+    // (.trim() inside formatLiteratureLines would otherwise swallow it immediately)
+    const trailingSpace = raw.endsWith(" ") && !formatted.endsWith(" ") ? " " : "";
+    onChange(formatted + trailingSpace);
   };
 
   const handleSave = async () => {
