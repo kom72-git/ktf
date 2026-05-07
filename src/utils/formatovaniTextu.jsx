@@ -281,10 +281,12 @@ const italicizeCastNakladu = (value = "") =>
   value.replace(/(\(část nákladu\)|část nákladu)/gi, (match, _p1, offset, source) => {
     const before = source.slice(0, offset);
     const after = source.slice(offset + match.length);
+    const needsLineBreak = !/(<br\s*\/?>(\s|&nbsp;)*|\n)\s*$/i.test(before) && before.trim() !== "";
+    const prefix = needsLineBreak ? "<br />" : "";
     if (before.endsWith("<em>") && after.startsWith("</em>")) {
-      return match;
+      return `${prefix}${match}`;
     }
-    return `<em>${match}</em>`;
+    return `${prefix}<em>${match}</em>`;
   });
 
 export function sklonujZobrazeno(count, jednotka) {
