@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { getApiBase } from "./apiBase.js";
 import { Fancybox } from "@fancyapps/ui";
 import VariantTooltip from "./components/VariantTooltip.jsx";
 import {
@@ -238,13 +239,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   };
 
   useEffect(() => {
-    const API_BASE =
-      import.meta.env.VITE_API_BASE ||
-      (window.location.hostname.endsWith("app.github.dev")
-        ? `https://${window.location.hostname}`
-        : window.location.hostname.endsWith("vercel.app")
-        ? "" // Pro Vercel používáme relativní cesty, backend bude na stejné doméně
-        : "http://localhost:3001"); // Lokální vývoj
+    const API_BASE = getApiBase(); // Lokální vývoj
     fetch(`${API_BASE}/api/stamps/${id}`, { headers: getAdminAuthHeaders() })
       .then(async (res) => {
         if (!res.ok) {
@@ -388,13 +383,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     isAutoSavingPrefillRef.current = true;
     lastAutoSavedPrefillRef.current = signature;
 
-    const API_BASE =
-      import.meta.env.VITE_API_BASE ||
-      (window.location.hostname.endsWith("app.github.dev")
-        ? `https://${window.location.hostname}`
-        : window.location.hostname.endsWith("vercel.app")
-        ? ""
-        : "http://localhost:3001");
+    const API_BASE = getApiBase();
 
     fetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
       method: 'PUT',
@@ -443,13 +432,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       console.log('updatedData:', updatedData);
       console.log('updatedData.popisVady:', updatedData.popisVady);
       
-      const API_BASE =
-        import.meta.env.VITE_API_BASE ||
-        (window.location.hostname.endsWith("app.github.dev")
-          ? `https://${window.location.hostname}`
-          : window.location.hostname.endsWith("vercel.app")
-          ? ""
-          : "http://localhost:3001"); // Správný port 3001
+      const API_BASE = getApiBase(); // Správný port 3001
 
       // Zkusme použít MongoDB _id nebo idVady
       const actualId = defectId._id || defectId.idVady || defectId;
@@ -561,13 +544,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const deleteDefect = async (defectId) => {
     if (!window.confirm('Opravdu smazat tuto variantu z databáze?')) return;
     try {
-      const API_BASE =
-        import.meta.env.VITE_API_BASE ||
-        (window.location.hostname.endsWith("app.github.dev")
-          ? `https://${window.location.hostname}`
-          : window.location.hostname.endsWith("vercel.app")
-          ? ""
-          : "http://localhost:3001");
+      const API_BASE = getApiBase();
       const actualId = defectId._id || defectId.idVady || defectId;
       const isVercel = window.location.hostname.endsWith('vercel.app');
       const apiUrl = isVercel
@@ -609,13 +586,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       };
       console.log('Saving stamp:', id, normalizedEditStampData);
       
-      const API_BASE =
-        import.meta.env.VITE_API_BASE ||
-        (window.location.hostname.endsWith("app.github.dev")
-          ? `https://${window.location.hostname}`
-          : window.location.hostname.endsWith("vercel.app")
-          ? ""
-          : "http://localhost:3001");
+      const API_BASE = getApiBase();
 
       const isVercel = window.location.hostname.endsWith('vercel.app');
       const apiUrl = isVercel
@@ -657,13 +628,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const saveTechnicalField = async (field, value) => {
     try {
       const normalizedValue = normalizeStampImageFieldValue(field, value, editStampData.rok || item?.rok);
-      const API_BASE =
-        import.meta.env.VITE_API_BASE ||
-        (window.location.hostname.endsWith("app.github.dev")
-          ? `https://${window.location.hostname}`
-          : window.location.hostname.endsWith("vercel.app")
-          ? ""
-          : "http://localhost:3001");
+      const API_BASE = getApiBase();
 
       const response = await fetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
         method: 'PUT',
@@ -701,13 +666,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const saveMainField = async (fieldOrObj, value) => {
     const fields = typeof fieldOrObj === 'object' ? fieldOrObj : { [fieldOrObj]: value };
     try {
-      const API_BASE =
-        import.meta.env.VITE_API_BASE ||
-        (window.location.hostname.endsWith("app.github.dev")
-          ? `https://${window.location.hostname}`
-          : window.location.hostname.endsWith("vercel.app")
-          ? ""
-          : "http://localhost:3001");
+      const API_BASE = getApiBase();
 
       const response = await fetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
         method: 'PUT',
@@ -739,13 +698,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   // Funkce pro uložení studijních údajů
   const saveStudyField = async (field, value) => {
     try {
-      const API_BASE =
-        import.meta.env.VITE_API_BASE ||
-        (window.location.hostname.endsWith("app.github.dev")
-          ? `https://${window.location.hostname}`
-          : window.location.hostname.endsWith("vercel.app")
-          ? ""
-          : "http://localhost:3001");
+      const API_BASE = getApiBase();
 
       const response = await fetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
         method: 'PUT',
@@ -807,13 +760,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     setDeleteConfirmVisible(false);
     setIsDeletingStamp(true);
     try {
-      const API_BASE =
-        import.meta.env.VITE_API_BASE ||
-        (window.location.hostname.endsWith("app.github.dev")
-          ? `https://${window.location.hostname}`
-          : window.location.hostname.endsWith("vercel.app")
-          ? ""
-          : "http://localhost:3001");
+      const API_BASE = getApiBase();
 
       const apiUrl = `${API_BASE}/api/stamps/${item.idZnamky}`;
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { getApiBase } from "./apiBase.js";
 export default function AdminPanel({
   isAdmin,
   onLogout,
@@ -297,13 +298,7 @@ export default function AdminPanel({
   useEffect(() => {
     async function loadVariantSuggestions() {
       try {
-        const API_BASE =
-          import.meta.env.VITE_API_BASE ||
-          (window.location.hostname.endsWith("app.github.dev")
-            ? `https://${window.location.hostname}`
-            : window.location.hostname.endsWith("vercel.app")
-            ? ""
-            : "http://localhost:3001");
+        const API_BASE = getApiBase();
         const response = await fetch(`${API_BASE}/api/defects`);
         if (!response.ok) return;
         const defects = await response.json();
@@ -363,13 +358,7 @@ export default function AdminPanel({
       const idZnamky = e.detail?.idZnamky || '';
       let obrazekVady = '';
       try {
-        const API_BASE =
-          import.meta.env.VITE_API_BASE ||
-          (window.location.hostname.endsWith("app.github.dev")
-            ? `https://${window.location.hostname}`
-            : window.location.hostname.endsWith("vercel.app")
-            ? ""
-            : "http://localhost:3001");
+        const API_BASE = getApiBase();
         const response = await fetch(`${API_BASE}/api/stamps/${idZnamky}`, { headers: getAdminAuthHeaders() });
         if (response.ok) {
           const stamp = await response.json();
@@ -397,13 +386,7 @@ export default function AdminPanel({
     window.setShowAddVariantModal = async (idZnamky) => {
       let obrazekVady = '';
       try {
-        const API_BASE =
-          import.meta.env.VITE_API_BASE ||
-          (window.location.hostname.endsWith("app.github.dev")
-            ? `https://${window.location.hostname}`
-            : window.location.hostname.endsWith("vercel.app")
-            ? ""
-            : "http://localhost:3001");
+        const API_BASE = getApiBase();
         const response = await fetch(`${API_BASE}/api/stamps/${idZnamky}`, { headers: getAdminAuthHeaders() });
         if (response.ok) {
           const stamp = await response.json();
@@ -469,13 +452,7 @@ export default function AdminPanel({
         ...newVariantData,
         poradiVady: Number.isFinite(normalizedOrder) ? normalizedOrder : ''
       };
-      const API_BASE =
-        import.meta.env.VITE_API_BASE ||
-        (window.location.hostname.endsWith("app.github.dev")
-          ? `https://${window.location.hostname}`
-          : window.location.hostname.endsWith("vercel.app")
-          ? ""
-          : "http://localhost:3001");
+      const API_BASE = getApiBase();
       const response = await fetch(`${API_BASE}/api/defects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { getApiBase } from "./apiBase.js";
 import { useLocation, useNavigate } from "react-router-dom";
 import Header from './Header';
 import Footer from './Footer';
@@ -127,13 +128,7 @@ export default function StampCatalog(props) {
   // ...zbytek kódu beze změny...
 
   useEffect(() => {
-    const API_BASE =
-      import.meta.env.VITE_API_BASE ||
-      (window.location.hostname.endsWith("app.github.dev")
-        ? `https://${window.location.hostname}`
-        : window.location.hostname.endsWith("vercel.app")
-        ? "" // Pro Vercel používáme relativní cesty, backend bude na stejné doméně
-        : "http://localhost:3001"); // Lokální vývoj
+    const API_BASE = getApiBase(); // Lokální vývoj
     const adminHeaders = getAdminAuthHeaders();
 
     fetch(`${API_BASE}/api/stamps`, { headers: adminHeaders })
@@ -815,13 +810,7 @@ export default function StampCatalog(props) {
             schemaTF: normalizeStampImagePathForStorage(stampData.schemaTF, stampData.rok)
           };
           // Odeslání na backend
-          const API_BASE =
-            import.meta.env.VITE_API_BASE ||
-            (window.location.hostname.endsWith("app.github.dev")
-              ? `https://${window.location.hostname}`
-              : window.location.hostname.endsWith("vercel.app")
-              ? ""
-              : "http://localhost:3001");
+          const API_BASE = getApiBase();
           try {
             const response = await fetch(`${API_BASE}/api/stamps`, {
               method: 'POST',

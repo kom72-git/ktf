@@ -1,19 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { getApiBase } from "./apiBase.js";
 import { useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
 import { katalogSort } from "./utils/katalog.js";
 
-function getApiBase() {
-  return (
-    import.meta.env.VITE_API_BASE ||
-    (window.location.hostname.endsWith("app.github.dev")
-      ? `https://${window.location.hostname}`
-      : window.location.hostname.endsWith("vercel.app")
-      ? ""
-      : "http://localhost:3001")
-  );
-}
 
 function sortDefects(a, b) {
   const whereCmp = String(a.umisteniVady || "").localeCompare(String(b.umisteniVady || ""), "cs", {
