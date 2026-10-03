@@ -2625,6 +2625,10 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   }
 }
 @media (max-width: 900px) {
+  .stamp-list-layout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .help-grid {
     grid-template-columns: 1fr;
   }
