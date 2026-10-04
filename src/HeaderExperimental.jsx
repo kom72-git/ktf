@@ -17,9 +17,9 @@ export default function HeaderExperimental({ navigate }) {
           <span className="ktf-header__wordmark">
             <span className="ktf-header__name">Filatelium</span>
             <span className="ktf-header__tagline">
-              Studium tiskových forem a desek
+              Studium tiskových forem, desek a polí
               <br />
-              československých známek
+              československých známek 1945-92
             </span>
           </span>
         </a>

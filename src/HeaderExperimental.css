@@ -20,7 +20,7 @@
   right: -5%;
   width: 48%;
   height: 280%;
-  background: url("/img/header_prava_strana.webp") center 48% / cover no-repeat;
+  background: url("/img/header_prava_strana2.webp") center 48% / cover no-repeat;
   opacity: 1;
   filter: grayscale(0.4) sepia(0.08) saturate(0.8) contrast(1.05);
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 28%, #000 100%);
