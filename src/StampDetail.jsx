@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import ScrollTopButton from "./components/ScrollTopButton.jsx";
 import { getApiBase } from "./apiBase.js";
 import { Fancybox } from "@fancyapps/ui";
 import VariantTooltip from "./components/VariantTooltip.jsx";
@@ -87,7 +88,6 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const [item, setItem] = useState(null);
   const [localDefects, setLocalDefects] = useState(defects || []);
   const [isEditingAll, setIsEditingAll] = useState(false);
-  const [showScrollTopButton, setShowScrollTopButton] = useState(false);
   const [editingDefect, setEditingDefect] = useState(null);
   const [editStampData, setEditStampData] = useState({});
   const [savedCaption, setSavedCaption] = useState(false);
@@ -405,23 +405,6 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         isAutoSavingPrefillRef.current = false;
       });
   }, [isEditingAll, item?.idZnamky, item?.rok, item?.katalogCislo, editStampData.rok, editStampData.katalogCislo]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTopButton(window.scrollY > 320);
-    };
-
-    handleScroll();
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   // Funkce pro editaci vady
   const saveDefectEdit = async (defectId, updatedData, options = {}) => {
@@ -1554,17 +1537,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           ))}
         </datalist>
       ))}
-      {showScrollTopButton && (
-        <button
-          type="button"
-          className="scroll-top-button"
-          onClick={scrollToTop}
-          aria-label="Zpět na začátek stránky"
-          title="Zpět nahoru"
-        >
-          ↑
-        </button>
-      )}
+      <ScrollTopButton />
       {deleteConfirmVisible && (() => {
         const requiredDigits = String(item?.katalogCislo || "").replace(/\D+/g, "");
         const digitsMatch = String(deleteConfirmDigitInput).trim() === requiredDigits;

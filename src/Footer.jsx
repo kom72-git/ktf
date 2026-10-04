@@ -1,5 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import "./FooterExperimental.css";
+
+// Přepínač: true = nová patička, false = původní (stačí přepsat a hotovo).
+const USE_EXPERIMENTAL_FOOTER = true;
 
 export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
   const [localAdmin, setLocalAdmin] = useState(() => {
@@ -13,7 +17,11 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
   const [localPassword, setLocalPassword] = useState("");
   const passwordInputRef = useRef(null);
   const location = useLocation();
-  const isHelpActive = location.hash === "#/napoveda" || location.pathname === "/napoveda";
+  const currentPath = location.hash ? location.hash.replace(/^#/, "") : location.pathname;
+  const isHelpActive = currentPath === "/napoveda";
+  const isChecklistActive = currentPath === "/chybenka";
+  // Po přechodu přes odkaz v patičce se stránka zobrazí od začátku.
+  const scrollToTop = () => window.scrollTo({ top: 0 });
   const year = new Date().getFullYear();
 
   useEffect(() => {
@@ -130,6 +138,8 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
     <a
       href="#/napoveda"
       className={`footer-link footer-link-help${isHelpActive ? " footer-link-current" : ""}`}
+      aria-current={isHelpActive ? "page" : undefined}
+      onClick={scrollToTop}
     >
       Nápověda
     </a>
@@ -137,8 +147,17 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
 
   return (
     <>
-      <footer className="footer">
+      <footer className={USE_EXPERIMENTAL_FOOTER ? "footer footer-v2" : "footer"}>
         <div className="footer-inner">
+          {USE_EXPERIMENTAL_FOOTER ? (
+            <span className="footer-v2-brand">
+              <img src="/img/logo.svg" alt="" className="footer-v2-logo" />
+              <span className="footer-v2-title">
+                <strong>Filatelium</strong>
+                <small>Studium tiskových forem, desek a polí</small>
+              </span>
+            </span>
+          ) : null}
           <span className="footer-brand">kom72 © {year}</span>
           {!adminActive ? (
             <>
@@ -175,7 +194,9 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
                 <span className="footer-divider footer-divider-tight">|</span>
                 <a
                   href="#/chybenka"
-                  className="footer-link"
+                  className={`footer-link${isChecklistActive ? " footer-link-current" : ""}`}
+                  aria-current={isChecklistActive ? "page" : undefined}
+                  onClick={scrollToTop}
                 >
                   Chyběnka
                 </a>

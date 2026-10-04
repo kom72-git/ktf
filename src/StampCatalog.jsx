@@ -22,6 +22,7 @@ import {
   normalizeStampImagePath,
   normalizeStampImagePathForStorage
 } from "./utils/obrazekCesta.js";
+import ScrollTopButton from "./components/ScrollTopButton.jsx";
 import "./App.css";
 
 // Pomocná fce: vrátí čas (ms) pro řazení podle data publikování.
@@ -833,6 +834,7 @@ export default function StampCatalog(props) {
         }}
         fieldSuggestions={fieldSuggestions}
       />
+      <ScrollTopButton />
     </div>
   );
 }

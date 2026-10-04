@@ -3,6 +3,7 @@ import { getApiBase } from "./apiBase.js";
 import { useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
+import ScrollTopButton from "./components/ScrollTopButton.jsx";
 import { katalogSort } from "./utils/katalog.js";
 
 
@@ -505,6 +506,7 @@ export default function VariantOverview() {
           ) : null}
         </section>
       </main>
+      <ScrollTopButton />
       <Footer />
     </div>
   );

@@ -2029,18 +2029,23 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   align-items: center;
   justify-content: flex-start;
   width: 100%;
-  padding-left: 0.5rem;
+  box-sizing: border-box;
+  padding-left: 0;
 }
 .search-row input,
 .search-row select {
-  padding: 10px;
+  padding: 0 10px;
+  height: 34px;
+  box-sizing: border-box;
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 1rem;
 }
 .search-row button {
-  padding: 10px;
+  padding: 0 14px;
   border-radius: 6px;
+  height: 34px;
+  box-sizing: border-box;
   border: 1px solid #d1d5db;
   background: linear-gradient(180deg, #ffffff 0%, #eef3f9 100%);
   color: #334155;
@@ -2071,6 +2076,14 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   flex: 1;
   min-width: 160px;
 }
+@media (min-width: 601px) {
+  /* Rok je krátký, Vyhledat a Emise dostanou více místa, Katalogové číslo se podle šířky zkracuje. */
+  .search-row input { flex: 1.6 1 200px; min-width: 150px; width: auto; }
+  .search-row select { width: auto; min-width: 0; }
+  .search-row .filter-year { flex: 0 1 100px; }
+  .search-row .filter-emission { flex: 2 1 200px; max-width: 420px; }
+  .search-row .filter-catalog { flex: 1 1 150px; max-width: 190px; }
+}
 .count-info {
   font-size: 0.95rem;
   color: #666;
@@ -2080,19 +2093,20 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
 }
 .count-info-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px 12px;
   margin-bottom: 24px;
-  padding-left: 0.5rem;
+  padding-left: 0;
+  box-sizing: border-box;
 }
 .count-controls {
   display: flex;
   align-items: center;
   gap: 5px;
   flex-shrink: 0;
-  /* Zarovnani vpravo: jemny pixelovy posun ven, aby pravy select sedel na hranu s tlacitkem Vyčistit. */
-  margin-right: -7px;
+  margin-left: auto;
 }
 .count-controls-hint {
   font-size: 0.95rem;
@@ -2136,7 +2150,7 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   margin-top: 18px;
   margin-bottom: 6px;
   padding-right: 0;
-  margin-right: -7px;
+  margin-right: 0;
 }
 
 .home-pagination {
@@ -2254,8 +2268,6 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  /* Dočasné zvýraznění prostoru pod hlavičkou; po kontrole odstranit. */
-  background: #ff6b35;
 }
 .catalog-admin-add-row {
   text-align: right;
@@ -2728,7 +2740,8 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
     width: 100%;
   }
   .count-controls {
-    justify-content: flex-start;
+    align-self: flex-end;
+    justify-content: flex-end;
   }
 
   .home-pagination-row {

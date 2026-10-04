@@ -1,5 +1,5 @@
-import React from "react";
-import { HashRouter, Routes, Route, useParams, useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { HashRouter, Routes, Route, useParams, useNavigate, useLocation, useNavigationType } from "react-router-dom";
 import StampCatalog from "./StampCatalog";
 import Help from "./Help";
 import MissingChecklist from "./MissingChecklist";
@@ -8,6 +8,7 @@ import VariantOverview from "./VariantOverview";
 export default function Router() {
   return (
     <HashRouter>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<CatalogWrapper />} />
         <Route path="/rok/:year" element={<CatalogWrapper />} />
@@ -46,4 +47,14 @@ function DetailWrapper() {
   const { id } = useParams();
   const navigate = useNavigate();
   return <StampCatalog detailId={id} setDetailId={id => navigate(id ? `/detail/${id}` : "/")} />;
+}
+
+// Nová navigace vždy začíná nahoře; při Zpět necháme obnovit pozici prohlížeči
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  const type = useNavigationType();
+  useEffect(() => {
+    if (type !== "POP") window.scrollTo({ top: 0, left: 0 });
+  }, [pathname, type]);
+  return null;
 }
