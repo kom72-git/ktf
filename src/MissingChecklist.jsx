@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { getApiBase } from "./apiBase.js";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
 import ScrollTopButton from "./components/ScrollTopButton.jsx";
@@ -361,9 +361,9 @@ export default function MissingChecklist() {
                   <ul className="missing-stamp-list">
                     {group.stamps.map((stampRow) => (
                       <li key={stampRow.stampId} className="missing-stamp-row">
-                        <a href={`#/detail/${stampRow.stampId}`} className="missing-stamp-link">
+                        <Link to={`/detail/${stampRow.stampId}`} className="missing-stamp-link">
                           {stampRow.stamp?.katalogCislo || stampRow.stampId}
-                        </a>
+                        </Link>
                         <ul className="missing-variant-list">
                           {stampRow.missingItems.map((item) => (
                             <li key={item.variantLabel} className={`missing-variant-line missing-variant-${item.type} variant-overview-line`}>

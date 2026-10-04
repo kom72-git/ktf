@@ -1,13 +1,18 @@
 import React, { useEffect } from "react";
-import { HashRouter, Routes, Route, useParams, useNavigate, useLocation, useNavigationType } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useParams, useNavigate, useLocation, useNavigationType } from "react-router-dom";
 import StampCatalog from "./StampCatalog";
 import Help from "./Help";
 import MissingChecklist from "./MissingChecklist";
 import VariantOverview from "./VariantOverview";
 
+// Staré odkazy ve tvaru /#/detail/... převedeme na adresu bez #
+if (typeof window !== "undefined" && window.location.hash.startsWith("#/")) {
+  window.history.replaceState(null, "", window.location.hash.slice(1));
+}
+
 export default function Router() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<CatalogWrapper />} />
@@ -19,7 +24,7 @@ export default function Router() {
         <Route path="/prehled-variant" element={<VariantOverview />} />
         <Route path="/napoveda" element={<Help />} />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 }
 
@@ -28,7 +33,7 @@ function CatalogWrapper() {
   const params = useParams();
   // Rozlišíme, zda je to /rok/:year nebo /emise/:slug(-:year)?
   const { slug, year } = params;
-  // V HashRouter nelze spoléhat na window.location.pathname; určeme podle přítomnosti parametrů
+  // V BrowserRouter nelze spoléhat na window.location.pathname; určeme podle přítomnosti parametrů
   const isYearRoute = (!slug && !!year);
   const key = `${slug || 'all'}-${year || 'all'}-${isYearRoute ? 'year' : 'emission'}`;
   return (

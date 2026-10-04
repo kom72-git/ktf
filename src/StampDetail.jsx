@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import ScrollTopButton from "./components/ScrollTopButton.jsx";
 import { getApiBase } from "./apiBase.js";
 import { Fancybox } from "@fancyapps/ui";
@@ -1150,7 +1151,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         onMouseEnter={() => setHoverPreviewId(key)}
         onMouseLeave={() => setHoverPreviewId((current) => (current === key ? null : current))}
       >
-        <a href={`#/detail/${stamp.idZnamky}`}>{renderCatalogDisplay(text, key)}</a>
+        <Link to={`/detail/${stamp.idZnamky}`}>{renderCatalogDisplay(text, key)}</Link>
         {isOpen && (
           <span className="catalog-preview-popover" aria-hidden="true">
             <img

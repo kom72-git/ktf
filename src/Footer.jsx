@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import "./FooterExperimental.css";
 
 // Přepínač: true = nová patička, false = původní (stačí přepsat a hotovo).
@@ -17,7 +17,7 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
   const [localPassword, setLocalPassword] = useState("");
   const passwordInputRef = useRef(null);
   const location = useLocation();
-  const currentPath = location.hash ? location.hash.replace(/^#/, "") : location.pathname;
+  const currentPath = location.pathname;
   const isHelpActive = currentPath === "/napoveda";
   const isChecklistActive = currentPath === "/chybenka";
   // Po přechodu přes odkaz v patičce se stránka zobrazí od začátku.
@@ -135,14 +135,14 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
   );
 
   const helpLink = (
-    <a
-      href="#/napoveda"
+    <Link
+      to="/napoveda"
       className={`footer-link footer-link-help${isHelpActive ? " footer-link-current" : ""}`}
       aria-current={isHelpActive ? "page" : undefined}
       onClick={scrollToTop}
     >
       Nápověda
-    </a>
+    </Link>
   );
 
   return (
@@ -192,14 +192,14 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
                   GitHub
                 </a>
                 <span className="footer-divider footer-divider-tight">|</span>
-                <a
-                  href="#/chybenka"
+                <Link
+                  to="/chybenka"
                   className={`footer-link${isChecklistActive ? " footer-link-current" : ""}`}
                   aria-current={isChecklistActive ? "page" : undefined}
                   onClick={scrollToTop}
                 >
                   Chyběnka
-                </a>
+                </Link>
                 <span className="footer-divider footer-divider-tight">|</span>
                 <a
                   href="#"

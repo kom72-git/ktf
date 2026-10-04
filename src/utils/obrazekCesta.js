@@ -57,8 +57,10 @@ export function normalizeStampImagePath(rawValue, stampYear) {
   if (!raw) return "";
 
   if (UNAVAILABLE_IMAGE_SUFFIX_RE.test(raw)) {
-    return "img/no-img.png";
+    return "/img/no-img.png";
   }
 
-  return normalizeStampImageBase(raw, stampYear);
+  const base = normalizeStampImageBase(raw, stampYear);
+  // Absolutní cesta, aby se obrázky načetly na jakékoli adrese (např. /emise/...).
+  return /^(https?:|data:|\/)/i.test(base) || !base ? base : `/${base}`;
 }
