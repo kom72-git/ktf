@@ -588,6 +588,7 @@ const VariantList = forwardRef(function VariantList({
         </div>
       )}
 
+      <div className="variant-groups">
       {/* Seskupené varianty (A, B, ... nebo číselné) */}
       {groupedKeysSorted.map(group => {
         const defs = grouped[group];
@@ -699,6 +700,7 @@ const VariantList = forwardRef(function VariantList({
           </div>
         </section>
       )}
+      </div>
     </>
   );
 });

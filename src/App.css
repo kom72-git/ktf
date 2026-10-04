@@ -1970,6 +1970,24 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
 .detail-section {
   margin-bottom: 10px;
 }
+.variant-groups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  column-gap: 80px;
+}
+/* Skupina je tak široká jako její obsah: malé skupiny se řadí vedle sebe, velká zabere celý řádek. */
+.variant-groups > section {
+  flex: 0 1 auto;
+  max-width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* Skupiny na jednom řádku mají stejnou výšku, boxy variant se jí přizpůsobí. */
+.variant-groups > section > .variants {
+  flex: 1 1 auto;
+}
 .variants {
   display: flex;
   flex-wrap: wrap;
