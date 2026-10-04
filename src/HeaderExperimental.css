@@ -5,7 +5,7 @@
   box-sizing: border-box;
   width: auto;
   max-width: 1200px;
-  margin: -1rem auto 0.5rem;
+  margin: -24px auto 0.5rem;
   background:
     radial-gradient(ellipse at 12% 10%, rgba(255, 255, 255, 0.82), transparent 58%),
     linear-gradient(180deg, #f4f0e7 0%, #efeee8 62%, #f3f4f6 100%);
@@ -58,8 +58,8 @@
 
 .ktf-header__logo {
   display: block;
-  width: 108px;
-  height: 114px;
+  width: 93px;
+  height: 98px;
   object-fit: contain;
   flex: 0 0 auto;
 }
@@ -119,6 +119,12 @@
 @media (min-width: 601px) and (max-width: 680px) {
   .ktf-header__name {
     font-size: 1.9rem;
+  }
+
+  .ktf-header__tagline {
+    margin-top: 4px;
+    padding-top: 3px;
+    font-size: 0.62rem;
   }
 }
 
