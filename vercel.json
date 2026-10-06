@@ -1,3 +1,13 @@
 {
-  "rewrites": [{ "source": "/((?!api/|img/|assets/).*)", "destination": "/index.html" }]
+  "rewrites": [{ "source": "/((?!api/|img/|assets/).*)", "destination": "/index.html" }],
+  "headers": [
+    {
+      "source": "/chybenka",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/prehled-variant",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    }
+  ]
 }

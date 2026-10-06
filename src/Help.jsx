@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -6,15 +6,6 @@ import VariantTooltip from "./components/VariantTooltip.jsx";
 
 export default function Help() {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const previousTitle = document.title;
-    document.title = "Nápověda | Katalog TF";
-
-    return () => {
-      document.title = previousTitle;
-    };
-  }, []);
 
   return (
     <div className="page-bg">
@@ -24,7 +15,7 @@ export default function Help() {
           <div className="help-top">
             <div className="help-top-copy">
               <div className="detail-title help-main-title-wrap">
-                <h2 className="detail-title-text">O webu</h2>
+                <h1 id="help-page-title" className="detail-title-text">Nápověda</h1>
               </div>
 
               <p className="help-lead">
@@ -50,7 +41,7 @@ export default function Help() {
 
           <div className="help-section-intro">
             <div className="detail-title help-main-title-wrap">
-              <h1 id="help-page-title" className="detail-title-text">Nápověda</h1>
+              <h2 className="detail-title-text">Používání katalogu</h2>
             </div>
             <p className="help-section-intro-text">
               Základní přehled ovládání webu, vyhledávání a práce s detailem známky i variantami.

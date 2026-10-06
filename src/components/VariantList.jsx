@@ -2,7 +2,7 @@
 // V admin edit módu umožňuje editaci všech polí variant přes kontrolovaný stav.
 // Přes ref (useImperativeHandle) vystavuje metodu saveAll() pro hromadné uložení z rodiče.
 
-import React, { useState, useEffect, useImperativeHandle, forwardRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useImperativeHandle, forwardRef, useRef } from "react";
 import { Fancybox } from "@fancyapps/ui";
 import VariantTooltip from "./VariantTooltip.jsx";
 import { formatDefectDescription } from "../utils/formatovaniTextu.jsx";
@@ -199,6 +199,8 @@ const VariantList = forwardRef(function VariantList({
   onSaveInheritedMam,
   onExcludeChange,
 }, ref) {
+  const variantGroupsRef = useRef(null);
+
   // Kontrolovaný stav pro editaci polí každé varianty
   const buildInitialEdits = (defects) =>
     Object.fromEntries((defects || []).map(def => [
@@ -305,6 +307,56 @@ const VariantList = forwardRef(function VariantList({
   const plusVariantsOrdered = plusVariants.slice();
   const allVariantsOrdered = [...groupedVariantsOrdered, ...plusVariantsOrdered];
   const getImageNumber = (def) => { const idx = allVariantsOrdered.indexOf(def); return idx === -1 ? "?" : idx + 1; };
+
+  useLayoutEffect(() => {
+    const container = variantGroupsRef.current;
+    if (!container) return undefined;
+
+    let frame = 0;
+    const equalizeGroupHeaders = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const sections = Array.from(container.children);
+        const rows = new Map();
+
+        sections.forEach(section => {
+          const header = section.querySelector(".variant-group-header");
+          if (!header) return;
+          header.style.minHeight = "";
+        });
+
+        sections.forEach(section => {
+          const header = section.querySelector(".variant-group-header");
+          if (!header) return;
+          const rowTop = Math.round(section.getBoundingClientRect().top);
+          const row = rows.get(rowTop) || [];
+          row.push(header);
+          rows.set(rowTop, row);
+        });
+
+        rows.forEach(headers => {
+          if (headers.length < 2) return;
+          const maxHeight = Math.max(...headers.map(header => header.getBoundingClientRect().height));
+          headers.forEach(header => {
+            header.style.minHeight = `${maxHeight}px`;
+          });
+        });
+      });
+    };
+
+    equalizeGroupHeaders();
+    const observer = typeof ResizeObserver === "undefined"
+      ? null
+      : new ResizeObserver(equalizeGroupHeaders);
+    observer?.observe(container);
+    window.addEventListener("resize", equalizeGroupHeaders);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener("resize", equalizeGroupHeaders);
+    };
+  }, [effectiveDefects, groupedKeysSorted.join("|")]);
 
   // Fancybox galerie
   const openFancybox = (flatIndex = 0, clickedSrc = "") => {
@@ -588,7 +640,7 @@ const VariantList = forwardRef(function VariantList({
         </div>
       )}
 
-      <div className="variant-groups">
+      <div className="variant-groups" ref={variantGroupsRef}>
       {/* Seskupené varianty (A, B, ... nebo číselné) */}
       {groupedKeysSorted.map(group => {
         const defs = grouped[group];
@@ -626,37 +678,39 @@ const VariantList = forwardRef(function VariantList({
         );
         return (
           <section key={group} aria-labelledby={`${variantsHeadingBaseId}-${group}`}>
-            <h3 id={`${variantsHeadingBaseId}-${group}`} className="variant-subtitle">
-              {heading}
-              {isEditingAll && isAdmin ? (
-                <>
-                  <span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span>
-                  <input type="text" className="variant-typ-edit-input" defaultValue={typVarianty} placeholder="typ varianty…" id={`typVarianty-input-${group}`} />
-                  <button
-                    className="ktf-btn-check variant-type-save-button"
-                    title="Uložit typ varianty"
-                    onClick={() => {
-                      const val = document.getElementById(`typVarianty-input-${group}`)?.value ?? "";
-                      saveDefectEdit(mainDef._id || mainDef.idVady, { ...mainDef, typVarianty: val });
-                    }}
-                  >✓</button>
-                </>
-              ) : (
-                typVarianty && <><span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span><span className="variant-type">{typVarianty}</span></>
+            <div className="variant-group-header">
+              <h3 id={`${variantsHeadingBaseId}-${group}`} className="variant-subtitle">
+                {heading}
+                {isEditingAll && isAdmin ? (
+                  <>
+                    <span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span>
+                    <input type="text" className="variant-typ-edit-input" defaultValue={typVarianty} placeholder="typ varianty…" id={`typVarianty-input-${group}`} />
+                    <button
+                      className="ktf-btn-check variant-type-save-button"
+                      title="Uložit typ varianty"
+                      onClick={() => {
+                        const val = document.getElementById(`typVarianty-input-${group}`)?.value ?? "";
+                        saveDefectEdit(mainDef._id || mainDef.idVady, { ...mainDef, typVarianty: val });
+                      }}
+                    >✓</button>
+                  </>
+                ) : (
+                  typVarianty && <><span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span><span className="variant-type">{typVarianty}</span></>
+                )}
+              </h3>
+              {subvariantLabels.length > 0 && (
+                <div className="variant-group-info">
+                  <span className="variant-group-info-icon" title={subvariantTitle}>
+                    <img src="/img/ico_podvarianty.png" alt="info" className="variant-group-info-icon" />
+                  </span>
+                  <span className="variant-group-info-text">
+                    {subvariantTitle}: {subvariantLabels.map((s, i) => (
+                      <span key={s.label + i}>{i > 0 && ", "}{s.bold ? <strong>{s.label}</strong> : s.label}</span>
+                    ))}
+                  </span>
+                </div>
               )}
-            </h3>
-            {subvariantLabels.length > 0 && (
-              <div className="variant-group-info">
-                <span className="variant-group-info-icon" title={subvariantTitle}>
-                  <img src="/img/ico_podvarianty.png" alt="info" className="variant-group-info-icon" />
-                </span>
-                <span className="variant-group-info-text">
-                  {subvariantTitle}: {subvariantLabels.map((s, i) => (
-                    <span key={s.label + i}>{i > 0 && ", "}{s.bold ? <strong>{s.label}</strong> : s.label}</span>
-                  ))}
-                </span>
-              </div>
-            )}
+            </div>
             <div className="variants">
               {defs.slice().sort(compareVariantsWithBracket).map((def, i) => renderVariantBox(def, i, `var-${group}`))}
             </div>

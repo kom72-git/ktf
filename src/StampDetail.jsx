@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import ScrollTopButton from "./components/ScrollTopButton.jsx";
-import { getApiBase } from "./apiBase.js";
+import { apiFetch, getApiBase } from "./apiBase.js";
 import { Fancybox } from "@fancyapps/ui";
 import VariantTooltip from "./components/VariantTooltip.jsx";
 import {
@@ -115,9 +115,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const lastAutoSavedPrefillRef = useRef("");
   const isAutoSavingPrefillRef = useRef(false);
   const getAdminAuthHeaders = () => {
-    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
-    if (!isAdmin || !adminPassword) return {};
-    return { 'X-Admin-Password': adminPassword };
+    return {};
   };
   const applyUpdatedStamp = (updatedStamp, options = {}) => {
     const { touchNow = false } = options;
@@ -241,7 +239,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
   useEffect(() => {
     const API_BASE = getApiBase(); // Lokální vývoj
-    fetch(`${API_BASE}/api/stamps/${id}`, { headers: getAdminAuthHeaders() })
+    apiFetch(`${API_BASE}/api/stamps/${id}`, { headers: getAdminAuthHeaders() })
       .then(async (res) => {
         if (!res.ok) {
           const error = new Error("Známka nenalezena");
@@ -386,7 +384,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
     const API_BASE = getApiBase();
 
-    fetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
+    apiFetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(normalizedPayload)
@@ -436,7 +434,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       
       console.log('API URL:', apiUrl);
 
-      const response = await fetch(apiUrl, {
+      const response = await apiFetch(apiUrl, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedData)
@@ -534,7 +532,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       const apiUrl = isVercel
         ? `/api/defects/${actualId}`
         : `${API_BASE}/api/defects/${actualId}`;
-      const response = await fetch(apiUrl, { method: 'DELETE' });
+      const response = await apiFetch(apiUrl, { method: 'DELETE' });
       if (response.ok) {
         const nowIso = new Date().toISOString();
         // Odstraníme z lokálního stavu
@@ -579,7 +577,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       
       console.log('Stamp API URL:', apiUrl);
 
-      const response = await fetch(apiUrl, {
+      const response = await apiFetch(apiUrl, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(normalizedEditStampData)
@@ -614,7 +612,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       const normalizedValue = normalizeStampImageFieldValue(field, value, editStampData.rok || item?.rok);
       const API_BASE = getApiBase();
 
-      const response = await fetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
+      const response = await apiFetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [field]: normalizedValue })
@@ -652,7 +650,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     try {
       const API_BASE = getApiBase();
 
-      const response = await fetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
+      const response = await apiFetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -684,7 +682,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     try {
       const API_BASE = getApiBase();
 
-      const response = await fetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
+      const response = await apiFetch(`${API_BASE}/api/stamps/${item.idZnamky}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -748,7 +746,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       const apiUrl = `${API_BASE}/api/stamps/${item.idZnamky}`;
 
-      const response = await fetch(apiUrl, { method: 'DELETE' });
+      const response = await apiFetch(apiUrl, { method: 'DELETE' });
       const responseData = await response.json().catch(() => ({}));
       if (!response.ok) {
         alert(`Chyba při mazání známky: ${responseData.error || 'Neznámá chyba'}`);

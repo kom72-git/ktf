@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { apiFetch, getApiBase } from "./apiBase.js";
 import "./FooterExperimental.css";
 
 // Přepínač: true = nová patička, false = původní (stačí přepsat a hotovo).
@@ -25,17 +26,24 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
   const year = new Date().getFullYear();
 
   useEffect(() => {
-    const syncAdmin = () => {
+    let cancelled = false;
+    const syncAdmin = async () => {
       try {
-        const active = typeof localStorage !== "undefined" && localStorage.getItem("ktf_admin_session") === "active";
-        setLocalAdmin(active);
-      } catch (err) {
-        setLocalAdmin(false);
+        const response = await apiFetch(`${getApiBase()}/api/auth/session`);
+        if (cancelled) return;
+        setLocalAdmin(response.ok);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Ověření admin session se nezdařilo:", error);
+          setLocalAdmin(false);
+        }
       }
     };
     window.addEventListener("ktf-admin-refresh", syncAdmin);
     window.addEventListener("storage", syncAdmin);
+    syncAdmin();
     return () => {
+      cancelled = true;
       window.removeEventListener("ktf-admin-refresh", syncAdmin);
       window.removeEventListener("storage", syncAdmin);
     };
@@ -83,10 +91,17 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
     }
   };
 
-  const triggerAdminLogout = () => {
+  const triggerAdminLogout = async () => {
     if (onAdminLogout) {
       onAdminLogout();
       return;
+    }
+    try {
+      const response = await apiFetch(`${getApiBase()}/api/auth/logout`, { method: "POST" });
+      if (!response.ok) throw new Error(`Logout request failed (${response.status})`);
+    } catch (error) {
+      console.error("Odhlášení správce se nezdařilo:", error);
+      alert("Server odhlášení nepotvrdil. Zkus to prosím znovu.");
     }
     try {
       localStorage.removeItem("ktf_admin_session");
@@ -99,22 +114,27 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
     }
   };
 
-  const handleLocalLoginSubmit = () => {
-    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
-    if (localPassword === adminPassword) {
-      try {
-        localStorage.setItem("ktf_admin_session", "active");
-      } catch (err) {
-        // Ignoruj chyby práce s úložištěm
+  const handleLocalLoginSubmit = async () => {
+    try {
+      const response = await apiFetch(`${getApiBase()}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: localPassword }),
+      });
+      if (!response.ok) {
+        alert(response.status === 503
+          ? "Přihlášení správce není na serveru nastavené."
+          : "Nesprávné heslo");
+        return;
       }
+      localStorage.setItem("ktf_admin_session", "active");
       setLocalAdmin(true);
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("ktf-admin-refresh"));
-      }
+      window.dispatchEvent(new Event("ktf-admin-refresh"));
       setShowLocalLogin(false);
       setLocalPassword("");
-    } else {
-      alert("Nesprávné heslo");
+    } catch (error) {
+      console.error("Přihlášení správce se nezdařilo:", error);
+      alert("Přihlášení se nepodařilo. Zkontroluj připojení k serveru.");
     }
   };
 

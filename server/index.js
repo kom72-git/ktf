@@ -4,6 +4,13 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import Stamp from "./Stamp.js";
+import {
+  endAdminSession,
+  isAdminAuthConfigured,
+  isAdminRequest,
+  startAdminSession,
+  verifyAdminPassword,
+} from "../api/_lib/adminAuth.js";
 
 
 const app = express();
@@ -26,6 +33,47 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+app.set("trust proxy", 1);
+
+app.post("/api/auth/login", (req, res) => {
+  if (!isAdminAuthConfigured()) {
+    return res.status(503).json({ error: "Admin authentication is not configured" });
+  }
+  if (!verifyAdminPassword(req.body?.password)) {
+    return res.status(401).json({ error: "Nesprávné heslo" });
+  }
+  try {
+    startAdminSession(req, res);
+    return res.json({ authenticated: true });
+  } catch (error) {
+    console.error("Unable to start admin session:", error);
+    return res.status(503).json({ error: "Admin authentication is not configured" });
+  }
+});
+
+app.get("/api/auth/session", (req, res) => {
+  const authenticated = isAdminRequest(req);
+  return res.status(authenticated ? 200 : 401).json({ authenticated });
+});
+
+app.post("/api/auth/logout", (req, res) => {
+  endAdminSession(req, res);
+  return res.json({ authenticated: false });
+});
+
+app.use("/api", (req, res, next) => {
+  if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method) && !isAdminRequest(req)) {
+    return res.status(401).json({ error: "Vyžadováno přihlášení správce" });
+  }
+  return next();
+});
+
+const publicStampsQuery = {
+  $nor: [
+    { stav: "interni" },
+    { stav: { $exists: false }, isHidden: true },
+  ],
+};
 
 // Připojení k MongoDB (connection string doplníme později)
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://<username>:<password>@cluster0.3y2ox5f.mongodb.net/?retryWrites=true&w=majority";
@@ -91,7 +139,8 @@ app.post("/api/stamps", async (req, res) => {
   }
 });
   try {
-    const stamps = await mongoose.connection.db.collection("stamps").find({}).toArray();
+    const query = isAdminRequest(req) ? {} : publicStampsQuery;
+    const stamps = await mongoose.connection.db.collection("stamps").find(query).toArray();
     res.json(stamps);
   } catch (err) {
     res.status(500).json({ error: "Chyba při načítání známek" });
@@ -102,7 +151,10 @@ app.post("/api/stamps", async (req, res) => {
 app.get("/api/stamps/:id", async (req, res) => {
   try {
     console.log("[API] Detail známky: požadované id:", req.params.id);
-    const stamp = await mongoose.connection.db.collection("stamps").findOne({ idZnamky: req.params.id });
+    const query = isAdminRequest(req)
+      ? { idZnamky: req.params.id }
+      : { idZnamky: req.params.id, ...publicStampsQuery };
+    const stamp = await mongoose.connection.db.collection("stamps").findOne(query);
     console.log("[API] Výsledek dotazu:", stamp);
     if (!stamp) {
       console.log("[API] Známka nenalezena pro id:", req.params.id);

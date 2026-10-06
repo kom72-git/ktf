@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 import mongoose from "mongoose";
+import { isAdminRequest, setApiCors } from "./_lib/adminAuth.js";
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://<username>:<password>@cluster0.3y2ox5f.mongodb.net/?retryWrites=true&w=majority";
 let cachedDb = null;
@@ -20,9 +21,7 @@ async function connectToDatabase() {
 }
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  setApiCors(req, res);
   
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -30,6 +29,9 @@ export default async function handler(req, res) {
   }
   
   try {
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method) && !isAdminRequest(req)) {
+      return res.status(401).json({ error: "Vyžadováno přihlášení správce" });
+    }
     await connectToDatabase();
     if (req.method === 'GET') {
       const defects = await mongoose.connection.db.collection("defects").find({}).toArray();

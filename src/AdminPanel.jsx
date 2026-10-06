@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { getApiBase } from "./apiBase.js";
+import { apiFetch, getApiBase } from "./apiBase.js";
 export default function AdminPanel({
   isAdmin,
   onLogout,
@@ -64,9 +64,7 @@ export default function AdminPanel({
     umisteniVady: []
   });
   const getAdminAuthHeaders = () => {
-    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
-    if (!isAdmin || !adminPassword) return {};
-    return { 'X-Admin-Password': adminPassword };
+    return {};
   };
   const getLocationPrefix = (value) => {
     const match = String(value ?? "").match(/^\s*(nad|pod|vlevo od|vpravo od)(?:\s+|$)/i);
@@ -299,7 +297,7 @@ export default function AdminPanel({
     async function loadVariantSuggestions() {
       try {
         const API_BASE = getApiBase();
-        const response = await fetch(`${API_BASE}/api/defects`);
+        const response = await apiFetch(`${API_BASE}/api/defects`);
         if (!response.ok) return;
         const defects = await response.json();
         const collect = (field) => Array.from(
@@ -359,7 +357,7 @@ export default function AdminPanel({
       let obrazekVady = '';
       try {
         const API_BASE = getApiBase();
-        const response = await fetch(`${API_BASE}/api/stamps/${idZnamky}`, { headers: getAdminAuthHeaders() });
+        const response = await apiFetch(`${API_BASE}/api/stamps/${idZnamky}`, { headers: getAdminAuthHeaders() });
         if (response.ok) {
           const stamp = await response.json();
           if (stamp && stamp.rok && stamp.katalogCislo) {
@@ -387,7 +385,7 @@ export default function AdminPanel({
       let obrazekVady = '';
       try {
         const API_BASE = getApiBase();
-        const response = await fetch(`${API_BASE}/api/stamps/${idZnamky}`, { headers: getAdminAuthHeaders() });
+        const response = await apiFetch(`${API_BASE}/api/stamps/${idZnamky}`, { headers: getAdminAuthHeaders() });
         if (response.ok) {
           const stamp = await response.json();
           if (stamp && stamp.rok && stamp.katalogCislo) {
@@ -453,7 +451,7 @@ export default function AdminPanel({
         poradiVady: Number.isFinite(normalizedOrder) ? normalizedOrder : ''
       };
       const API_BASE = getApiBase();
-      const response = await fetch(`${API_BASE}/api/defects`, {
+      const response = await apiFetch(`${API_BASE}/api/defects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

@@ -4,6 +4,7 @@ import StampCatalog from "./StampCatalog";
 import Help from "./Help";
 import MissingChecklist from "./MissingChecklist";
 import VariantOverview from "./VariantOverview";
+import { setPageMetadata } from "./utils/seo.js";
 
 // Staré odkazy ve tvaru /#/detail/... převedeme na adresu bez #
 if (typeof window !== "undefined" && window.location.hash.startsWith("#/")) {
@@ -14,6 +15,7 @@ export default function Router() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <StaticPageMetadata />
       <Routes>
         <Route path="/" element={<CatalogWrapper />} />
         <Route path="/rok/:year" element={<CatalogWrapper />} />
@@ -26,6 +28,33 @@ export default function Router() {
       </Routes>
     </BrowserRouter>
   );
+}
+
+function StaticPageMetadata() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    const pages = {
+      "/napoveda": {
+        title: "Nápověda | Filatelium",
+        description: "Nápověda ke katalogu československých známek: vyhledávání, filtry, detail známky a její varianty.",
+      },
+      "/chybenka": {
+        title: "Chyběnka | Filatelium",
+        description: "Přehled známek a variant, které ve své sbírce postrádáte. Procházejte katalog československých známek.",
+        noIndex: true,
+      },
+      "/prehled-variant": {
+        title: "Přehled variant | Filatelium",
+        description: "Přehled variant a deskových vad československých poštovních známek z let 1945–1992.",
+        noIndex: true,
+      },
+    };
+    const page = pages[pathname];
+    if (page) setPageMetadata({ ...page, path: pathname });
+  }, [pathname]);
+
+  return null;
 }
 
 function CatalogWrapper() {

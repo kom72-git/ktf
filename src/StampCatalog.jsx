@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { getApiBase } from "./apiBase.js";
+import { apiFetch, getApiBase } from "./apiBase.js";
 import { useLocation, useNavigate } from "react-router-dom";
 import Header from './Header';
 import Footer from './Footer';
@@ -24,6 +24,7 @@ import {
 } from "./utils/obrazekCesta.js";
 import ScrollTopButton from "./components/ScrollTopButton.jsx";
 import "./App.css";
+import { setPageMetadata } from "./utils/seo.js";
 
 // Pomocná fce: vrátí čas (ms) pro řazení podle data publikování.
 // Primárně používá publishedAt; pokud není, odvozen timestamp z MongoDB ObjectId.
@@ -64,10 +65,7 @@ export default function StampCatalog(props) {
   const navigate = typeof useNavigate === 'function' ? useNavigate() : null;
 
   // Deklarace všech useState na úplný začátek
-  const [isAdmin, setIsAdmin] = useState(() => {
-    // Zachovej admin session i po reloadu/přechodu
-    return localStorage.getItem('ktf_admin_session') === 'active';
-  });
+  const [isAdmin, setIsAdmin] = useState(false);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [stamps, setStamps] = useState([]);
@@ -101,28 +99,62 @@ export default function StampCatalog(props) {
   // (Synchronizace stavu emise a roku už není potřeba, vše je odvozeno z props)
 
   // Funkce pro admin login/logout
-  const handleAdminLogin = (password) => {
-    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
-    if (password === adminPassword) {
-      localStorage.setItem('ktf_admin_session', 'active');
+  const handleAdminLogin = async (password) => {
+    try {
+      const response = await apiFetch(`${getApiBase()}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (!response.ok) {
+        alert(response.status === 503
+          ? "Přihlášení správce není na serveru nastavené."
+          : "Nesprávné heslo");
+        return;
+      }
+      localStorage.setItem("ktf_admin_session", "active");
       setIsAdmin(true);
       setShowAdminLogin(false);
-      window.dispatchEvent(new Event('ktf-admin-refresh'));
-    } else {
-      alert('Nesprávné heslo');
+      window.dispatchEvent(new Event("ktf-admin-refresh"));
+    } catch (error) {
+      console.error("Přihlášení správce se nezdařilo:", error);
+      alert("Přihlášení se nepodařilo. Zkontroluj připojení k serveru.");
     }
   };
-  const handleAdminLogout = () => {
+  const handleAdminLogout = async () => {
+    try {
+      const response = await apiFetch(`${getApiBase()}/api/auth/logout`, { method: "POST" });
+      if (!response.ok) throw new Error(`Logout request failed (${response.status})`);
+    } catch (error) {
+      console.error("Odhlášení správce se nezdařilo:", error);
+      alert("Server odhlášení nepotvrdil. Zkus to prosím znovu.");
+    }
     localStorage.removeItem('ktf_admin_session');
     setIsAdmin(false);
     window.dispatchEvent(new Event('ktf-admin-refresh'));
   };
 
-  const getAdminAuthHeaders = () => {
-    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD;
-    if (!isAdmin || !adminPassword) return {};
-    return { 'X-Admin-Password': adminPassword };
-  };
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch(`${getApiBase()}/api/auth/session`)
+      .then(response => {
+        if (cancelled) return;
+        const authenticated = response.ok;
+        setIsAdmin(authenticated);
+        if (authenticated) localStorage.setItem("ktf_admin_session", "active");
+        else localStorage.removeItem("ktf_admin_session");
+        window.dispatchEvent(new Event("ktf-admin-refresh"));
+      })
+      .catch(error => {
+        if (cancelled) return;
+        console.error("Ověření admin session se nezdařilo:", error);
+        setIsAdmin(false);
+        localStorage.removeItem("ktf_admin_session");
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const getAdminAuthHeaders = () => ({});
 
   // (Synchronizace s URL už není potřeba, vše je řízeno routerem)
 
@@ -132,7 +164,7 @@ export default function StampCatalog(props) {
     const API_BASE = getApiBase(); // Lokální vývoj
     const adminHeaders = getAdminAuthHeaders();
 
-    fetch(`${API_BASE}/api/stamps`, { headers: adminHeaders })
+    apiFetch(`${API_BASE}/api/stamps`, { headers: adminHeaders })
       .then(res => {
         console.log('Stamps response:', res);
         return res.json();
@@ -142,7 +174,7 @@ export default function StampCatalog(props) {
         setStamps(data);
       })
       .catch(err => console.error("Chyba při načítání známek:", err));
-    fetch(`${API_BASE}/api/defects`)
+    apiFetch(`${API_BASE}/api/defects`)
       .then(res => {
         console.log('Defects response:', res);
         return res.json();
@@ -173,13 +205,36 @@ export default function StampCatalog(props) {
   useEffect(() => {
     if (detailId) {
       const item = stamps.find(d => d.idZnamky === detailId);
-      document.title = item ? `${item.emise} (${item.rok}) | Katalog TF` : 'Katalog TF';
+      const title = item
+        ? `${item.emise} (${item.rok}) | Filatelium`
+        : "Detail známky | Filatelium";
+      const description = item
+        ? `${item.emise} (${item.rok}), československá poštovní známka${item.katalogCislo ? ` katalogového čísla ${item.katalogCislo}` : ""}. Studie tiskové formy, deskových polí a variant.`
+        : undefined;
+      setPageMetadata({ title, description, path: location.pathname || `/detail/${detailId}` });
     } else if (emission !== "all") {
-      document.title = `${emission} | Katalog TF`;
+      const title = year !== "all"
+        ? `${emission} (${year}) | Filatelium`
+        : `${emission} | Filatelium`;
+      setPageMetadata({
+        title,
+        description: `Československé poštovní známky emise ${emission}${year !== "all" ? ` z roku ${year}` : ""}. Prohlédněte si katalogová čísla a jejich varianty.`,
+        path: location.pathname || "/",
+      });
+    } else if (year !== "all") {
+      setPageMetadata({
+        title: `Československé známky ${year} | Filatelium`,
+        description: `Katalog československých poštovních známek vydaných v roce ${year}, včetně studií tiskových forem, deskových polí a variant.`,
+        path: location.pathname || `/rok/${year}`,
+      });
     } else {
-      document.title = 'Katalog TF';
+      setPageMetadata({
+        title: "Filatelium | Katalog československých známek",
+        description: "Katalog československých poštovních známek z let 1945–1992 se studiemi tiskových forem, desek, polí a jejich variant.",
+        path: location.pathname || "/",
+      });
     }
-  }, [detailId, stamps, emission]);
+  }, [detailId, stamps, emission, year, location.pathname]);
 
   const getEmissionFilterName = (stamp) => {
     const group = typeof stamp?.emiseSkupina === "string" ? stamp.emiseSkupina.trim() : "";
@@ -611,6 +666,15 @@ export default function StampCatalog(props) {
       <Header navigate={navigate} />
       <main className="main">
         {/* ...existující kód bez testovacího výpisu... */}
+        {!detailId && (
+          <h1 className="sr-only">
+            {emission !== "all"
+              ? `Známky emise ${emission}${year !== "all" ? ` (${year})` : ""}`
+              : year !== "all"
+                ? `Československé poštovní známky ${year}`
+                : "Katalog československých poštovních známek 1945–1992"}
+          </h1>
+        )}
         {detailId ? (
           <DetailPage
             id={detailId}
@@ -813,7 +877,7 @@ export default function StampCatalog(props) {
           // Odeslání na backend
           const API_BASE = getApiBase();
           try {
-            const response = await fetch(`${API_BASE}/api/stamps`, {
+            const response = await apiFetch(`${API_BASE}/api/stamps`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -838,4 +902,3 @@ export default function StampCatalog(props) {
     </div>
   );
 }
-

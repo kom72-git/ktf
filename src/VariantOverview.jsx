@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getApiBase } from "./apiBase.js";
+import { apiFetch, getApiBase } from "./apiBase.js";
 import { Link, useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -164,7 +164,15 @@ export default function VariantOverview() {
 
   useEffect(() => {
     try {
-      setIsAdmin(localStorage.getItem("ktf_admin_session") === "active");
+      apiFetch(`${getApiBase()}/api/auth/session`).then(response => {
+        const authenticated = response.ok;
+        setIsAdmin(authenticated);
+        if (authenticated) localStorage.setItem("ktf_admin_session", "active");
+        else localStorage.removeItem("ktf_admin_session");
+      }).catch(error => {
+        console.error("Ověření admin session se nezdařilo:", error);
+        setIsAdmin(false);
+      });
     } catch {
       setIsAdmin(false);
     }
@@ -181,11 +189,11 @@ export default function VariantOverview() {
     setError("");
 
     Promise.all([
-      fetch(`${base}/api/stamps`).then((res) => {
+      apiFetch(`${base}/api/stamps`).then((res) => {
         if (!res.ok) throw new Error("Nepodařilo se načíst známky");
         return res.json();
       }),
-      fetch(`${base}/api/defects`).then((res) => {
+      apiFetch(`${base}/api/defects`).then((res) => {
         if (!res.ok) throw new Error("Nepodařilo se načíst vady");
         return res.json();
       }),

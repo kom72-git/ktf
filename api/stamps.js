@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 import mongoose from "mongoose";
+import { isAdminRequest, setApiCors } from "./_lib/adminAuth.js";
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://<username>:<password>@cluster0.3y2ox5f.mongodb.net/?retryWrites=true&w=majority";
 let cachedDb = null;
@@ -29,21 +30,8 @@ const publicStampsQuery = {
   ]
 };
 
-function getAdminSecret() {
-  return process.env.ADMIN_PASSWORD || process.env.VITE_ADMIN_PASSWORD || '';
-}
-
-function isAdminRequest(req) {
-  const expected = getAdminSecret();
-  if (!expected) return false;
-  const provided = req.headers['x-admin-password'];
-  return typeof provided === 'string' && provided === expected;
-}
-
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Admin-Password');
+  setApiCors(req, res);
   
   if (req.method === 'OPTIONS') {
     res.status(200).end();
