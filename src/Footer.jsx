@@ -16,6 +16,7 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
   });
   const [showLocalLogin, setShowLocalLogin] = useState(false);
   const [localPassword, setLocalPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const passwordInputRef = useRef(null);
   const location = useLocation();
   const currentPath = location.pathname;
@@ -250,49 +251,57 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
           <div className="footer-login-modal">
             <h3 id="footer-login-heading" className="footer-login-title">Admin přístup</h3>
             <p className="footer-login-hint">Zadejte heslo správce.</p>
-            {/* Skryté pole, aby správce hesel vyplnil jméno sem, ne do vyhledávání */}
-            <input
-              type="text"
-              name="username"
-              autoComplete="username"
-              tabIndex={-1}
-              aria-hidden="true"
-              style={{ position: "absolute", opacity: 0, height: 0, width: 0, pointerEvents: "none" }}
-              readOnly={false}
-              defaultValue=""
-            />
-            <input
-              ref={passwordInputRef}
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              className="footer-login-input"
-              value={localPassword}
-              onChange={e => setLocalPassword(e.target.value)}
-              placeholder="Heslo"
-              onKeyDown={event => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  handleLocalLoginSubmit();
-                }
+            <form
+              onSubmit={event => {
+                event.preventDefault();
+                handleLocalLoginSubmit();
               }}
-            />
-            <div className="footer-login-actions">
-              <button
-                type="button"
-                className="footer-login-cancel"
-                onClick={handleLocalLoginCancel}
-              >
-                Zrušit
-              </button>
-              <button
-                type="button"
-                className="footer-login-confirm"
-                onClick={handleLocalLoginSubmit}
-              >
-                Přihlásit
-              </button>
-            </div>
+            >
+              {/* Pole pro správce hesel: nenulová velikost, aby ho rozpoznal a nevyplnil jméno jinam */}
+              <input
+                type="text"
+                name="username"
+                id="footer-login-username"
+                autoComplete="username"
+                tabIndex={-1}
+                aria-hidden="true"
+                style={{ position: "absolute", width: 1, height: 1, opacity: 0.01, overflow: "hidden", border: 0, padding: 0, pointerEvents: "none" }}
+              />
+              <div className="footer-login-password-wrap">
+                <input
+                  ref={passwordInputRef}
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  id="footer-login-password"
+                  autoComplete="current-password"
+                  className="footer-login-input"
+                  value={localPassword}
+                  onChange={e => setLocalPassword(e.target.value)}
+                  placeholder="Heslo"
+                />
+                <button
+                  type="button"
+                  className="footer-login-eye"
+                  onClick={() => setShowPassword(v => !v)}
+                  aria-label={showPassword ? "Skrýt heslo" : "Zobrazit heslo"}
+                  title={showPassword ? "Skrýt heslo" : "Zobrazit heslo"}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                    <circle cx="12" cy="12" r="3" />
+                    {showPassword && <line x1="3" y1="3" x2="21" y2="21" />}
+                  </svg>
+                </button>
+              </div>
+              <div className="footer-login-actions">
+                <button type="button" className="footer-login-cancel" onClick={handleLocalLoginCancel}>
+                  Zrušit
+                </button>
+                <button type="submit" className="footer-login-confirm">
+                  Přihlásit
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

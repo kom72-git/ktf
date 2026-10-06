@@ -273,6 +273,7 @@
 }
 
 .admin-login-modal {
+  max-width: calc(100vw - 32px);
   background: #fff;
   padding: 20px;
   border-radius: 8px;
@@ -291,10 +292,54 @@
 }
 
 .admin-login-input {
-  width: 200px;
+  width: 320px;
+  max-width: 100%;
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
+}
+
+.admin-login-password-wrap {
+  display: flex;
+  align-items: center;
+  width: 320px;
+  max-width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+  background: #fff;
+}
+.admin-login-password-wrap:focus-within {
+  border-color: #3b82f6;
+}
+.admin-login-password-wrap .admin-login-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  border: 0;
+  outline: none;
+  padding-right: 4px;
+  background: transparent;
+}
+.admin-login-password-wrap input::-ms-reveal {
+  display: none;
+}
+.admin-login-eye {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  margin-right: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  padding: 0;
+  color: #6b7280;
+  cursor: pointer;
+}
+.admin-login-eye:hover {
+  color: #263b49;
 }
 
 .admin-login-confirm,
