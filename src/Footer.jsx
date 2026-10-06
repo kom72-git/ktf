@@ -250,9 +250,22 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
           <div className="footer-login-modal">
             <h3 id="footer-login-heading" className="footer-login-title">Admin přístup</h3>
             <p className="footer-login-hint">Zadejte heslo správce.</p>
+            {/* Skryté pole, aby správce hesel vyplnil jméno sem, ne do vyhledávání */}
+            <input
+              type="text"
+              name="username"
+              autoComplete="username"
+              tabIndex={-1}
+              aria-hidden="true"
+              style={{ position: "absolute", opacity: 0, height: 0, width: 0, pointerEvents: "none" }}
+              readOnly={false}
+              defaultValue=""
+            />
             <input
               ref={passwordInputRef}
               type="password"
+              name="password"
+              autoComplete="current-password"
               className="footer-login-input"
               value={localPassword}
               onChange={e => setLocalPassword(e.target.value)}
