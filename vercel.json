@@ -1,5 +1,8 @@
 {
-  "rewrites": [{ "source": "/((?!api/|img/|assets/).*)", "destination": "/index.html" }],
+  "rewrites": [
+    { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    { "source": "/((?!api/|img/|assets/).*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/chybenka",
