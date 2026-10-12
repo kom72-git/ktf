@@ -37,11 +37,11 @@ function StaticPageMetadata() {
     const pages = {
       "/napoveda": {
         title: "Nápověda | Filatelium",
-        description: "Nápověda ke katalogu československých známek: vyhledávání, filtry, detail známky a její varianty.",
+        description: "Nápověda k přehledu studií československých známek: vyhledávání, filtry, detail známky a její varianty.",
       },
       "/chybenka": {
         title: "Chyběnka | Filatelium",
-        description: "Přehled známek a variant, které ve své sbírce postrádáte. Procházejte katalog československých známek.",
+        description: "Přehled známek a variant, které ve své sbírce postrádáte. Procházejte přehled studií československých známek.",
         noIndex: true,
       },
       "/prehled-variant": {

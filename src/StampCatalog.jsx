@@ -224,13 +224,13 @@ export default function StampCatalog(props) {
     } else if (year !== "all") {
       setPageMetadata({
         title: `Československé známky ${year} | Filatelium`,
-        description: `Katalog československých poštovních známek vydaných v roce ${year}, včetně studií tiskových forem, deskových polí a variant.`,
+        description: `Přehled studií tiskových forem, desek a polí československých poštovních známek vydaných v roce ${year}.`,
         path: location.pathname || `/rok/${year}`,
       });
     } else {
       setPageMetadata({
-        title: "Filatelium | Katalog československých známek",
-        description: "Katalog československých poštovních známek z let 1945–1992 se studiemi tiskových forem, desek, polí a jejich variant.",
+        title: "Filatelium | Studie československých známek",
+        description: "Přehled studií tiskových forem, desek a polí československých poštovních známek z let 1945–1992.",
         path: location.pathname || "/",
       });
     }
@@ -672,7 +672,7 @@ export default function StampCatalog(props) {
               ? `Známky emise ${emission}${year !== "all" ? ` (${year})` : ""}`
               : year !== "all"
                 ? `Československé poštovní známky ${year}`
-                : "Katalog československých poštovních známek 1945–1992"}
+                : "Studie československých poštovních známek 1945–1992"}
           </h1>
         )}
         {detailId ? (

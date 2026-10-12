@@ -1,6 +1,6 @@
 const SITE_ORIGIN = "https://www.filatelium.cz";
 const DEFAULT_DESCRIPTION =
-  "Katalog československých poštovních známek z let 1945–1992 se studiemi tiskových forem, desek, polí a jejich variant.";
+  "Přehled studií tiskových forem, desek a polí československých poštovních známek z let 1945–1992.";
 
 function setMeta(attribute, key, content) {
   let element = document.head.querySelector(`meta[${attribute}="${key}"]`);
