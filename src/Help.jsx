@@ -19,7 +19,7 @@ export default function Help() {
               </div>
 
               <p className="help-lead">
-                Tyto stránky poskytují široké filatelistické veřejnosti seznam o všech studiích, které rozlišují tiskové formy, desky a pole při tisku československých známek v letech 1945-92.
+                Tyto stránky poskytují široké filatelistické veřejnosti seznam o všech studiích, které rozlišují tiskové formy, desky a pole při tisku československých známek v letech 1945–1992.
               </p>
               <p className="help-lead help-lead-secondary">
                 Web má usnadnit orientaci v materiálech, které by jinak bylo potřeba dohledávat jednotlivě na různých místech internetu,

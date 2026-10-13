@@ -175,7 +175,7 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
               <img src="/img/logo.svg" alt="" className="footer-v2-logo" />
               <span className="footer-v2-title">
                 <strong>Filatelium</strong>
-                <small>Studium tiskových forem, desek a polí</small>
+                <small>Studie tiskových forem, desek a polí</small>
               </span>
             </span>
           ) : null}
