@@ -164,8 +164,9 @@ export default function VariantOverview() {
 
   useEffect(() => {
     try {
-      apiFetch(`${getApiBase()}/api/auth/session`).then(response => {
-        const authenticated = response.ok;
+      apiFetch(`${getApiBase()}/api/auth/session`).then(async response => {
+        const session = response.ok ? await response.json() : null;
+        const authenticated = Boolean(session?.authenticated);
         setIsAdmin(authenticated);
         if (authenticated) localStorage.setItem("ktf_admin_session", "active");
         else localStorage.removeItem("ktf_admin_session");

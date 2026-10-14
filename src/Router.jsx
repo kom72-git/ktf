@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, useParams, useNavigate, useLocation, useNavigationType } from "react-router-dom";
 import StampCatalog from "./StampCatalog";
 import Help from "./Help";
+import Contact from "./Contact";
 import MissingChecklist from "./MissingChecklist";
 import VariantOverview from "./VariantOverview";
 import { setPageMetadata } from "./utils/seo.js";
@@ -25,6 +26,7 @@ export default function Router() {
         <Route path="/chybenka" element={<MissingChecklist />} />
         <Route path="/prehled-variant" element={<VariantOverview />} />
         <Route path="/napoveda" element={<Help />} />
+        <Route path="/kontakt" element={<Contact />} />
       </Routes>
     </BrowserRouter>
   );
@@ -38,6 +40,10 @@ function StaticPageMetadata() {
       "/napoveda": {
         title: "Nápověda | Filatelium",
         description: "Nápověda k přehledu studií československých známek: vyhledávání, filtry, detail známky a její varianty.",
+      },
+      "/kontakt": {
+        title: "Kontakt | Filatelium",
+        description: "Kontaktní e-mail na Filatelium.",
       },
       "/chybenka": {
         title: "Chyběnka | Filatelium",

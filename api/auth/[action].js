@@ -22,7 +22,7 @@ export default function handler(req, res) {
   }
 
   if (action === "session" && req.method === "GET") {
-    return res.status(isAdminRequest(req) ? 200 : 401).json({ authenticated: isAdminRequest(req) });
+    return res.status(200).json({ authenticated: isAdminRequest(req) });
   }
 
   if (action === "logout" && req.method === "POST") {

@@ -21,6 +21,7 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
   const location = useLocation();
   const currentPath = location.pathname;
   const isHelpActive = currentPath === "/napoveda";
+  const isContactActive = currentPath === "/kontakt";
   const isChecklistActive = currentPath === "/chybenka";
   // Po přechodu přes odkaz v patičce se stránka zobrazí od začátku.
   const scrollToTop = () => window.scrollTo({ top: 0 });
@@ -31,8 +32,9 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
     const syncAdmin = async () => {
       try {
         const response = await apiFetch(`${getApiBase()}/api/auth/session`);
+        const session = response.ok ? await response.json() : null;
         if (cancelled) return;
-        setLocalAdmin(response.ok);
+        setLocalAdmin(Boolean(session?.authenticated));
       } catch (error) {
         if (!cancelled) {
           console.error("Ověření admin session se nezdařilo:", error);
@@ -145,14 +147,14 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
   };
 
   const contactLink = (
-    <a
-      href="#"
-      className="footer-link footer-link-disabled"
-      title="Připravujeme"
-      onClick={e => e.preventDefault()}
+    <Link
+      to="/kontakt"
+      className={`footer-link${isContactActive ? " footer-link-current" : ""}`}
+      aria-current={isContactActive ? "page" : undefined}
+      onClick={scrollToTop}
     >
       Kontakt
-    </a>
+    </Link>
   );
 
   const helpLink = (

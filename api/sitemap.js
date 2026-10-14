@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import { emissionToSlug } from "../src/utils/katalog.js";
 
 const SITE_URL = "https://www.filatelium.cz";
+const PUBLIC_STATIC_PATHS = ["/napoveda", "/kontakt"];
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://<username>:<password>@cluster0.3y2ox5f.mongodb.net/?retryWrites=true&w=majority";
 let cachedDb = null;
 
@@ -57,7 +58,10 @@ function buildSitemap(stamps) {
     newest = Math.max(newest, time);
   }
 
-  const entries = [{ path: "/", time: newest }];
+  const entries = [
+    { path: "/", time: newest },
+    ...PUBLIC_STATIC_PATHS.map(path => ({ path, time: 0 })),
+  ];
   [...emissionPages.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .forEach(([path, time]) => entries.push({ path, time }));

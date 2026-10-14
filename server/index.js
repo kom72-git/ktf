@@ -53,7 +53,7 @@ app.post("/api/auth/login", (req, res) => {
 
 app.get("/api/auth/session", (req, res) => {
   const authenticated = isAdminRequest(req);
-  return res.status(authenticated ? 200 : 401).json({ authenticated });
+  return res.status(200).json({ authenticated });
 });
 
 app.post("/api/auth/logout", (req, res) => {
