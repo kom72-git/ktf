@@ -1296,9 +1296,6 @@ input.admin-checkbox { width: 18px; height: 18px; cursor: pointer; }
   color: #10b981;
   font-weight: 600;
 }
-.footer-link-admin {
-  text-transform: lowercase;
-}
 .footer-login-overlay {
   position: fixed;
   inset: 0;

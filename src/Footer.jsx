@@ -193,7 +193,7 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
                   triggerAdminLogin();
                 }}
               >
-                admin
+                Admin
               </a>
               <span className="footer-divider">|</span>
               {contactLink}
