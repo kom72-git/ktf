@@ -27,7 +27,7 @@ import {
   formatRozmerDisplay,
   formatTiskovaFormaDisplay,
   formatZoubkovaniDisplay,
-  normalizeDatumVydani,
+  formatDatumVydaniDisplay,
 } from "./utils/formatovaniUdaju.js";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import "./fancybox-responsive.css";
@@ -202,7 +202,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     }
 
     if (field === 'datumVydani') {
-      return normalizeDatumVydani(value) ?? value;
+      return formatDatumVydaniDisplay(value) ?? value;
     }
 
     if (field === 'naklad') {

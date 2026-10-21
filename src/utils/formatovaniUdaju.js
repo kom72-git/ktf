@@ -1,6 +1,14 @@
 /**
  * Formátování technických polí pro zobrazení ve view režimu.
  * Input hodnoty zůstávají beze změny – funkce se aplikují pouze při renderování.
+ *
+ * TECHNICKÉ ÚDAJE V DETAILU ZNÁMKY (pravidla zápisu, špatný zápis v databázi se opraví při zobrazení):
+ *   datum vydání   normalizeDatumVydani / formatDatumVydaniDisplay    5. 1. 2026 (bez úvodních nul)
+ *   tisková forma  formatTiskovaFormaDisplay                          1 TF 2× (4 ZP + 2 KN)
+ *   nominál        formatNominalDisplay                               4× 5 Kčs
+ *   rozměr         formatRozmerDisplay                                100 × 109 mm
+ *   náklad         formatNakladDisplay                                96 750 ks
+ *   zoubkování     formatZoubkovaniDisplay                            ŘZ 13¾ : 11½
  */
 
 /**
@@ -33,7 +41,7 @@ export function formatNakladDisplay(value) {
 
 /**
  * Formátuje hodnotu rozměru pro zobrazení:
- * - nahradí "x" / "X" jako oddělovač rozměrů za typografický znak ×
+ * - nahradí "x" / "X" / "×" jako oddělovač rozměrů za × s nezlomitelnými mezerami z obou stran (100 × 109 mm)
  * - doplní "mm" za poslední číselný blok, pokud tam ještě není
  * - pokud "mm" v hodnotě již je, nebude ve výsledku dvakrát
  */
@@ -42,8 +50,7 @@ export function formatRozmerDisplay(value) {
   const str = String(value).trim();
   if (!str || !/\d/.test(str)) return str;
 
-  // Nahradit "x" / "X" mezi číslicemi (nebo desetinnou čárkou/tečkou) za "×" (bez mezer)
-  const withTimes = str.replace(/([\d,.])\s*[xX]\s*([\d,.])/g, '$1×$2');
+  const withTimes = str.replace(/([\d,.])\s*[xX×]\s*([\d,.])/g, '$1\u00a0×\u00a0$2');
 
   if (/\bmm\b/i.test(withTimes)) return withTimes;
 
@@ -94,58 +101,50 @@ export function formatZoubkovaniDisplay(value) {
 }
 
 /**
- * Formátuje umístění variant pro zobrazení:
- * - zajistí mezeru mezi písmennou zkratkou a číslem (ZP1 → ZP 1)
- * - ponechá rozsah se spojovníkem bez mezer (ZP 1-10)
+ * Formátuje nominál pro zobrazení:
+ * - násobitel se lepí k číslu a za ním je mezera: 4x5 Kčs → 4× 5 Kčs, 2x60 h → 2× 60 h
+ * - mezi číslem a měnou je nezlomitelná mezera (5 Kčs, 50 h)
+ * - měna se nedoplňuje; zápis bez měny zůstane bez měny
  */
-export function formatVariantLocationDisplay(value) {
-  if (!value) return value;
-  const str = String(value).trim();
-  if (!str) return str;
-
-  const withLetterNumberSpace = str.replace(/([A-Za-z\u00C0-\u017E])(\d)/g, '$1 $2');
-
-  // Normalizace spojovníku v rozsazích: 1 - 10 -> 1-10
-  return withLetterNumberSpace.replace(/(\d)\s*-\s*(\d)/g, '$1-$2');
-}
-
-/**
- * Nahradí klasické x/X za typografické × bez úpravy mezer.
- * Příklady: 2x2 -> 2×2, 2x (2 AP + 25 ZP) -> 2× (2 AP + 25 ZP)
- */
-function normalizeTimesBetweenNumbers(value) {
-  if (!value) return value;
-  const str = String(value).trim();
-  if (!str) return str;
-
-  return str.replace(/(\d\s*)[xX](\s*)(?=\d|\(|[A-Za-z\u00C0-\u017E])/g, '$1×$2');
-}
-
-function normalizeTimesTightBetweenNumbers(value) {
-  if (!value) return value;
-  const str = String(value).trim();
-  if (!str) return str;
-
-  // Nominal: mezi číselnými částmi držet zápis bez mezer (4x1,60 -> 4×1,60)
-  return str.replace(/(\d)\s*[xX]\s*(?=[\d,.])/g, '$1×');
-}
-
 export function formatNominalDisplay(value) {
-  return normalizeTimesTightBetweenNumbers(value);
-}
+  if (!value) return value;
+  const str = String(value).trim();
+  if (!str) return str;
 
-export function formatTiskovaFormaDisplay(value) {
-  return normalizeTimesBetweenNumbers(value);
+  return str
+    .replace(/(\d)\s*[xX×]\s*(?=[\d,.])/g, '$1×\u00a0')
+    .replace(/(\d)\s+(?=(?:Kčs|Kč|h)(?![A-Za-z\u00C0-\u017E]))/g, '$1\u00a0');
 }
 
 /**
- * Normalizuje datum vydání do kanonického formátu "D. M. YYYY".
+ * Formátuje tiskovou formu pro zobrazení (např. 1 TF 2×(4ZP+2KN) → 1 TF 2× (4 ZP + 2 KN)):
+ * - násobitel se lepí k číslu a za ním je mezera: 2x (…) → 2× (…), 2 x 6 AP → 2× 6 AP
+ * - mezi číslem a zkratkou je nezlomitelná mezera: 4ZP → 4 ZP
+ * - "+" je vždy s mezerami z obou stran: 4+2KN → 4 + 2 KN
+ * - závorky bez mezer uvnitř: ( 4 ZP ) → (4 ZP)
+ * - počet forem na začátku a ostatní text zůstává beze změny
+ */
+export function formatTiskovaFormaDisplay(value) {
+  if (!value) return value;
+  const str = String(value).trim();
+  if (!str) return str;
+
+  return str
+    .replace(/(\d)\s*[xX×]\s*(?=[\d(A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u017E])/g, '$1×\u00a0')
+    .replace(/\s*\+\s*/g, ' + ')
+    .replace(/\(\s+/g, '(')
+    .replace(/\s+\)/g, ')')
+    .replace(/(\d)[\s\u00a0]*(?=[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u017E])/g, '$1\u00a0')
+    .replace(/\s{2,}/g, ' ');
+}
+
+/**
+ * Normalizuje datum vydání (hodnota, která se ukládá do databáze):
+ * - jednotný zápis "D. M. YYYY" bez úvodních nul, s mezerami za tečkami (5. 1. 2026)
  * Přijímá různé varianty zápisu:
- *   "18.05.1983"   → "18. 5. 1983"
- *   "18.5. 1983"   → "18. 5. 1983"
  *   "18.5.1983"    → "18. 5. 1983"
  *   "1983-05-18"   → "18. 5. 1983"
- *   "18. 5. 1983"  → "18. 5. 1983"  (beze změny)
+ *   "05.01.2026"   → "5. 1. 2026"
  */
 export function normalizeDatumVydani(value) {
   if (!value) return value;
@@ -176,6 +175,31 @@ export function normalizeDatumVydani(value) {
   if (d < 1 || d > 31 || m < 1 || m > 12 || y < 1800 || y > 2100) return str;
 
   return `${d}. ${m}. ${y}`;
+}
+
+/**
+ * Datum vydání pro zobrazení: stejná pravidla jako normalizeDatumVydani,
+ * jen mezery v zápisu "D. M. YYYY" jsou nezlomitelné, aby se datum nezalamovalo.
+ */
+export function formatDatumVydaniDisplay(value) {
+  const normalized = normalizeDatumVydani(value);
+  return typeof normalized === 'string' ? normalized.replace(/ /g, '\u00a0') : normalized;
+}
+
+/**
+ * Formátuje umístění variant pro zobrazení (varianty, nejde o technické údaje):
+ * - zajistí mezeru mezi písmennou zkratkou a číslem (ZP1 → ZP 1)
+ * - ponechá rozsah se spojovníkem bez mezer (ZP 1-10)
+ */
+export function formatVariantLocationDisplay(value) {
+  if (!value) return value;
+  const str = String(value).trim();
+  if (!str) return str;
+
+  const withLetterNumberSpace = str.replace(/([A-Za-z\u00C0-\u017E])(\d)/g, '$1 $2');
+
+  // Normalizace spojovníku v rozsazích: 1 - 10 -> 1-10
+  return withLetterNumberSpace.replace(/(\d)\s*-\s*(\d)/g, '$1-$2');
 }
 
 export function formatDateTimeDisplay(value) {
