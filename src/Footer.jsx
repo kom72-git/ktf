@@ -245,14 +245,14 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
       </footer>
       {!onAdminLogin && showLocalLogin && (
         <div
-          className="footer-login-overlay"
+          className="admin-login-overlay"
           role="dialog"
           aria-modal="true"
-          aria-labelledby="footer-login-heading"
+          aria-labelledby="admin-login-heading"
         >
-          <div className="footer-login-modal">
-            <h3 id="footer-login-heading" className="footer-login-title">Admin přístup</h3>
-            <p className="footer-login-hint">Zadejte heslo správce.</p>
+          <div className="admin-login-modal">
+            <h3 id="admin-login-heading" className="admin-login-title">Admin přístup</h3>
+            <p className="admin-login-hint">Zadejte heslo správce.</p>
             <form
               onSubmit={event => {
                 event.preventDefault();
@@ -269,21 +269,21 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
                 aria-hidden="true"
                 style={{ position: "absolute", width: 1, height: 1, opacity: 0.01, overflow: "hidden", border: 0, padding: 0, pointerEvents: "none" }}
               />
-              <div className="footer-login-password-wrap">
+              <div className="admin-login-password-wrap">
                 <input
                   ref={passwordInputRef}
                   type={showPassword ? "text" : "password"}
                   name="password"
                   id="footer-login-password"
                   autoComplete="current-password"
-                  className="footer-login-input"
+                  className="admin-login-input"
                   value={localPassword}
                   onChange={e => setLocalPassword(e.target.value)}
                   placeholder="Heslo"
                 />
                 <button
                   type="button"
-                  className="footer-login-eye"
+                  className="admin-login-eye"
                   onClick={() => setShowPassword(v => !v)}
                   aria-label={showPassword ? "Skrýt heslo" : "Zobrazit heslo"}
                   title={showPassword ? "Skrýt heslo" : "Zobrazit heslo"}
@@ -295,12 +295,12 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
                   </svg>
                 </button>
               </div>
-              <div className="footer-login-actions">
-                <button type="button" className="footer-login-cancel" onClick={handleLocalLoginCancel}>
-                  Zrušit
+              <div className="admin-login-actions">
+                <button type="submit" className="admin-login-confirm">
+                  OK
                 </button>
-                <button type="submit" className="footer-login-confirm">
-                  Přihlásit
+                <button type="button" className="admin-login-cancel" onClick={handleLocalLoginCancel}>
+                  Zrušit
                 </button>
               </div>
             </form>

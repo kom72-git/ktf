@@ -487,6 +487,7 @@ export default function AdminPanel({
         <div className="admin-login-overlay">
           <div className="admin-login-modal">
             <h3 className="admin-login-title">Admin přístup</h3>
+            <p className="admin-login-hint">Zadejte heslo správce.</p>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -527,17 +528,20 @@ export default function AdminPanel({
                     </svg>
                   </button>
                 </div>
+              </div>
+              <div className="admin-login-actions">
                 <button type="submit" className="admin-login-confirm">
                   OK
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAdminLogin(false)}
+                  className="admin-login-cancel"
+                >
+                  Zrušit
+                </button>
               </div>
             </form>
-            <button
-              onClick={() => setShowAdminLogin(false)}
-              className="admin-login-cancel"
-            >
-              Zrušit
-            </button>
           </div>
         </div>
       )}
