@@ -38,6 +38,55 @@ export default async function handler(req, res) {
     return;
   }
   
+  if (req.method === 'POST') {
+    if (!isAdminRequest(req)) {
+      return res.status(401).json({ error: "Vyžadováno přihlášení správce" });
+    }
+    try {
+      await connectToDatabase();
+      const newStamp = { ...(req.body || {}) };
+      const defaultIsHidden = typeof newStamp.isHidden === 'boolean' ? newStamp.isHidden : true;
+      if (!newStamp.stav) {
+        newStamp.stav = defaultIsHidden ? 'interni' : 'zverejneno';
+      }
+      newStamp.isHidden = newStamp.stav === 'interni';
+
+      const rok = Number(newStamp.rok);
+      if (!newStamp.rok || isNaN(rok) || String(newStamp.rok).length !== 4) {
+        return res.status(400).json({ error: "Rok je povinný, musí být číslo a ve formátu YYYY!" });
+      }
+      newStamp.rok = rok;
+
+      const collection = mongoose.connection.db.collection("stamps");
+      const stampsForYear = await collection.find({ rok }).toArray();
+      const usedNN = stampsForYear
+        .map(stamp => {
+          const match = String(stamp.idZnamky || "").match(/^cz-\d{4}-(\d{2})$/);
+          return match ? parseInt(match[1], 10) : null;
+        })
+        .filter(nn => nn !== null);
+      let nextNN = 1;
+      while (usedNN.includes(nextNN)) nextNN++;
+
+      newStamp.idZnamky = `cz-${rok}-${String(nextNN).padStart(2, '0')}`;
+      delete newStamp._id;
+
+      const result = await collection.insertOne(newStamp);
+      if (!result.insertedId) {
+        return res.status(400).json({ error: "Známku se nepodařilo vložit" });
+      }
+      const inserted = await collection.findOne({ _id: result.insertedId });
+      return res.status(201).json(inserted);
+    } catch (err) {
+      console.error("Chyba při vkládání známky:", err);
+      return res.status(500).json({ error: "Chyba při vkládání známky", details: err.message });
+    }
+  }
+
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: "Metoda není podporována" });
+  }
+
   try {
     await connectToDatabase();
     console.log("Getting stamps from database...");

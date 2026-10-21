@@ -886,12 +886,14 @@ export default function StampCatalog(props) {
               },
               body: JSON.stringify(normalizedStampData)
             });
-            if (response.ok) {
-              const newStamp = await response.json();
+            const newStamp = response.ok ? await response.json() : null;
+            if (newStamp && !Array.isArray(newStamp) && newStamp._id) {
               setStamps(prev => [newStamp, ...prev]);
               setShowAddModal(false);
             } else {
-              alert('Chyba při přidávání známky');
+              alert(response.status === 401
+                ? 'Platnost přihlášení vypršela, přihlas se prosím znovu.'
+                : 'Chyba při přidávání známky');
             }
           } catch (err) {
             alert('Chyba při komunikaci se serverem');
