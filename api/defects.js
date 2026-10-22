@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     }
     if (req.method === 'POST') {
       // Přidání nové vady
-      const { idZnamky, variantaVady, umisteniVady, obrazekVady, popisVady } = req.body;
+      const { idZnamky, variantaVady, umisteniVady, poradiVady, obrazekVady, popisVady, mam } = req.body;
       if (!idZnamky || !variantaVady) {
         return res.status(400).json({ error: "Chybí povinné pole idZnamky nebo variantaVady" });
       }
@@ -48,9 +48,10 @@ export default async function handler(req, res) {
         idZnamky,
         variantaVady,
         umisteniVady: umisteniVady || '',
+        poradiVady: poradiVady ?? '',
         obrazekVady: obrazekVady || '',
         popisVady: popisVady || '',
-        mam: false
+        mam: mam === true
       };
       const result = await mongoose.connection.db.collection("defects").insertOne(defect);
       if (result.insertedId) {
