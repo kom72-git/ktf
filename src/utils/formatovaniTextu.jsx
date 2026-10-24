@@ -9,7 +9,7 @@ export function formatPopisWithAll(text) {
   // Redakční poznámka: [pozn]...[/pozn] (podporovány i aliasy [poznamka] a [redakce]).
   s = s.replace(/\[(pozn|poznamka|redakce)\]([\s\S]*?)\[\/\1\]/gi, (_m, _tag, content) => {
     const body = String(content ?? "").trim();
-    return `<div class="study-editor-note"><div class="study-editor-note-label">Poznámka k obsahu</div><div class="study-editor-note-body">${body}</div></div>`;
+    return `<div class="study-editor-note"><div class="study-editor-note-label">Poznámka ke studii</div><div class="study-editor-note-body">${body}</div></div>`;
   });
   // Support both [B1a] and [B1]a (suffix inside or immediately after brackets)
   // capture optional single-letter suffix immediately after the closing bracket
