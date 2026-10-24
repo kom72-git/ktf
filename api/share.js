@@ -40,9 +40,15 @@ function stampMeta(stamp) {
   if (stamp.druhTisku) parts.push(`druh tisku ${clean(stamp.druhTisku)}`);
   if (stamp.navrh) parts.push(`návrh ${clean(stamp.navrh)}`);
   if (stamp.rytec) parts.push(`rytec ${clean(stamp.rytec)}`);
+  const shortParts = [];
+  if (stamp.katalogCislo) shortParts.push(`Katalog ${clean(stamp.katalogCislo)}`);
+  if (stamp.datumVydani) shortParts.push(`vydáno ${clean(formatDatumVydaniDisplay(stamp.datumVydani))}`);
+  if (stamp.druhTisku) shortParts.push(clean(stamp.druhTisku));
   const head = `${clean(stamp.emise)} (${stamp.rok}), československá poštovní známka.`;
   return {
     title: `${clean(stamp.emise)} (${stamp.rok}) | Filatelium`,
+    shareTitle: `${clean(stamp.emise)} (${stamp.rok})`,
+    shareDescription: `${shortParts.join(" · ")}. Studie tiskové formy, polí a variant.`,
     description: `${head} ${parts.length ? `${parts.join(", ")}. ` : ""}Studie tiskové formy, deskových polí a variant.`,
     image: normalizeStampImagePath(stamp.obrazek, stamp.rok),
   };
@@ -74,6 +80,8 @@ async function resolveMeta(query) {
     const first = items[0];
     return {
       title: year ? `${name} (${year}) | Filatelium` : `${name} | Filatelium`,
+      shareTitle: year ? `${name} (${year})` : name,
+      shareDescription: `Československé poštovní známky${year ? ` z roku ${year}` : ""}: katalogová čísla a varianty.`,
       description: `Československé poštovní známky emise ${name}${year ? ` z roku ${year}` : ""}. Prohlédněte si katalogová čísla a jejich varianty.`,
       image: normalizeStampImagePath(first.obrazek, first.rok),
       path: `/emise/${query.slug}`,
@@ -86,20 +94,26 @@ async function resolveMeta(query) {
 function injectMeta(html, meta) {
   const title = escapeHtml(meta.title);
   const description = escapeHtml(meta.description);
+  const shareTitle = escapeHtml(meta.shareTitle || meta.title);
+  const shareDescription = escapeHtml(meta.shareDescription || meta.description);
   const url = escapeHtml(SITE_URL + meta.path);
-  const image = meta.image && !/no-img/.test(meta.image) ? escapeHtml(new URL(meta.image, SITE_URL).href) : `${SITE_URL}/favicon-192.png`;
+  const hasImage = meta.image && !/no-img/.test(meta.image);
+  const image = hasImage
+    ? escapeHtml(`${SITE_URL}/api/thumb?src=${encodeURIComponent(meta.image)}`)
+    : `${SITE_URL}/favicon-192.png`;
+  const size = hasImage ? 300 : 192;
 
   let out = html
     .replace(/<title>[\s\S]*?<\/title>/, `<title>${title}</title>`)
     .replace(/(<meta name="description" content=")[^"]*(")/, `$1${description}$2`)
-    .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${title}$2`)
-    .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${description}$2`)
+    .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${shareTitle}$2`)
+    .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${shareDescription}$2`)
     .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${url}$2`)
-    .replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${title}$2`)
-    .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${description}$2`)
+    .replace(/(<meta name="twitter:title" content=")[^"]*(")/, `$1${shareTitle}$2`)
+    .replace(/(<meta name="twitter:description" content=")[^"]*(")/, `$1${shareDescription}$2`)
     .replace(/(<link rel="canonical" href=")[^"]*(")/, `$1${url}$2`)
-    .replace(/<meta (?:property="og:image"|name="twitter:image")[^>]*>\s*/g, "")
-    .replace(/<meta name="twitter:card"[^>]*>/, `<meta name="twitter:card" content="summary_large_image" />\n    <meta property="og:image" content="${image}" />\n    <meta name="twitter:image" content="${image}" />`);
+    .replace(/<meta (?:property="og:image(?::width|:height)?"|name="twitter:image")[^>]*>\s*/g, "")
+    .replace(/<meta name="twitter:card"[^>]*>/, `<meta name="twitter:card" content="summary" />\n    <meta property="og:image" content="${image}" />\n    <meta property="og:image:width" content="${size}" />\n    <meta property="og:image:height" content="${size}" />\n    <meta name="twitter:image" content="${image}" />`);
 
   return out;
 }
