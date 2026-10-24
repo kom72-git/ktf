@@ -1,6 +1,8 @@
 {
   "rewrites": [
     { "source": "/sitemap.xml", "destination": "/api/sitemap" },
+    { "source": "/detail/:id", "destination": "/api/share?type=detail&id=:id" },
+    { "source": "/emise/:slug", "destination": "/api/share?type=emise&slug=:slug" },
     { "source": "/((?!api/|img/|assets/).*)", "destination": "/index.html" }
   ],
   "headers": [

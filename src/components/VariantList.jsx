@@ -150,6 +150,8 @@ function isExcludedFromA(def, excludedList) {
 
 const SPLIT_REGEX = /\[\[\s*\.{3}\s*\]\]/;
 const NO_IMAGE = "/img/no-image.png";
+// Podoba popisku pod obrázkem varianty: "hidden" (A 1), "plain" (A obr. 1), "brackets" (A (obr.) 1).
+const IMAGE_LABEL_MODE = "plain";
 
 function renderDefectDescription(descriptionText, tucneVSeznamu) {
   if (!descriptionText) return null;
@@ -514,7 +516,11 @@ const VariantList = forwardRef(function VariantList({
               {renderVariantToken(variantToken, !!def.tucneVSeznamu)}
             </span>
           )}
-          <span className="variant-label-prefix">obr.</span>{" "}{getImageNumber(def)}
+          {IMAGE_LABEL_MODE === "brackets" ? (
+            <>(<span className="variant-label-prefix">obr.</span>){" "}{getImageNumber(def)}</>
+          ) : IMAGE_LABEL_MODE === "plain" ? (
+            <><span className="variant-label-prefix">obr.</span>{" "}{getImageNumber(def)}</>
+          ) : getImageNumber(def)}
         </div>
         {isEditingAll ? (
           <div>
