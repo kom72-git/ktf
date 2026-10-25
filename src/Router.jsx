@@ -4,6 +4,8 @@ import StampCatalog from "./StampCatalog";
 import Help from "./Help";
 import Contact from "./Contact";
 import MissingChecklist from "./MissingChecklist";
+import Tvurce from "./Tvurce";
+import Tvurci from "./Tvurci";
 import VariantOverview from "./VariantOverview";
 import { setPageMetadata } from "./utils/seo.js";
 
@@ -23,6 +25,8 @@ export default function Router() {
         <Route path="/emise/:slug-:year" element={<CatalogWrapper />} />
         <Route path="/emise/:slug" element={<CatalogWrapper />} />
         <Route path="/detail/:id" element={<DetailWrapper />} />
+        <Route path="/tvurci" element={<Tvurci />} />
+        <Route path="/tvurce/:slug" element={<Tvurce />} />
         <Route path="/chybenka" element={<MissingChecklist />} />
         <Route path="/prehled-variant" element={<VariantOverview />} />
         <Route path="/napoveda" element={<Help />} />
@@ -44,6 +48,10 @@ function StaticPageMetadata() {
       "/kontakt": {
         title: "Kontakt | Filatelium",
         description: "Kontaktní e-mail na Filatelium.",
+      },
+      "/tvurci": {
+        title: "Rytci a návrháři známek | Filatelium",
+        description: "Přehled návrhářů a rytců československých poštovních známek z let 1945–1992 a jejich známek v katalogu Filatelium.",
       },
       "/chybenka": {
         title: "Chyběnka | Filatelium",

@@ -33,6 +33,13 @@ function getPublishTime(item) {
   return parseInt(item._id.substring(0, 8), 16) * 1000;
 }
 
+// Hledání v jménech autorů bez ohledu na diakritiku
+const stripDiacritics = (v) => String(v || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const matchesAuthor = (stamp, q) => {
+  const nq = stripDiacritics(q);
+  return stripDiacritics(stamp.navrh).includes(nq) || stripDiacritics(stamp.rytec).includes(nq);
+};
+
 export default function StampCatalog(props) {
   const HOMEPAGE_BOX_LIMIT = 12; // 👈 zde měň výchozí počet zobrazených boxů/emisí na HomePage
   const HOME_BOX_LIMIT_OPTIONS = [4, HOMEPAGE_BOX_LIMIT, 8, 20, 40]; // 👈 zde měň výchozí počty v rozevíracím seznamu na HomePage
@@ -335,7 +342,8 @@ export default function StampCatalog(props) {
             (d.emise && d.emise.toLowerCase().includes(q)) ||
             (d.emiseSkupina && d.emiseSkupina.toLowerCase().includes(q)) ||
             (d.katalogCislo && d.katalogCislo.toLowerCase().includes(q)) ||
-            (d.rok && String(d.rok).includes(q))
+            (d.rok && String(d.rok).includes(q)) ||
+            matchesAuthor(d, q)
           );
         }
         return true;
@@ -752,7 +760,8 @@ export default function StampCatalog(props) {
                         (s.emise && s.emise.toLowerCase().includes(q)) ||
                         (s.emiseSkupina && s.emiseSkupina.toLowerCase().includes(q)) ||
                         (s.katalogCislo && s.katalogCislo.toLowerCase().includes(q)) ||
-                        (s.rok && String(s.rok).includes(q));
+                        (s.rok && String(s.rok).includes(q)) ||
+                        matchesAuthor(s, q);
                       if (!matchesQuery) return false;
                     }
                     return true;

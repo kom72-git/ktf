@@ -151,7 +151,7 @@ function isExcludedFromA(def, excludedList) {
 const SPLIT_REGEX = /\[\[\s*\.{3}\s*\]\]/;
 const NO_IMAGE = "/img/no-image.png";
 // Podoba popisku pod obrázkem varianty: "hidden" (A 1), "plain" (A obr. 1), "brackets" (A (obr.) 1).
-const IMAGE_LABEL_MODE = "plain";
+const IMAGE_LABEL_MODE = "hidden";
 
 function renderDefectDescription(descriptionText, tucneVSeznamu) {
   if (!descriptionText) return null;

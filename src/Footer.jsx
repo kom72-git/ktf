@@ -22,6 +22,7 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
   const currentPath = location.pathname;
   const isHelpActive = currentPath === "/napoveda";
   const isContactActive = currentPath === "/kontakt";
+  const isCreatorsActive = currentPath === "/tvurci";
   const isChecklistActive = currentPath === "/chybenka";
   // Po přechodu přes odkaz v patičce se stránka zobrazí od začátku.
   const scrollToTop = () => window.scrollTo({ top: 0 });
@@ -146,6 +147,17 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
     setLocalPassword("");
   };
 
+  const creatorsLink = (
+    <Link
+      to="/tvurci"
+      className={`footer-link${isCreatorsActive ? " footer-link-current" : ""}`}
+      aria-current={isCreatorsActive ? "page" : undefined}
+      onClick={scrollToTop}
+    >
+      Rytci a návrháři
+    </Link>
+  );
+
   const contactLink = (
     <Link
       to="/kontakt"
@@ -196,6 +208,8 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
                 Admin
               </a>
               <span className="footer-divider">|</span>
+              {creatorsLink}
+              <span className="footer-divider">|</span>
               {contactLink}
               <span className="footer-divider">|</span>
               {helpLink}
@@ -236,6 +250,8 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
                 </a>
               </span>
               <span className="footer-divider footer-divider-strong">||</span>
+              {creatorsLink}
+              <span className="footer-divider">|</span>
               {contactLink}
               <span className="footer-divider">|</span>
               {helpLink}

@@ -4,6 +4,7 @@
 import React from "react";
 import { replaceAbbreviations, formatPopisWithAll } from "../utils/formatovaniTextu.jsx";
 import { formatDateTimeDisplay, normalizeDatumVydani } from "../utils/formatovaniUdaju.js";
+import AuthorNames from "./TvurceJmena.jsx";
 import ImageSources from "./ImageSources.jsx";
 import LiteratureTextarea from "./LiteratureTextarea.jsx";
 import StudyBlockTextarea from "./StudyBlockTextarea.jsx";
@@ -345,6 +346,7 @@ export function StampTechnicalSpecSection({
         <span className="stamp-spec-label">Návrh</span>
         <span className="stamp-spec-value">
           {isEditingAll ? (
+            <>
             <div className="edit-field-row">
               <input
                 type="text"
@@ -360,6 +362,12 @@ export function StampTechnicalSpecSection({
                 className="ktf-btn-check"
               >✓</button>
             </div>
+            {editStampData.navrh && (
+              <div className="author-edit-line">
+                Karta autora: <AuthorNames value={editStampData.navrh} role="navrhar" isAdmin />
+              </div>
+            )}
+            </>
           ) : (
             renderTechnicalValue('navrh', resolvedNavrh)
           )}
@@ -369,6 +377,7 @@ export function StampTechnicalSpecSection({
         <span className="stamp-spec-label">Rytec</span>
         <span className="stamp-spec-value">
           {isEditingAll ? (
+            <>
             <div className="edit-field-row">
               <input
                 type="text"
@@ -384,6 +393,12 @@ export function StampTechnicalSpecSection({
                 className="ktf-btn-check"
               >✓</button>
             </div>
+            {editStampData.rytec && (
+              <div className="author-edit-line">
+                Karta autora: <AuthorNames value={editStampData.rytec} role="rytec" isAdmin />
+              </div>
+            )}
+            </>
           ) : (
             renderTechnicalValue('rytec', resolvedRytec)
           )}

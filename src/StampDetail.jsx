@@ -4,6 +4,7 @@ import ScrollTopButton from "./components/ScrollTopButton.jsx";
 import { apiFetch, getApiBase } from "./apiBase.js";
 import { Fancybox } from "@fancyapps/ui";
 import VariantTooltip from "./components/VariantTooltip.jsx";
+import AuthorNames from "./components/TvurceJmena.jsx";
 import {
   replaceAbbreviations,
   formatPopisWithAll,
@@ -223,6 +224,16 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     if (field === 'nominal') {
       const formatted = formatNominalDisplay(value);
       return typeof formatted === "string" ? replaceAbbreviations(formatted) : formatted;
+    }
+
+    if (field === 'navrh' || field === 'rytec') {
+      return (
+        <AuthorNames
+          value={value}
+          role={field === 'navrh' ? 'navrhar' : 'rytec'}
+          isAdmin={isAdmin && isEditingAll}
+        />
+      );
     }
 
     if (field === 'tiskovaForma') {

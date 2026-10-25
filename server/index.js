@@ -11,6 +11,7 @@ import {
   startAdminSession,
   verifyAdminPassword,
 } from "../api/_lib/adminAuth.js";
+import { saveAuthor } from "../api/_lib/tvurci.js";
 
 
 const app = express();
@@ -225,6 +226,36 @@ app.delete("/api/stamps/:id", async (req, res) => {
   } catch (err) {
     console.error("Chyba při mazání známky:", err);
     res.status(500).json({ error: "Chyba při mazání známky", details: err.message });
+  }
+});
+
+// Autoři (návrháři a rytci)
+app.get("/api/tvurci", async (req, res) => {
+  try {
+    res.json(await mongoose.connection.db.collection("tvurci").find({}).toArray());
+  } catch (err) {
+    res.status(500).json({ error: "Chyba při načítání autorů" });
+  }
+});
+
+app.post("/api/tvurci", async (req, res) => {
+  try {
+    const { error, author } = await saveAuthor(mongoose.connection.db.collection("tvurci"), req.body);
+    if (error) return res.status(400).json({ error });
+    res.json(author);
+  } catch (err) {
+    res.status(500).json({ error: "Chyba při ukládání autora" });
+  }
+});
+
+app.delete("/api/tvurci", async (req, res) => {
+  try {
+    const slug = String(req.query.slug || "");
+    if (!slug) return res.status(400).json({ error: "Chybí slug autora" });
+    await mongoose.connection.db.collection("tvurci").deleteOne({ slug });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: "Chyba při mazání autora" });
   }
 });
 

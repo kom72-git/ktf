@@ -3,6 +3,8 @@ dotenv.config();
 import mongoose from "mongoose";
 import { emissionToSlug } from "../src/utils/katalog.js";
 import { normalizeStampImagePath } from "../src/utils/obrazekCesta.js";
+import { autoFoto } from "../src/utils/tvurciFoto.js";
+import { collectAuthors, sortedRoleKeys, roleLabel } from "./_lib/tvurci.js";
 import { formatDatumVydaniDisplay } from "../src/utils/formatovaniUdaju.js";
 
 // Vrací index.html s doplněnými náhledovými značkami (og:*) pro sdílení odkazů
@@ -59,7 +61,7 @@ const getEmissionName = (stamp) => {
   return group || stamp.emise;
 };
 
-async function resolveMeta(query) {
+async function resolveMeta(query, origin) {
   await connectToDatabase();
   const collection = mongoose.connection.db.collection("stamps");
 
@@ -85,6 +87,41 @@ async function resolveMeta(query) {
       description: `Československé poštovní známky emise ${name}${year ? ` z roku ${year}` : ""}. Prohlédněte si katalogová čísla a jejich varianty.`,
       image: normalizeStampImagePath(first.obrazek, first.rok),
       path: `/emise/${query.slug}`,
+    };
+  }
+
+  if (query.type === "tvurce" && query.slug) {
+    const slug = String(query.slug);
+    const stamps = await collection.find(publicStampsQuery, { projection: { navrh: 1, rytec: 1 } }).toArray();
+    const entry = collectAuthors(stamps).get(slug);
+    if (!entry) return { notFound: true };
+    const card = await mongoose.connection.db.collection("tvurci").findOne({ slug });
+    const name = clean(card?.jmeno || entry.name);
+    const roleText = sortedRoleKeys(entry.roles)
+      .map((r) => roleLabel(r, name)).join(" a ");
+    const countText = `${entry.count} ${entry.count === 1 ? "známka" : entry.count < 5 ? "známky" : "známek"}`;
+    const intro = clean(String(card?.popis ?? "").replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, "$1"));
+    const description = `${name} – ${roleText} československých poštovních známek. ${countText} v katalogu.${intro ? ` ${intro}` : ""}`;
+
+    // Fotka podle karty, jinak podle jména; chybí-li soubor, použije se logo.
+    let photoPath = card?.foto ? (/^\//.test(card.foto) ? card.foto : `/${card.foto}`) : autoFoto(name);
+    if (!/^\/img\//.test(photoPath)) photoPath = "";
+    if (photoPath) {
+      try {
+        const head = await fetch(`${origin}${photoPath}`, { method: "HEAD" });
+        if (!head.ok) photoPath = "";
+      } catch {
+        photoPath = "";
+      }
+    }
+    return {
+      title: `${name} – ${roleText} známek | Filatelium`,
+      shareTitle: name,
+      shareDescription: `${roleText[0].toUpperCase()}${roleText.slice(1)} československých známek · ${countText} v katalogu.`,
+      description,
+      image: photoPath,
+      path: `/tvurce/${slug}`,
+      person: { name, jobTitle: roleText, description: intro },
     };
   }
 
@@ -115,6 +152,20 @@ function injectMeta(html, meta) {
     .replace(/<meta (?:property="og:image(?::width|:height)?"|name="twitter:image")[^>]*>\s*/g, "")
     .replace(/<meta name="twitter:card"[^>]*>/, `<meta name="twitter:card" content="summary" />\n    <meta property="og:image" content="${image}" />\n    <meta property="og:image:width" content="${size}" />\n    <meta property="og:image:height" content="${size}" />\n    <meta name="twitter:image" content="${image}" />`);
 
+  if (meta.person) {
+    const person = {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      name: meta.person.name,
+      jobTitle: meta.person.jobTitle,
+      url: SITE_URL + meta.path,
+      ...(meta.person.description ? { description: meta.person.description } : {}),
+      ...(hasImage ? { image: SITE_URL + meta.image } : {}),
+    };
+    const json = JSON.stringify(person).replace(/</g, "\\u003c");
+    out = out.replace("</head>", `  <script type="application/ld+json">${json}</script>\n  </head>`);
+  }
+
   return out;
 }
 
@@ -132,7 +183,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const meta = await resolveMeta(req.query || {});
+    const meta = await resolveMeta(req.query || {}, `${proto}://${host}`);
+    if (meta?.notFound) {
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Cache-Control", "public, s-maxage=600");
+      return res.status(404).send(html);
+    }
     if (meta) html = injectMeta(html, meta);
   } catch (err) {
     // Při chybě DB se vrátí běžné index.html, aplikace funguje dál.

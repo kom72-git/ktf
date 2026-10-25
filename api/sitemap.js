@@ -1,10 +1,11 @@
 import dotenv from "dotenv";
 dotenv.config();
 import mongoose from "mongoose";
+import { collectAuthors } from "./_lib/tvurci.js";
 import { emissionToSlug } from "../src/utils/katalog.js";
 
 const SITE_URL = "https://www.filatelium.cz";
-const PUBLIC_STATIC_PATHS = ["/napoveda", "/kontakt"];
+const PUBLIC_STATIC_PATHS = ["/tvurci", "/napoveda", "/kontakt"];
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://<username>:<password>@cluster0.3y2ox5f.mongodb.net/?retryWrites=true&w=majority";
 let cachedDb = null;
 
@@ -58,6 +59,8 @@ function buildSitemap(stamps) {
     newest = Math.max(newest, time);
   }
 
+  const authorPages = [...collectAuthors(stamps).keys()].sort();
+
   const entries = [
     { path: "/", time: newest },
     ...PUBLIC_STATIC_PATHS.map(path => ({ path, time: 0 })),
@@ -65,6 +68,7 @@ function buildSitemap(stamps) {
   [...emissionPages.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .forEach(([path, time]) => entries.push({ path, time }));
+  authorPages.forEach((slug) => entries.push({ path: `/tvurce/${slug}`, time: 0 }));
 
   const urls = entries.map(({ path, time }) => {
     const lastmod = toDate(time);
@@ -84,7 +88,7 @@ export default async function handler(req, res) {
     await connectToDatabase();
     const stamps = await mongoose.connection.db
       .collection("stamps")
-      .find(publicStampsQuery, { projection: { emise: 1, emiseSkupina: 1, rok: 1, publishedAt: 1 } })
+      .find(publicStampsQuery, { projection: { emise: 1, emiseSkupina: 1, rok: 1, publishedAt: 1, navrh: 1, rytec: 1 } })
       .toArray();
 
     res.setHeader("Content-Type", "application/xml; charset=utf-8");
