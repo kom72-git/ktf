@@ -62,6 +62,7 @@ export default function AuthorForm({ name, author, onSaved }) {
         <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
         <div className="ktf-tip-box">
           <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Odkaz v popisu: napiš <code>[text odkazu](https://adresa)</code>, např. <code>[Infofila](https://www.infofila.cz/vaclav-fajt-r-2-c-19)</code>. V hranatých závorkách je to, co čtenář uvidí, v kulatých adresa.</span>
+          <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Formátování: <code>&lt;b&gt;&lt;/b&gt;</code> tučně ✧ <code>&lt;em&gt;&lt;/em&gt;</code> kurzíva ✧ <code>&lt;u&gt;&lt;/u&gt;</code> podtržení ✧ <code>&lt;br /&gt;</code> nový řádek ✧ <code>&lt;sup&gt;&lt;/sup&gt;</code> horní index ✧ <code>&lt;sub&gt;&lt;/sub&gt;</code> dolní index</span>
           <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Pole Zdroj textu: vlož celou adresu a zobrazí se jen doména (např. „infofila.cz"). Chceš-li vlastní název, použij stejný zápis <code>[název](https://adresa)</code>.</span>
         </div>
       </div>

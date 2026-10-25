@@ -100,7 +100,7 @@ async function resolveMeta(query, origin) {
     const roleText = sortedRoleKeys(entry.roles)
       .map((r) => roleLabel(r, name)).join(" a ");
     const countText = `${entry.count} ${entry.count === 1 ? "známka" : entry.count < 5 ? "známky" : "známek"}`;
-    const intro = clean(String(card?.popis ?? "").replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, "$1"));
+    const intro = clean(String(card?.popis ?? "").replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, "$1").replace(/<br\s*\/?>/gi, " ").replace(/<\/?(?:b|strong|i|em|u|sup|sub)\s*>/gi, ""));
     const description = `${name} – ${roleText} československých poštovních známek. ${countText} v katalogu.${intro ? ` ${intro}` : ""}`;
 
     // Fotka podle karty, jinak podle jména; chybí-li soubor, použije se logo.
