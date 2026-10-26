@@ -9,6 +9,7 @@ export default function AuthorForm({ name, author, onSaved }) {
     foto: author?.foto || autoFoto(name),
     narozen: author?.narozen || "",
     zemrel: author?.zemrel || "",
+    dalsi: author?.dalsi || "",
     popis: author?.popis || "",
     zdrojUrl: author?.zdrojUrl || "",
   }));
@@ -55,6 +56,10 @@ export default function AuthorForm({ name, author, onSaved }) {
         </label>
       </div>
       <label>
+        Další označení (oddělená čárkou)
+        <input type="text" placeholder="např. malíř, grafik" value={form.dalsi} onChange={setField("dalsi")} />
+      </label>
+      <label>
         Popis
         <textarea rows="12" value={form.popis} onChange={setField("popis")} />
       </label>
@@ -63,12 +68,12 @@ export default function AuthorForm({ name, author, onSaved }) {
         <div className="ktf-tip-box">
           <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Odkaz v popisu: napiš <code>[text odkazu](https://adresa)</code>, např. <code>[Infofila](https://www.infofila.cz/vaclav-fajt-r-2-c-19)</code>. V hranatých závorkách je to, co čtenář uvidí, v kulatých adresa.</span>
           <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Formátování: <code>&lt;b&gt;&lt;/b&gt;</code> tučně ✧ <code>&lt;em&gt;&lt;/em&gt;</code> kurzíva ✧ <code>&lt;u&gt;&lt;/u&gt;</code> podtržení ✧ <code>&lt;br /&gt;</code> nový řádek ✧ <code>&lt;sup&gt;&lt;/sup&gt;</code> horní index ✧ <code>&lt;sub&gt;&lt;/sub&gt;</code> dolní index</span>
-          <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Pole Zdroj textu: vlož celou adresu a zobrazí se jen doména (např. „infofila.cz"). Chceš-li vlastní název, použij stejný zápis <code>[název](https://adresa)</code>.</span>
+          <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Pole Zdroje textu: každý zdroj dej na nový řádek. Vlož celou adresu a zobrazí se jen doména (např. „infofila.cz"). Chceš-li vlastní název, použij stejný zápis <code>[název](https://adresa)</code>.</span>
         </div>
       </div>
       <label>
-        Zdroj textu – odkaz
-        <input type="text" placeholder="https://…  nebo  [název](https://…)" value={form.zdrojUrl} onChange={setField("zdrojUrl")} />
+        Zdroje textu – odkazy (každý na nový řádek)
+        <textarea rows={3} placeholder="https://…  nebo  [název](https://…)" value={form.zdrojUrl} onChange={setField("zdrojUrl")} />
       </label>
       {error && <div className="author-pop-error">{error}</div>}
       {saving && <div>Ukládám…</div>}

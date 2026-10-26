@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { emissionToSlug } from "../src/utils/katalog.js";
 import { normalizeStampImagePath } from "../src/utils/obrazekCesta.js";
 import { autoFoto } from "../src/utils/tvurciFoto.js";
-import { collectAuthors, sortedRoleKeys, roleLabel } from "./_lib/tvurci.js";
+import { collectAuthors, sortedRoleKeys, roleLabel, extraLabels } from "./_lib/tvurci.js";
 import { formatDatumVydaniDisplay } from "../src/utils/formatovaniUdaju.js";
 
 // Vrací index.html s doplněnými náhledovými značkami (og:*) pro sdílení odkazů
@@ -98,7 +98,7 @@ async function resolveMeta(query, origin) {
     const card = await mongoose.connection.db.collection("tvurci").findOne({ slug });
     const name = clean(card?.jmeno || entry.name);
     const roleText = sortedRoleKeys(entry.roles)
-      .map((r) => roleLabel(r, name)).join(" a ");
+      .map((r) => roleLabel(r, name)).concat(extraLabels(card)).join(" a ");
     const countText = `${entry.count} ${entry.count === 1 ? "známka" : entry.count < 5 ? "známky" : "známek"}`;
     const intro = clean(String(card?.popis ?? "").replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, "$1").replace(/<br\s*\/?>/gi, " ").replace(/<\/?(?:b|strong|i|em|u|sup|sub)\s*>/gi, ""));
     const description = `${name} – ${roleText} československých poštovních známek. ${countText} v katalogu.${intro ? ` ${intro}` : ""}`;

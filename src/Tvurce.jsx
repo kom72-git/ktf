@@ -8,10 +8,10 @@ import { emissionToSlug } from "./utils/katalog.js";
 import { normalizeStampImagePath } from "./utils/obrazekCesta.js";
 import { setPageMetadata } from "./utils/seo.js";
 import ScrollTopButton from "./components/ScrollTopButton.jsx";
-import { renderPopis, parseZdroj } from "./utils/popisTvurce.jsx";
+import { renderPopis, parseZdroje, renderZdroje } from "./utils/popisTvurce.jsx";
 import AuthorForm from "./components/TvurceForm.jsx";
 import { useAdminSession } from "./utils/useAdminSession.js";
-import { loadAuthors, fotoSrc, autoFoto, Lifespan, roleLabel, sortedRoles } from "./components/TvurceJmena.jsx";
+import { loadAuthors, fotoSrc, autoFoto, Lifespan, allRoleLabels } from "./components/TvurceJmena.jsx";
 
 function splitNames(value) {
   return String(value || "")
@@ -64,9 +64,9 @@ export default function Tvurce() {
   useEffect(() => {
     if (loading) return;
     setPageMetadata({
-      title: name ? `${name} – ${sortedRoles(roles).map((r) => roleLabel(r, name)).join(" a ")} známek | Filatelium` : "Autor nenalezen | Filatelium",
+      title: name ? `${name} – ${allRoleLabels(roles, name, card).join(" a ")} známek | Filatelium` : "Autor nenalezen | Filatelium",
       description: name
-        ? `${name} – ${sortedRoles(roles).map((r) => roleLabel(r, name)).join(" a ")} československých poštovních známek. ${mine.length} v katalogu.`
+        ? `${name} – ${allRoleLabels(roles, name, card).join(" a ")} československých poštovních známek. ${mine.length} v katalogu.`
         : undefined,
       path: `/tvurce/${slug}`,
       noIndex: unknown,
@@ -112,16 +112,16 @@ export default function Tvurce() {
                   )}
                 </div>
                 <h1 id="author-page-title" className="detail-title-text">{name}</h1>
-                <div className="author-pop-role">{sortedRoles(roles).map((r) => roleLabel(r, name)).join(", ")}</div>
+                <div className="author-pop-role">{allRoleLabels(roles, name, card).join(", ")}</div>
                 {editing ? (
                   <AuthorForm name={name} author={card} onSaved={(saved) => { setAuthors((list) => [...(list || []).filter((a) => a.slug !== saved.slug), saved]); setEditing(false); setFotoBroken(false); }} />
                 ) : (
                   <>
                     <Lifespan author={card} />
                     {card?.popis ? <p className="author-page-text">{renderPopis(card.popis)}</p> : <p className="author-pop-empty">O tomto tvůrci zatím nemáme další informace.</p>}
-                    {card?.popis && parseZdroj(card.zdrojUrl) && (
+                    {card?.popis && parseZdroje(card.zdrojUrl).length > 0 && (
                       <p className="author-page-source">
-                        Zdroj: <a href={parseZdroj(card.zdrojUrl).url} target="_blank" rel="noopener noreferrer nofollow">{parseZdroj(card.zdrojUrl).label}</a>
+                        {parseZdroje(card.zdrojUrl).length > 1 ? "Zdroje" : "Zdroj"}: {renderZdroje(card.zdrojUrl)}
                       </p>
                     )}
                   </>

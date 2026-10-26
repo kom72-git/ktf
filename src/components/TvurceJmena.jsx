@@ -5,7 +5,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from
 import { Link } from "react-router-dom";
 import { apiFetch, getApiBase } from "../apiBase.js";
 import { emissionToSlug } from "../utils/katalog.js";
-import { plainPopis, parseZdroj } from "../utils/popisTvurce.jsx";
+import { plainPopis, parseZdroje, renderZdroje } from "../utils/popisTvurce.jsx";
 import { autoFoto } from "../utils/tvurciFoto.js";
 
 export { autoFoto };
@@ -32,6 +32,10 @@ const stampsWord = (n, name) => {
 
 const ROLE_LABELS_FEMALE = { navrhar: "návrhářka", rytec: "rytkyně" };
 export const roleLabel = (role, name) => (isFemaleName(name) ? ROLE_LABELS_FEMALE : ROLE_LABELS)[role];
+
+// Další označení z karty tvůrce (např. "malíř, grafik")
+export const extraLabels = (card) => String(card?.dalsi || "").split(",").map((t) => t.trim()).filter(Boolean);
+export const allRoleLabels = (roles, name, card) => [...sortedRoles(roles).map((r) => roleLabel(r, name)), ...extraLabels(card)];
 
 export const ROLE_LABELS = { navrhar: "návrhář", rytec: "rytec" };
 
@@ -207,8 +211,8 @@ function AuthorPopover({ name, role, author, onClose }) {
   const slugLink = emissionToSlug(name);
   const info = counts?.[slugLink];
   const shownRoles = info
-    ? sortedRoles(info.roles).map((r) => roleLabel(r, name)).join(", ")
-    : roleLabel(role, name);
+    ? allRoleLabels(info.roles, name, author).join(", ")
+    : [roleLabel(role, name), ...extraLabels(author)].join(", ");
 
   return (
     <div className="author-pop" role="dialog" aria-label={name} ref={ref}>
@@ -227,9 +231,9 @@ function AuthorPopover({ name, role, author, onClose }) {
             <Lifespan author={author} />
             <div className="author-pop-role">{shownRoles}</div>
             {author?.popis ? <p>{shortText(plainPopis(author.popis))}</p> : !author && <p className="author-pop-empty">O tomto tvůrci zatím nemáme další informace.</p>}
-            {author?.popis && parseZdroj(author.zdrojUrl) && (
+            {author?.popis && parseZdroje(author.zdrojUrl).length > 0 && (
               <div className="author-pop-source">
-                Zdroj: <a href={parseZdroj(author.zdrojUrl).url} target="_blank" rel="noopener noreferrer nofollow">{parseZdroj(author.zdrojUrl).label}</a>
+                {parseZdroje(author.zdrojUrl).length > 1 ? "Zdroje" : "Zdroj"}: {renderZdroje(author.zdrojUrl)}
               </div>
             )}
             <div className="author-pop-actions-row">

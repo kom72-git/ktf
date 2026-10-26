@@ -59,6 +59,22 @@ export function plainPopis(text) {
   return String(text || "").replace(LINK_RE, "$1").replace(TAG_RE, (m) => (/^<br/i.test(m) ? " " : ""));
 }
 
+// Více zdrojů: každý na vlastním řádku
+export function parseZdroje(value) {
+  return String(value || "").split(/\r?\n/).map(parseZdroj).filter(Boolean);
+}
+
+// Odkazy na zdroje oddělené čárkou
+export function renderZdroje(value) {
+  const list = parseZdroje(value);
+  return list.map((z, i) => (
+    <React.Fragment key={i}>
+      {i > 0 && ", "}
+      <a href={z.url} target="_blank" rel="noopener noreferrer nofollow">{z.label}</a>
+    </React.Fragment>
+  ));
+}
+
 // Zdroj textu: buď čistá adresa, nebo [název](adresa)
 export function parseZdroj(value) {
   const v = String(value || "").trim();

@@ -1,10 +1,10 @@
 import { emissionToSlug } from "../../src/utils/katalog.js";
 
 // Společná logika kolekce "tvurci" pro Vercel (api/tvurci.js) i lokální server.
-// Dokument: { slug, jmeno, role: ["navrhar","rytec"], foto, narozen, zemrel, popis, zdroj, zdrojUrl }
+// Dokument: { slug, jmeno, role: ["navrhar","rytec"], foto, narozen, zemrel, popis, zdroj, zdrojUrl, dalsi (další označení oddělená čárkou) }
 
 const ROLES = ["navrhar", "rytec"];
-const TEXT_FIELDS = ["jmeno", "foto", "narozen", "zemrel", "popis", "zdroj", "zdrojUrl"];
+const TEXT_FIELDS = ["jmeno", "foto", "narozen", "zemrel", "popis", "zdroj", "zdrojUrl", "dalsi"];
 
 export function authorSlug(name) {
   return emissionToSlug(String(name || "").trim());
@@ -72,4 +72,9 @@ const ROLE_NAMES = { navrhar: ["návrhář", "návrhářka"], rytec: ["rytec", "
 // České ženské příjmení končí na „á"
 export function roleLabel(role, name) {
   return ROLE_NAMES[role][/á$/i.test(String(name || "").trim()) ? 1 : 0];
+}
+
+// Další označení z karty tvůrce (např. "malíř, grafik")
+export function extraLabels(card) {
+  return String(card?.dalsi || "").split(",").map((t) => t.trim()).filter(Boolean);
 }
