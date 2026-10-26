@@ -2604,7 +2604,7 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
 
 
 /* ========================== 11. @media ========================== */
-@media (max-width: 1320px) {
+@media (max-width: 1180px) {
   .stamp-list-layout {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -3330,6 +3330,7 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   padding: 0;
   margin: 0;
   display: grid;
+  width: 100%;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0 16px;
 }
@@ -3380,7 +3381,23 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
 .author-stamps-role { align-self: end; padding-top: 4px; }
 @media (max-width: 1100px) { .author-stamps { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 820px) { .author-stamps { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 520px) { .author-stamps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; } }
+@media (max-width: 680px) {
+  .stamp-detail-block.author-page { padding-left: 16px; padding-right: 16px; }
+  .author-stamps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+  .author-stamps a {
+    grid-row: auto;
+    grid-template-rows: none;
+    grid-template-columns: 84px minmax(0, 1fr);
+    column-gap: 14px;
+    align-content: center;
+    margin-bottom: 12px;
+    padding: 12px;
+  }
+  .author-stamps-img { grid-column: 1; grid-row: 1 / span 3; height: 84px; margin-bottom: 0; }
+  .author-stamps-title, .author-stamps-meta { grid-column: 2; }
+  .author-stamps-role { align-self: start; padding-top: 0; }
+}
+@media (max-width: 520px) { .author-stamps { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 560px) {
   .author-page-photo { float: none; margin: 0 0 12px; }
 }
@@ -3468,4 +3485,46 @@ a.study-note-reference-link:hover,
 .author-name:focus-visible {
   color: #1e40af;
   text-decoration-thickness: 2px;
+}
+
+/* Seznam emisí na úzkých displejích: 2 sloupce, pak 1 sloupec s textem vpravo, pak 1 sloupec s textem pod obrázkem */
+@media (max-width: 680px) {
+  .stamp-list-layout { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .stamp-list-layout .stamp-card { width: 100%; max-width: none; min-width: 0; }
+}
+@media (max-width: 500px) {
+  .stamp-list-layout { grid-template-columns: minmax(0, 1fr); }
+}
+@media (min-width: 434px) and (max-width: 500px) {
+  .stamp-list-layout .stamp-card {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    column-gap: 14px;
+    row-gap: 2px;
+    align-content: center;
+    min-height: 0;
+    height: auto;
+    padding: 12px;
+    box-sizing: border-box;
+  }
+  .stamp-list-layout .stamp-card .stamp-img-bg {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: auto;
+    min-height: 0;
+    height: 96px;
+    max-height: 96px;
+    margin: 0;
+  }
+  .stamp-list-layout .stamp-card .stamp-img-bg img { max-height: 100%; max-width: 100%; object-fit: contain; }
+  .stamp-list-layout .stamp-card .stamp-title { grid-column: 2; grid-row: 1; align-self: end; text-align: left; white-space: normal; }
+  .stamp-list-layout .stamp-card .stamp-bottom {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 10px;
+  }
+  .stamp-list-layout .stamp-card .stamp-bottom > div { min-width: 0; }
 }

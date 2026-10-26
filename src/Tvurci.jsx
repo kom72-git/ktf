@@ -7,7 +7,7 @@ import Footer from "./Footer";
 import { apiFetch, getApiBase } from "./apiBase.js";
 import { emissionToSlug } from "./utils/katalog.js";
 import { autoFoto } from "./utils/tvurciFoto.js";
-import { loadAuthors, fotoSrc, splitNames, allRoleLabels } from "./components/TvurceJmena.jsx";
+import { loadAuthors, fotoSrc, splitNames, roleLabel, sortedRoles } from "./components/TvurceJmena.jsx";
 
 const surnameKey = (name) => {
   const parts = String(name).trim().split(/\s+/);
@@ -106,7 +106,7 @@ export default function Tvurci() {
                           <AuthorPhoto src={a.card?.foto ? fotoSrc(a.card.foto) : autoFoto(a.name)} />
                           <span className="authors-list-name">{a.card?.jmeno || a.name}</span>
                           <span className="authors-list-meta">
-                            {allRoleLabels(a.roles, a.card?.jmeno || a.name, a.card).join(", ")} · {a.ids.size}
+                            {sortedRoles(a.roles).map((r) => `${roleLabel(r, a.card?.jmeno || a.name)} (${a.roles.get(r)})`).join(", ")}
                           </span>
                         </Link>
                       </li>
