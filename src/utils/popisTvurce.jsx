@@ -1,5 +1,5 @@
 // Popis tvůrce: odkazy [text](https://adresa) a značky <b> <strong> <i> <em> <u> <sup> <sub> <br />.
-import React from "react";
+import React, { useEffect, useRef } from "react";
 
 const LINK_RE = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
 const TAG_RE = /<\/?(?:b|strong|i|em|u|sup|sub)\s*>|<br\s*\/?>/gi;
@@ -67,23 +67,86 @@ export function parseZdroje(value) {
 // Odkazy na zdroje oddělené čárkou
 export function renderZdroje(value) {
   const list = parseZdroje(value);
-  return list.map((z, i) => (
-    <React.Fragment key={i}>
+  const groups = new Map();
+  list.forEach((source, index) => {
+    let domain;
+    try {
+      domain = new URL(source.url).hostname.replace(/^www\./i, "");
+    } catch {
+      domain = `${source.label}-${index}`;
+    }
+    const group = groups.get(domain) || [];
+    group.push(source);
+    groups.set(domain, group);
+  });
+
+  return Array.from(groups, ([domain, sources], i) => (
+    <React.Fragment key={domain}>
       {i > 0 && ", "}
-      <a href={z.url} target="_blank" rel="noopener noreferrer nofollow">{z.label}</a>
+      {sources.length === 1 ? (
+        <a href={sources[0].url} target="_blank" rel="noopener noreferrer nofollow">{sources[0].label}</a>
+      ) : (
+        <SourceGroup key={domain} domain={domain} sources={sources} />
+      )}
     </React.Fragment>
   ));
+}
+
+function SourceGroup({ domain, sources }) {
+  const detailsRef = useRef(null);
+
+  useEffect(() => {
+    const details = detailsRef.current;
+    if (!details) return undefined;
+
+    const closeOnOutsideClick = (event) => {
+      if (!details.contains(event.target)) details.open = false;
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape" && details.open) {
+        details.open = false;
+        details.querySelector("summary")?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick, true);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick, true);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, []);
+
+  return (
+    <details className="author-source-group" ref={detailsRef}>
+      <summary>{domain} ({sources.length})</summary>
+      <div className="author-source-links">
+        {sources.map((source, index) => {
+          let label = source.label;
+          try {
+            const url = new URL(source.url);
+            const path = `${url.pathname}${url.search}${url.hash}`;
+            if (!source.customLabel) label = `...${path}`;
+          } catch {
+            label = source.url;
+          }
+          return (
+            <a key={`${source.url}-${index}`} href={source.url} title={source.url} target="_blank" rel="noopener noreferrer nofollow">{label}</a>
+          );
+        })}
+      </div>
+    </details>
+  );
 }
 
 // Zdroj textu: buď čistá adresa, nebo [název](adresa)
 export function parseZdroj(value) {
   const v = String(value || "").trim();
   const m = v.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
-  if (m) return { label: m[1], url: m[2] };
+  if (m) return { label: m[1], url: m[2], customLabel: true };
   if (/^https?:\/\//i.test(v)) {
     let label = v;
     try { label = new URL(v).hostname.replace(/^www\./, ""); } catch { /* ponechat adresu */ }
-    return { label, url: v };
+    return { label, url: v, customLabel: false };
   }
   return null;
 }

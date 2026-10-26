@@ -3220,8 +3220,7 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   display: block;
   font-size: 15px;
 }
-.author-pop-dates,
-.author-pop-source {
+.author-pop-dates {
   color: #777;
   font-size: 12px;
 }
@@ -3320,6 +3319,7 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   line-height: 1.2;
   margin: 0 0 4px;
 }
+.author-page-head > .author-pop-role { margin-bottom: 10px; }
 .author-page-photo {
   width: 160px;
   float: left;
@@ -3403,11 +3403,47 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
 }
 .author-page-source { color: #777; font-size: 13px; margin: 6px 0 0; }
 .author-page-source a { color: inherit; text-decoration: underline; }
+.author-source-group { display: inline-block; position: relative; }
+.author-source-group summary { cursor: pointer; list-style: none; text-decoration: underline; }
+.author-source-group summary::-webkit-details-marker { display: none; }
+.author-source-group summary::marker { content: ""; }
+.author-source-links {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 3000;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 7px 9px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  overflow-wrap: anywhere;
+}
+.author-source-group[open] .author-source-links { display: block; }
+.author-source-links a {
+  display: block;
+  position: relative;
+  padding-left: 8px;
+}
+.author-source-links a::before {
+  content: "";
+  position: absolute;
+  top: 0.62em;
+  left: 1px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.author-source-links a + a { margin-top: 4px; }
 .author-pop:not(.is-editing) { display: block; }
 .author-pop:not(.is-editing)::after { content: ""; display: block; clear: both; }
 .author-pop:not(.is-editing) .author-pop-photo { float: left; margin: 0 12px 6px 0; }
 .author-pop:not(.is-editing) .author-pop-info { display: block; }
-.author-pop-source a { color: inherit; text-decoration: underline; }
 .author-edit-form { display: flex; flex-direction: column; gap: 10px; clear: both; width: 100%; }
 .author-edit-form input, .author-edit-form textarea { width: 100%; box-sizing: border-box; }
 .author-edit-form label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #555; }
@@ -3453,6 +3489,7 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
 .authors-group .authors-list { margin-top: 12px; }
 .authors-group, .authors-letters { width: 100%; box-sizing: border-box; }
 .author-page-text { white-space: pre-line; }
+.author-page-head > .author-page-text { margin-top: 22px; }
 
 /* Tlačítka na stránce tvůrce ve stejné výšce */
 .author-page .button-row > .back-btn,

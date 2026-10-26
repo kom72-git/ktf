@@ -5,7 +5,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from
 import { Link } from "react-router-dom";
 import { apiFetch, getApiBase } from "../apiBase.js";
 import { emissionToSlug } from "../utils/katalog.js";
-import { plainPopis, parseZdroje, renderZdroje } from "../utils/popisTvurce.jsx";
+import { plainPopis } from "../utils/popisTvurce.jsx";
 import { autoFoto } from "../utils/tvurciFoto.js";
 
 export { autoFoto };
@@ -231,11 +231,6 @@ function AuthorPopover({ name, role, author, onClose }) {
             <Lifespan author={author} />
             <div className="author-pop-role">{shownRoles}</div>
             {author?.popis ? <p>{shortText(plainPopis(author.popis))}</p> : !author && <p className="author-pop-empty">O tomto tvůrci zatím nemáme další informace.</p>}
-            {author?.popis && parseZdroje(author.zdrojUrl).length > 0 && (
-              <div className="author-pop-source">
-                {parseZdroje(author.zdrojUrl).length > 1 ? "Zdroje" : "Zdroj"}: {renderZdroje(author.zdrojUrl)}
-              </div>
-            )}
             <div className="author-pop-actions-row">
               {slugLink && (
                 <Link className="author-pop-link" to={`/tvurce/${slugLink}`}>

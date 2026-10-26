@@ -120,9 +120,9 @@ export default function Tvurce() {
                     <Lifespan author={card} />
                     {card?.popis ? <p className="author-page-text">{renderPopis(card.popis)}</p> : <p className="author-pop-empty">O tomto tvůrci zatím nemáme další informace.</p>}
                     {card?.popis && parseZdroje(card.zdrojUrl).length > 0 && (
-                      <p className="author-page-source">
+                      <div className="author-page-source">
                         {parseZdroje(card.zdrojUrl).length > 1 ? "Zdroje" : "Zdroj"}: {renderZdroje(card.zdrojUrl)}
-                      </p>
+                      </div>
                     )}
                   </>
                 )}
