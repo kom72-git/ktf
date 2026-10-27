@@ -60,13 +60,15 @@ export default function Tvurce() {
   const unknown = !loading && !foundName;
   const name = foundName;
   const fotoUrl = card?.foto ? fotoSrc(card.foto) : name ? autoFoto(name) : "";
+  const creatorRoles = allRoleLabels(roles, name, card);
+  const roleSummary = creatorRoles.length ? creatorRoles.join(" a ") : "tvůrce";
 
   useEffect(() => {
     if (loading) return;
     setPageMetadata({
-      title: name ? `${name} – ${allRoleLabels(roles, name, card).join(" a ")} známek | Filatelium` : "Autor nenalezen | Filatelium",
+      title: name ? `${name} – ${roleSummary} známek | Filatelium` : "Autor nenalezen | Filatelium",
       description: name
-        ? `${name} – ${allRoleLabels(roles, name, card).join(" a ")} československých poštovních známek. ${mine.length} v katalogu.`
+        ? `${name} – ${roleSummary} československých poštovních známek. ${mine.length} v katalogu.`
         : undefined,
       path: `/tvurce/${slug}`,
       noIndex: unknown,
@@ -81,7 +83,7 @@ export default function Tvurce() {
         <section className="stamp-detail-block author-page" aria-labelledby="author-page-title">
           <div className="button-row">
             <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Zpět</button>
-            <Link to="/tvurci" className="back-btn author-all-link">Rytci a návrháři</Link>
+            <Link to="/tvurci" className="back-btn author-all-link">Tvůrci známek</Link>
             {isAdmin && !loading && !unknown && (
               <>
                 <button
@@ -112,7 +114,7 @@ export default function Tvurce() {
                   )}
                 </div>
                 <h1 id="author-page-title" className="detail-title-text">{name}</h1>
-                <div className="author-pop-role">{allRoleLabels(roles, name, card).join(", ")}</div>
+                {creatorRoles.length > 0 && <div className="author-pop-role">{creatorRoles.join(", ")}</div>}
                 {editing ? (
                   <AuthorForm name={name} author={card} onSaved={(saved) => { setAuthors((list) => [...(list || []).filter((a) => a.slug !== saved.slug), saved]); setEditing(false); setFotoBroken(false); }} />
                 ) : (

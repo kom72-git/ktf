@@ -1,4 +1,4 @@
-// Seznam všech návrhářů a rytců, kteří se vyskytují ve známkách.
+// Seznam všech tvůrců, kteří se vyskytují ve známkách.
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import ScrollTopButton from "./components/ScrollTopButton.jsx";
@@ -85,7 +85,7 @@ export default function Tvurci() {
         <section className="stamp-detail-block author-page" aria-labelledby="authors-title">
           <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Zpět</button>
           <div className="detail-title">
-            <h1 id="authors-title" className="detail-title-text">Rytci a návrháři</h1>
+            <h1 id="authors-title" className="detail-title-text">Tvůrci známek</h1>
           </div>
           {!authors ? (
             <p>Načítám…</p>
@@ -106,7 +106,7 @@ export default function Tvurci() {
                           <AuthorPhoto src={a.card?.foto ? fotoSrc(a.card.foto) : autoFoto(a.name)} />
                           <span className="authors-list-name">{a.card?.jmeno || a.name}</span>
                           <span className="authors-list-meta">
-                            {sortedRoles(a.roles).map((r) => `${roleLabel(r, a.card?.jmeno || a.name)} (${a.roles.get(r)})`).join(", ")}
+                            {sortedRoles(a.roles).map((r) => `${r === "navrhar" ? "návrh" : roleLabel(r, a.card?.jmeno || a.name)} (${a.roles.get(r)})`).join(", ")}
                           </span>
                         </Link>
                       </li>

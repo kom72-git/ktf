@@ -50,8 +50,8 @@ function StaticPageMetadata() {
         description: "Kontaktní e-mail na Filatelium.",
       },
       "/tvurci": {
-        title: "Rytci a návrháři známek | Filatelium",
-        description: "Přehled návrhářů a rytců československých poštovních známek z let 1945–1992 a jejich známek v katalogu Filatelium.",
+        title: "Tvůrci známek | Filatelium",
+        description: "Přehled tvůrců československých poštovních známek z let 1945–1992 a jejich známek v katalogu Filatelium.",
       },
       "/chybenka": {
         title: "Chyběnka | Filatelium",

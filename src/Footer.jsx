@@ -154,7 +154,7 @@ export default function Footer({ isAdmin, onAdminLogin, onAdminLogout }) {
       aria-current={isCreatorsActive ? "page" : undefined}
       onClick={scrollToTop}
     >
-      Rytci a návrháři
+      Tvůrci známek
     </Link>
   );
 

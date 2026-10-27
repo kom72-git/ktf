@@ -35,7 +35,10 @@ export const roleLabel = (role, name) => (isFemaleName(name) ? ROLE_LABELS_FEMAL
 
 // Další označení z karty tvůrce (např. "malíř, grafik")
 export const extraLabels = (card) => String(card?.dalsi || "").split(",").map((t) => t.trim()).filter(Boolean);
-export const allRoleLabels = (roles, name, card) => [...sortedRoles(roles).map((r) => roleLabel(r, name)), ...extraLabels(card)];
+export const allRoleLabels = (roles, name, card) => [
+  ...sortedRoles(roles).filter((r) => r !== "navrhar").map((r) => roleLabel(r, name)),
+  ...extraLabels(card),
+];
 
 export const ROLE_LABELS = { navrhar: "návrhář", rytec: "rytec" };
 
@@ -212,7 +215,7 @@ function AuthorPopover({ name, role, author, onClose }) {
   const info = counts?.[slugLink];
   const shownRoles = info
     ? allRoleLabels(info.roles, name, author).join(", ")
-    : [roleLabel(role, name), ...extraLabels(author)].join(", ");
+    : [...(role === "navrhar" ? [] : [roleLabel(role, name)]), ...extraLabels(author)].join(", ");
 
   return (
     <div className="author-pop" role="dialog" aria-label={name} ref={ref}>
@@ -229,7 +232,7 @@ function AuthorPopover({ name, role, author, onClose }) {
         {(
           <>
             <Lifespan author={author} />
-            <div className="author-pop-role">{shownRoles}</div>
+            {shownRoles && <div className="author-pop-role">{shownRoles}</div>}
             {author?.popis ? <p>{shortText(plainPopis(author.popis))}</p> : !author && <p className="author-pop-empty">O tomto tvůrci zatím nemáme další informace.</p>}
             <div className="author-pop-actions-row">
               {slugLink && (
