@@ -20,7 +20,8 @@ import {
 import { katalogSort, emissionToSlug, slugToEmission, getCatalogBaseKey } from './utils/katalog.js';
 import {
   normalizeStampImagePath,
-  normalizeStampImagePathForStorage
+  normalizeStampImagePathForStorage,
+  normalizeSchemaTFForStorage
 } from "./utils/obrazekCesta.js";
 import ScrollTopButton from "./components/ScrollTopButton.jsx";
 import "./App.css";
@@ -316,10 +317,11 @@ export default function StampCatalog(props) {
       stamps.forEach((stamp) => {
         const raw = stamp[field];
         if (raw === null || raw === undefined) return;
-        const value = typeof raw === "string" ? raw.trim() : String(raw).trim();
-        if (value) {
-          values.add(value);
-        }
+        const entries = field === "schemaTF" && Array.isArray(raw) ? raw : [raw];
+        entries.forEach(entry => {
+          const value = String(entry).trim();
+          if (value) values.add(value);
+        });
       });
       return Array.from(values).sort((a, b) => a.localeCompare(b, "cs"));
     };
@@ -882,7 +884,7 @@ export default function StampCatalog(props) {
             isHidden: defaultIsHidden,
             obrazek: normalizeStampImagePathForStorage(stampData.obrazek, stampData.rok),
             obrazekStudie: normalizeStampImagePathForStorage(stampData.obrazekStudie, stampData.rok),
-            schemaTF: normalizeStampImagePathForStorage(stampData.schemaTF, stampData.rok)
+            schemaTF: normalizeSchemaTFForStorage(stampData.schemaTF, stampData.rok)
           };
           // Odeslání na backend
           const API_BASE = getApiBase();

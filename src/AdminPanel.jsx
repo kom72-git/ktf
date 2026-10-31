@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { apiFetch, getApiBase } from "./apiBase.js";
+import { SchemaTFEditor } from "./components/SchemaTFImages.jsx";
 export default function AdminPanel({
   isAdmin,
   onLogout,
@@ -235,13 +236,13 @@ export default function AdminPanel({
           autoManagedImageFieldsRef.current = {
             obrazek: true,
             obrazekStudie: true,
-            schemaTF: true,
+            schemaTF: !Array.isArray(draft.schemaTF),
           };
           return {
             ...draft,
             obrazek: "",
             obrazekStudie: "",
-            schemaTF: "",
+            schemaTF: Array.isArray(draft.schemaTF) ? ["", ...draft.schemaTF.slice(1)] : "",
           };
         }
         if (previousAutoBase) {
@@ -753,15 +754,13 @@ export default function AdminPanel({
               </div>
               <div className="label-top-input">
                 <label>Schéma TF</label>
-                <input
-                  type="text"
+                <SchemaTFEditor
                   value={newStampData.schemaTF}
-                  onChange={e => {
+                  onChange={value => {
                     autoManagedImageFieldsRef.current.schemaTF = false;
-                    setNewStampData({ ...newStampData, schemaTF: e.target.value });
+                    setNewStampData({ ...newStampData, schemaTF: value });
                   }}
-                  list={hasSuggestions('schemaTF') ? getSuggestionListId('schemaTF') : undefined}
-                  autoComplete="off"
+                  suggestionListId={hasSuggestions('schemaTF') ? getSuggestionListId('schemaTF') : undefined}
                 />
               </div>
               <div className="admin-modal-actions">

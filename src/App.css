@@ -1387,6 +1387,78 @@ input.admin-checkbox { width: 18px; height: 18px; cursor: pointer; }
 .spec-tf-edit-row {
   margin-top: 10px;
 }
+.schema-tf-gallery {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 100%;
+}
+.schema-tf-main {
+  display: block;
+  min-width: 0;
+  max-width: 320px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+.schema-tf-thumbnails {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 2px;
+}
+.schema-tf-thumbnail {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  padding: 3px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+}
+.schema-tf-thumbnail[aria-pressed="true"] {
+  background: #e5e7eb;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.16);
+}
+.schema-tf-thumbnail img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.schema-tf-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  min-width: 0;
+}
+.schema-tf-editor .edit-field-row input {
+  flex: 1;
+  min-width: 0;
+}
+.schema-tf-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 768px) {
+  .schema-tf-gallery {
+    flex-direction: column;
+  }
+  .schema-tf-thumbnails {
+    flex-direction: row;
+    max-width: 100%;
+    max-height: none;
+    overflow-x: auto;
+  }
+}
 .tf-img-missing {
   border: 1px dashed #6b7280 !important;
   border-radius: 8px !important;

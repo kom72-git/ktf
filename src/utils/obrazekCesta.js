@@ -64,3 +64,23 @@ export function normalizeStampImagePath(rawValue, stampYear) {
   // Absolutní cesta, aby se obrázky načetly na jakékoli adrese (např. /emise/...).
   return /^(https?:|data:|\/)/i.test(base) || !base ? base : `/${base}`;
 }
+
+export function getSchemaTFEntries(value) {
+  return Array.isArray(value) && value.length ? value : [typeof value === "string" ? value : ""];
+}
+
+export function normalizeSchemaTFForStorage(value, stampYear) {
+  const entries = getSchemaTFEntries(value)
+    .map(entry => normalizeStampImagePathForStorage(entry, stampYear))
+    .filter(Boolean);
+  return entries.length > 1 ? entries : (entries[0] || "");
+}
+
+export function resolveSchemaTFImages(value, inheritedValue, stampYear) {
+  const ownEntries = getSchemaTFEntries(value).map(entry => entry.trim()).filter(Boolean);
+  const entries = ownEntries.length
+    ? ownEntries
+    : getSchemaTFEntries(inheritedValue).map(entry => entry.trim()).filter(Boolean);
+  if (entries.some(entry => entry.toUpperCase() === "NE")) return [];
+  return entries.map(entry => normalizeStampImagePath(entry, stampYear));
+}

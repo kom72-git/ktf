@@ -8,6 +8,7 @@ import AuthorNames from "./TvurceJmena.jsx";
 import ImageSources from "./ImageSources.jsx";
 import LiteratureTextarea from "./LiteratureTextarea.jsx";
 import StudyBlockTextarea from "./StudyBlockTextarea.jsx";
+import { SchemaTFEditor, SchemaTFGallery } from "./SchemaTFImages.jsx";
 
 // Interní helper pro vykreslení obsahu s abbrev (pole fragmentů nebo prostý string)
 function renderAbbrevContent(value, keyPrefix) {
@@ -266,7 +267,6 @@ export function StampTechnicalSpecSection({
   getSuggestionListId,
   saveTechnicalField,
   renderTechnicalValue,
-  item,
   resolvedDatumVydani,
   resolvedNavrh,
   resolvedRytec,
@@ -278,31 +278,9 @@ export function StampTechnicalSpecSection({
   resolvedRozmer,
   resolvedNaklad,
   normalizeImageSrc,
-  normalizedItemSchemaTF,
-  normalizedResolvedSchemaTF,
-  openSingleImageLightbox,
+  schemaTFImages,
   specHeadingId,
 }) {
-  const markTfFallbackImage = (target) => {
-    const src = String(target?.src || "").toLowerCase();
-    if (src.includes("no-image.png")) {
-      target.classList.add("tf-img-missing");
-    } else {
-      target.classList.remove("tf-img-missing");
-    }
-  };
-
-  const handleTfImageLoad = (e) => {
-    markTfFallbackImage(e.currentTarget);
-  };
-
-  const handleTfImageError = (e) => {
-    const target = e.currentTarget;
-    target.onerror = null;
-    target.src = '/img/no-image.png';
-    target.classList.add("tf-img-missing");
-  };
-
   return (
     <section className="stamp-spec stamp-detail-spec-col" aria-labelledby={specHeadingId}>
       <h2 id={specHeadingId} className="sr-only">Technické údaje</h2>
@@ -572,95 +550,17 @@ export function StampTechnicalSpecSection({
           )}
         </span>
       </div>
-      {/*
-      PŮVODNÍ VARIANTA (obrázek vedle popisku):
-      <div className="stamp-spec-row spec-tf-row">
-        <span className="stamp-spec-label">Schéma TF</span>
-        <span className="stamp-spec-value">
-          {isEditingAll ? (
-            <div>
-              {item.schemaTF && (
-                <img
-                  src={normalizeImageSrc(normalizedItemSchemaTF)}
-                  alt="Schéma TF"
-                  className="tf-img tf-img-clickable"
-                  onClick={() => openSingleImageLightbox(normalizedItemSchemaTF, "Schéma TF")}
-                  onLoad={handleTfImageLoad}
-                  onError={handleTfImageError}
-                />
-              )}
-              <div className="edit-field-row">
-                <input
-                  type="text"
-                  value={editStampData.schemaTF}
-                  onChange={(e) => setEditStampData({...editStampData, schemaTF: e.target.value})}
-                  className="ktf-edit-input-tech"
-                  list={hasSuggestions('schemaTF') ? getSuggestionListId('schemaTF') : undefined}
-                  autoComplete="off"
-                />
-                <button
-                  onClick={() => saveTechnicalField('schemaTF', editStampData.schemaTF || '')}
-                  className="ktf-btn-check"
-                >✓</button>
-              </div>
-            </div>
-          ) : (
-            normalizedResolvedSchemaTF && (
-              <img
-                src={normalizeImageSrc(normalizedResolvedSchemaTF)}
-                alt="Schéma TF"
-                className="tf-img tf-img-clickable"
-                onClick={() => openSingleImageLightbox(normalizedResolvedSchemaTF, "Schéma TF")}
-                onLoad={handleTfImageLoad}
-                onError={handleTfImageError}
-              />
-            )
-          )}
-        </span>
-      </div>
-      */}
-
       <div className="spec-tf-block">
         <div className="spec-tf-title">Schéma tiskové formy</div>
         <div className="spec-tf-media-wrap">
-          {isEditingAll ? (
-            <div>
-              {item.schemaTF && (
-                <img
-                  src={normalizeImageSrc(normalizedItemSchemaTF)}
-                  alt="Schéma TF"
-                  className="tf-img tf-img-clickable"
-                  onClick={() => openSingleImageLightbox(normalizedItemSchemaTF, "Schéma TF")}
-                  onLoad={handleTfImageLoad}
-                  onError={handleTfImageError}
-                />
-              )}
-              <div className="edit-field-row spec-tf-edit-row">
-                <input
-                  type="text"
-                  value={editStampData.schemaTF}
-                  onChange={(e) => setEditStampData({...editStampData, schemaTF: e.target.value})}
-                  className="ktf-edit-input-tech"
-                  list={hasSuggestions('schemaTF') ? getSuggestionListId('schemaTF') : undefined}
-                  autoComplete="off"
-                />
-                <button
-                  onClick={() => saveTechnicalField('schemaTF', editStampData.schemaTF || '')}
-                  className="ktf-btn-check"
-                >✓</button>
-              </div>
-            </div>
-          ) : (
-            normalizedResolvedSchemaTF && (
-              <img
-                src={normalizeImageSrc(normalizedResolvedSchemaTF)}
-                alt="Schéma TF"
-                className="tf-img tf-img-clickable"
-                onClick={() => openSingleImageLightbox(normalizedResolvedSchemaTF, "Schéma TF")}
-                onLoad={handleTfImageLoad}
-                onError={handleTfImageError}
-              />
-            )
+          <SchemaTFGallery images={schemaTFImages} normalizeImageSrc={normalizeImageSrc} />
+          {isEditingAll && (
+            <SchemaTFEditor
+              value={editStampData.schemaTF}
+              onChange={value => setEditStampData({ ...editStampData, schemaTF: value })}
+              suggestionListId={hasSuggestions('schemaTF') ? getSuggestionListId('schemaTF') : undefined}
+              onSave={() => saveTechnicalField('schemaTF', editStampData.schemaTF || '')}
+            />
           )}
         </div>
       </div>

@@ -20,7 +20,9 @@ import {
 } from "./utils/katalog.js";
 import {
   normalizeStampImagePath,
-  normalizeStampImagePathForStorage
+  normalizeStampImagePathForStorage,
+  normalizeSchemaTFForStorage,
+  resolveSchemaTFImages
 } from "./utils/obrazekCesta.js";
 import {
   formatNakladDisplay,
@@ -167,7 +169,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           ...draft,
           obrazek: "",
           obrazekStudie: "",
-          schemaTF: "",
+          schemaTF: Array.isArray(draft.schemaTF) ? ["", ...draft.schemaTF.slice(1)] : "",
         };
       }
 
@@ -175,13 +177,15 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         ...draft,
         obrazek: base,
         obrazekStudie: `${base}s`,
-        schemaTF: `${base}-TF`,
+        schemaTF: Array.isArray(draft.schemaTF) ? [`${base}-TF`, ...draft.schemaTF.slice(1)] : `${base}-TF`,
       };
     });
   };
 
   const normalizeStampImageFieldValue = (field, value, yearValue) => (
-    field === 'obrazek' || field === 'obrazekStudie' || field === 'schemaTF'
+    field === 'schemaTF'
+      ? normalizeSchemaTFForStorage(value, yearValue)
+      : field === 'obrazek' || field === 'obrazekStudie'
       ? normalizeStampImagePathForStorage(value, yearValue)
       : value
   );
@@ -966,9 +970,11 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const resolvedPapir = getResolvedFromA("papir") || "";
   const resolvedRozmer = getResolvedFromA("rozmer") || "";
   const resolvedNaklad = getResolvedFromA("naklad") || "";
-  const resolvedSchemaTF = getResolvedFromA("schemaTF") || "";
-  const normalizedItemSchemaTF = normalizeStampImagePath(item?.schemaTF || "", editStampData.rok || item?.rok);
-  const normalizedResolvedSchemaTF = normalizeStampImagePath(resolvedSchemaTF, editStampData.rok || item?.rok);
+  const schemaTFImages = resolveSchemaTFImages(
+    isEditingAll ? editStampData.schemaTF : item?.schemaTF,
+    isEditingAll || !isViewingBVariant ? "" : aStamp?.schemaTF,
+    editStampData.rok || item?.rok
+  );
   const resolvedStudie = getResolvedFromA("Studie") || "";
   const resolvedStudieUrl = getResolvedFromA("studieUrl") || "";
   const resolvedPopisStudie = getResolvedFromA("popisStudie") || "";
@@ -1140,7 +1146,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
   const normalizeImageSrc = (src) => {
     if (!src || typeof src !== "string") return "";
-    return src[0] !== "/" && !src.startsWith("http") ? `/${src}` : src;
+    return /^(\/|https?:|data:)/i.test(src) ? src : `/${src}`;
   };
 
   const getPreviewImageSrc = (stamp) => {
@@ -1184,28 +1190,6 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     return `${base}${CATALOG_SUFFIX_SPACING}${suffix}`;
   };
 
-  const openSingleImageLightbox = (src, caption = "") => {
-    const normalizedSrc = normalizeImageSrc(src);
-    if (!normalizedSrc) return;
-    Fancybox.show(
-      [
-        {
-          src: normalizedSrc,
-          caption,
-        },
-      ],
-      {
-        Toolbar: ["zoom", "close"],
-        dragToClose: true,
-        animated: true,
-        compact: false,
-        showClass: "fancybox-zoomIn",
-        hideClass: "fancybox-zoomOut",
-        closeButton: "top",
-        defaultType: "image",
-      }
-    );
-  };
   const additionalStudyHeadingId = `${detailHeadingId}-study-after`;
   const currentStav = editStampData.stav || getStavFromStamp(item);
   const isPripravaStamp = currentStav === 'priprava';
@@ -1466,7 +1450,6 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           getSuggestionListId={getSuggestionListId}
           saveTechnicalField={saveTechnicalField}
           renderTechnicalValue={renderTechnicalValue}
-          item={item}
           resolvedDatumVydani={resolvedDatumVydani}
           resolvedNavrh={resolvedNavrh}
           resolvedRytec={resolvedRytec}
@@ -1478,9 +1461,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           resolvedRozmer={resolvedRozmer}
           resolvedNaklad={resolvedNaklad}
           normalizeImageSrc={normalizeImageSrc}
-          normalizedItemSchemaTF={normalizedItemSchemaTF}
-          normalizedResolvedSchemaTF={normalizedResolvedSchemaTF}
-          openSingleImageLightbox={openSingleImageLightbox}
+          schemaTFImages={schemaTFImages}
           specHeadingId={specHeadingId}
         />
       </div>

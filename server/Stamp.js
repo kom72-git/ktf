@@ -30,7 +30,7 @@ const StampSchema = new mongoose.Schema({
   papir: String,
   rozmer: String,
   naklad: String,
-  schemaTF: String,
+  schemaTF: [String],
   Studie: String,
   studieUrl: String,
   popisObrazkuStudie: String,
