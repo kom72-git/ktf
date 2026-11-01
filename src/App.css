@@ -930,6 +930,11 @@ textarea.resize-corner {
 .study-rich-editor-content ol {
   padding-left: 24px;
 }
+.study-rich-editor-content ul > li::marker,
+.study-note ul > li::marker {
+  content: "\2022  ";
+  font-weight: 400;
+}
 .study-rich-editor-content .study-editor-note {
   margin: 12px 0;
   padding: 8px 12px;
