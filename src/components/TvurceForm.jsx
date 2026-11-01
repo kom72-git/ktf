@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { apiFetch, getApiBase } from "../apiBase.js";
 import { autoFoto } from "../utils/tvurciFoto.js";
+import StudyRichTextEditor from "./StudyRichTextEditor.jsx";
 import { upsertCachedAuthor } from "./TvurceJmena.jsx";
 
 export default function AuthorForm({ name, author, onSaved }) {
@@ -59,10 +60,15 @@ export default function AuthorForm({ name, author, onSaved }) {
         Další označení (oddělená čárkou)
         <input type="text" placeholder="např. malíř, grafik" value={form.dalsi} onChange={setField("dalsi")} />
       </label>
-      <label>
-        Popis
-        <textarea rows="12" value={form.popis} onChange={setField("popis")} />
-      </label>
+      <label htmlFor="author-popis">Popis</label>
+      <StudyRichTextEditor
+        id="author-popis"
+        ariaLabel="Popis životopisu"
+        storageFormat="author"
+        className="author-rich-text-editor"
+        value={form.popis}
+        onChange={(value) => setForm({ ...form, popis: value })}
+      />
       <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
         <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
         <div className="ktf-tip-box">

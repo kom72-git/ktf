@@ -2,10 +2,34 @@ import React from "react";
 import AbbrWithTooltip from "../components/AbbrWithTooltip.jsx";
 import ZKRATKY_TOOLTIPY from "../zkratky-tooltips";
 
+function normalizeStudyIndent(html) {
+  return html.replace(/<p\b[^>]*>/gi, (tag) => {
+    const indentMatch = tag.match(/\bdata-indent\s*=\s*["']?(\d+)/i);
+    if (!indentMatch) return tag;
+
+    const indent = Math.max(0, Math.min(5, Number(indentMatch[1])));
+    const styleMatch = tag.match(/\bstyle\s*=\s*(["'])(.*?)\1/i);
+    const styles = styleMatch
+      ? styleMatch[2]
+        .split(";")
+        .map((style) => style.trim())
+        .filter((style) => style && !/^(margin-left|text-indent)\s*:/i.test(style))
+      : [];
+
+    if (indent) styles.push(`--first-line-indent: ${indent * 2}em`);
+    const styleAttribute = styles.length ? `style="${styles.join("; ")}"` : "";
+
+    if (styleMatch) {
+      return tag.replace(styleMatch[0], styleAttribute);
+    }
+    return styleAttribute ? tag.replace(/>$/, ` ${styleAttribute}>`) : tag;
+  });
+}
+
 // Univerzální formátování popisu: apostrofy → zvýraznění, hranaté závorky → tučně, známé zkratky → tooltip HTML
 export function formatPopisWithAll(text) {
   if (!text) return "";
-  let s = text.replace(/'(.+?)'(?=$|[\s.,;:!?)\]}])/g, '<span class="variant-popis-apostrof">$1</span>');
+  let s = normalizeStudyIndent(String(text)).replace(/'(.+?)'(?=$|[\s.,;:!?)\]}])/g, '<span class="variant-popis-apostrof">$1</span>');
   // Redakční poznámka: [pozn]...[/pozn] (podporovány i aliasy [poznamka] a [redakce]).
   s = s.replace(/\[(pozn|poznamka|redakce)\]([\s\S]*?)\[\/\1\]/gi, (_m, _tag, content) => {
     const body = String(content ?? "").trim();

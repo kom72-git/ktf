@@ -1,4 +1,5 @@
 import React from "react";
+import StudyRichTextEditor from "./StudyRichTextEditor.jsx";
 
 function appendBlock(currentValue, blockValue) {
   const current = String(currentValue ?? "");
@@ -23,6 +24,7 @@ export default function StudyBlockTextarea({
   buttonClassName,
   selectClassName,
   selectPlaceholder = "Vložit dříve použitý blok…",
+  richText = false,
 }) {
   const normalizedSuggestions = React.useMemo(() => {
     const values = Array.isArray(suggestionValues) ? suggestionValues : [];
@@ -40,14 +42,18 @@ export default function StudyBlockTextarea({
   return (
     <>
       <div className="edit-field-row ktf-edit-row-full">
-        <textarea
-          id={id}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className={textareaClassName}
-          placeholder={placeholder}
-          rows={rows}
-        />
+        {richText ? (
+          <StudyRichTextEditor id={id} value={value} onChange={onChange} />
+        ) : (
+          <textarea
+            id={id}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            className={textareaClassName}
+            placeholder={placeholder}
+            rows={rows}
+          />
+        )}
         <button
           type="button"
           onClick={() => onSave(value)}

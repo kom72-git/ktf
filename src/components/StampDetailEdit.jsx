@@ -653,6 +653,7 @@ export function StampStudyTopSection({
             buttonClassName="ktf-btn-check"
             selectClassName="ktf-edit-input-tech"
             selectPlaceholder="Vložit dříve použitý blok popisu…"
+            richText
           />
           <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
             <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
@@ -737,6 +738,7 @@ export function StampStudyFooterSection({
             buttonClassName="ktf-btn-check"
             selectClassName="ktf-edit-input-tech"
             selectPlaceholder="Vložit dříve použitý blok (část za variantami)…"
+            richText
           />
           <div className="edit-field-row study-authors-row">
             <label htmlFor="edit-obrazek-autor" className="ktf-edit-inline-label">Zdroj obrázků:</label>

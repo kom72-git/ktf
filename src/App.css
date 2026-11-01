@@ -856,6 +856,100 @@ textarea.resize-corner {
 .ktf-edit-textarea-study {
   min-height: 200px;
 }
+.study-rich-editor {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #fff;
+}
+.study-rich-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 9px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9faf9;
+}
+.study-rich-editor-toolbar button {
+  display: inline-flex;
+  width: 40px;
+  height: 38px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: #374151;
+  background: transparent;
+  cursor: pointer;
+}
+.study-rich-editor-toolbar button svg {
+  width: 18px;
+  height: 18px;
+}
+.study-rich-editor-toolbar button:hover,
+.study-rich-editor-toolbar button[aria-pressed="true"] {
+  border-color: #cbd5d1;
+  color: #176b55;
+  background: #e9f2ee;
+}
+.study-rich-editor-toolbar button:focus-visible {
+  outline: 2px solid #176b55;
+  outline-offset: 1px;
+}
+.study-rich-editor-divider {
+  width: 1px;
+  height: 24px;
+  margin: 0 4px;
+  background: #d1d5db;
+}
+.study-rich-editor-content {
+  min-height: 200px;
+  padding: 8px;
+  outline: none;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.study-rich-editor-content p {
+  margin: 0 0 0.75em;
+}
+.study-rich-editor-content p:last-child {
+  margin-bottom: 0;
+}
+.study-rich-editor-content p[data-indent]::before,
+.study-note p[data-indent]::before {
+  display: inline-block;
+  width: var(--first-line-indent, 0);
+  content: "";
+}
+.study-rich-editor-content ul,
+.study-rich-editor-content ol {
+  padding-left: 24px;
+}
+.study-rich-editor-content .study-editor-note {
+  margin: 12px 0;
+  padding: 8px 12px;
+  border-left: 3px solid #d8c99e;
+  background: #f7f1df;
+}
+.study-rich-editor-content .study-editor-note::before {
+  display: block;
+  margin-bottom: 4px;
+  color: #776329;
+  content: "Redakční poznámka";
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.study-rich-editor-content span[data-tooltip-enabled="true"] {
+  border-bottom: 1px dotted #8b5e3c;
+}
 .study-authors-row {
   width: 100%;
   margin-top: 18px;
