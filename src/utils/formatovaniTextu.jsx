@@ -2,6 +2,8 @@ import React from "react";
 import AbbrWithTooltip from "../components/AbbrWithTooltip.jsx";
 import ZKRATKY_TOOLTIPY from "../zkratky-tooltips";
 
+const STUDY_NOTE_APPEARANCE = "editorial";
+
 function normalizeStudyIndent(html) {
   return html.replace(/<p\b[^>]*>/gi, (tag) => {
     const indentMatch = tag.match(/\bdata-indent\s*=\s*["']?(\d+)/i);
@@ -29,11 +31,26 @@ function normalizeStudyIndent(html) {
 // Univerzální formátování popisu: apostrofy → zvýraznění, hranaté závorky → tučně, známé zkratky → tooltip HTML
 export function formatPopisWithAll(text) {
   if (!text) return "";
-  let s = normalizeStudyIndent(String(text)).replace(/'(.+?)'(?=$|[\s.,;:!?)\]}])/g, '<span class="variant-popis-apostrof">$1</span>');
+  let source = String(text);
+  const images = [];
+  if (/<img\b/i.test(source)) {
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = source;
+    wrapper.querySelectorAll("img").forEach((image, index) => {
+      const token = `ktfimageplaceholder${index}end`;
+      images.push([token, image.outerHTML]);
+      image.replaceWith(document.createTextNode(token));
+    });
+    source = wrapper.innerHTML;
+  }
+  let s = normalizeStudyIndent(source).replace(/'(.+?)'(?=$|[\s.,;:!?)\]}])/g, '<span class="variant-popis-apostrof">$1</span>');
   // Redakční poznámka: [pozn]...[/pozn] (podporovány i aliasy [poznamka] a [redakce]).
   s = s.replace(/\[(pozn|poznamka|redakce)\]([\s\S]*?)\[\/\1\]/gi, (_m, _tag, content) => {
     const body = String(content ?? "").trim();
-    return `<div class="study-editor-note"><div class="study-editor-note-label">Poznámka ke studii</div><div class="study-editor-note-body">${body}</div></div>`;
+    const editorial = STUDY_NOTE_APPEARANCE === "editorial";
+    const className = editorial ? "study-editor-note study-editor-note--editorial" : "study-editor-note";
+    const label = editorial ? "Redakční poznámka" : "Poznámka ke studii";
+    return `<div class="${className}"><div class="study-editor-note-label">${label}</div><div class="study-editor-note-body">${body}</div></div>`;
   });
   // Support both [B1a] and [B1]a (suffix inside or immediately after brackets)
   // capture optional single-letter suffix immediately after the closing bracket
@@ -85,7 +102,7 @@ export function formatPopisWithAll(text) {
       return abbr;
     });
   }
-  return s;
+  return images.reduce((result, [token, image]) => result.replace(token, () => image), s);
 }
 
 // Pro použití s dangerouslySetInnerHTML: nahradí zkratky za HTML variantu s tooltipem

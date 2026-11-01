@@ -1,10 +1,22 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  getStudyImagePathPrefix,
   getSchemaTFEntries,
   normalizeSchemaTFForStorage,
   resolveSchemaTFImages,
 } from "./obrazekCesta.js";
+
+test("study images suggest a year and catalog prefix ready for a suffix", () => {
+  assert.equal(getStudyImagePathPrefix(1989, "PL 2909"), "/img/1989/PL2909");
+  assert.equal(getStudyImagePathPrefix("1973", " PL 2050-51 "), "/img/1973/PL2050-51");
+  assert.equal(getStudyImagePathPrefix(1973, "PL 2050/51"), "/img/1973/PL2050-51");
+  assert.equal(getStudyImagePathPrefix(1988, "A 2864/5 A"), "/img/1988/A2864-5A");
+  assert.equal(getStudyImagePathPrefix("", "PL 2909"), "");
+  assert.equal(getStudyImagePathPrefix(1989, ""), "");
+  assert.equal(getStudyImagePathPrefix("198", "PL 2909"), "");
+  assert.equal(getStudyImagePathPrefix(1989, "PL"), "");
+});
 
 test("schema TF accepts legacy strings and preserves editable empty rows", () => {
   assert.deepEqual(getSchemaTFEntries("1945/123-TF"), ["1945/123-TF"]);

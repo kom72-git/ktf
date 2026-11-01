@@ -1,5 +1,6 @@
 import React from "react";
 import StudyRichTextEditor from "./StudyRichTextEditor.jsx";
+import { getStudyImagePathPrefix } from "../utils/obrazekCesta.js";
 
 function appendBlock(currentValue, blockValue) {
   const current = String(currentValue ?? "");
@@ -25,6 +26,8 @@ export default function StudyBlockTextarea({
   selectClassName,
   selectPlaceholder = "Vložit dříve použitý blok…",
   richText = false,
+  stampYear,
+  catalogNumber,
 }) {
   const normalizedSuggestions = React.useMemo(() => {
     const values = Array.isArray(suggestionValues) ? suggestionValues : [];
@@ -43,7 +46,7 @@ export default function StudyBlockTextarea({
     <>
       <div className="edit-field-row ktf-edit-row-full">
         {richText ? (
-          <StudyRichTextEditor id={id} value={value} onChange={onChange} />
+          <StudyRichTextEditor id={id} value={value} onChange={onChange} imagePathPrefix={getStudyImagePathPrefix(stampYear, catalogNumber)} />
         ) : (
           <textarea
             id={id}

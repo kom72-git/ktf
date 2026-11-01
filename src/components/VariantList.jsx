@@ -131,6 +131,7 @@ function hasDefectChanges(def, edits) {
     (edits.variantaVady ?? "") !== (def.variantaVady || "")
     || (edits.umisteniVady ?? "") !== (def.umisteniVady || "")
     || (edits.popisVady ?? "") !== (def.popisVady || "")
+    || (edits.obecnyPopisVarianty ?? "") !== (def.obecnyPopisVarianty || "")
     || (edits.obrazekVady ?? "") !== (def.obrazekVady || "")
     || nextOrder !== currentOrder
     || !!edits.tucneVSeznamu !== !!def.tucneVSeznamu
@@ -211,6 +212,7 @@ const VariantList = forwardRef(function VariantList({
         variantaVady: def.variantaVady || "",
         umisteniVady: def.umisteniVady || "",
         popisVady: def.popisVady || "",
+        obecnyPopisVarianty: def.obecnyPopisVarianty || "",
         obrazekVady: def.obrazekVady || "",
         poradiVady: def.poradiVady ?? "",
         tucneVSeznamu: !!def.tucneVSeznamu,
@@ -232,6 +234,7 @@ const VariantList = forwardRef(function VariantList({
             variantaVady: def.variantaVady || "",
             umisteniVady: def.umisteniVady || "",
             popisVady: def.popisVady || "",
+            obecnyPopisVarianty: def.obecnyPopisVarianty || "",
             obrazekVady: def.obrazekVady || "",
             poradiVady: def.poradiVady ?? "",
             tucneVSeznamu: !!def.tucneVSeznamu,
@@ -279,6 +282,7 @@ const VariantList = forwardRef(function VariantList({
       variantaVady: nextEdits.variantaVady,
       umisteniVady: nextEdits.umisteniVady,
       popisVady: nextEdits.popisVady,
+      obecnyPopisVarianty: nextEdits.obecnyPopisVarianty,
       obrazekVady: nextEdits.obrazekVady,
       poradiVady: normalizeDefectOrderForSave(nextEdits.poradiVady),
       tucneVSeznamu: nextEdits.tucneVSeznamu,
@@ -416,6 +420,7 @@ const VariantList = forwardRef(function VariantList({
           variantaVady: edits.variantaVady,
           umisteniVady: edits.umisteniVady,
           popisVady: edits.popisVady,
+          obecnyPopisVarianty: edits.obecnyPopisVarianty,
           obrazekVady: edits.obrazekVady,
           poradiVady: normalizeDefectOrderForSave(edits.poradiVady),
           tucneVSeznamu: edits.tucneVSeznamu,
@@ -448,6 +453,49 @@ const VariantList = forwardRef(function VariantList({
   }, {});
 
   if (!effectiveDefects.length && !isEditingAll) return null;
+
+  const renderGroupDescription = (def, label) => {
+    if (!def) return null;
+    const key = getDefectKey(def);
+    const edits = defectEdits[key] || {};
+    const value = edits.obecnyPopisVarianty ?? def.obecnyPopisVarianty ?? "";
+    if (isEditingAll && isAdmin && !def.__inheritedFromA) {
+      const inputId = `${variantsHeadingBaseId}-description-${key}`;
+      return (
+        <div className="variant-group-description-edit">
+          <label htmlFor={inputId}>Obecný popis varianty {label}</label>
+          <div className="edit-field-row">
+            <textarea
+              id={inputId}
+              className="ktf-edit-textarea-long variant-group-description-input"
+              rows={3}
+              lang="cs-CZ"
+              spellCheck
+              value={value}
+              onChange={(event) => updateEdit(key, "obecnyPopisVarianty", event.target.value)}
+            />
+            <button
+              type="button"
+              className="ktf-btn-check"
+              title="Uložit obecný popis varianty"
+              aria-label="Uložit obecný popis varianty"
+              onClick={async () => {
+                const saved = await saveDefectEdit(def._id || def.idVady, {
+                  ...def,
+                  ...edits,
+                  poradiVady: normalizeDefectOrderForSave(edits.poradiVady ?? def.poradiVady),
+                });
+                if (saved) clearDirtyKey(key);
+              }}
+            >✓</button>
+          </div>
+        </div>
+      );
+    }
+    return def.obecnyPopisVarianty?.trim()
+      ? <div className="variant-group-description">{def.obecnyPopisVarianty}</div>
+      : null;
+  };
 
   // Sdílený render jednoho boxu varianty
   const renderVariantBox = (def, i, keyPrefix) => {
@@ -579,6 +627,7 @@ const VariantList = forwardRef(function VariantList({
                     variantaVady: edits.variantaVady,
                     umisteniVady: edits.umisteniVady,
                     popisVady: edits.popisVady,
+                    obecnyPopisVarianty: edits.obecnyPopisVarianty,
                     obrazekVady: edits.obrazekVady,
                     poradiVady: normalizeDefectOrderForSave(edits.poradiVady),
                     tucneVSeznamu: edits.tucneVSeznamu,
@@ -640,6 +689,7 @@ const VariantList = forwardRef(function VariantList({
         <div className="ktf-tip-wrap" role="note" aria-label="Nápověda k editaci variant">
           <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
           <div className="ktf-tip-box ktf-tip-box-bulleted">
+            <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line"><code>&apos;text&apos;</code> → šedé zvýraznění</span>
             <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Vlož <code>{"[[...]]"}</code> kde chceš schovat text, před ní bude text vidět hned a text za ní se zobrazí jen po přejetí myší (…)</span>
             <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">V adrese obrázku varianty: <code>_</code> na začátku názvu = čárkovaný obrázek ✧ <code>!</code> na začátku názvu = čárkovaný box varianty ✧ <code>!</code> je jen marker v adrese (soubor ukládej bez něj) ✧ <code>(n/a)</code> na konci adresy = trvale nedostupný obrázek</span>
           </div>
@@ -696,7 +746,7 @@ const VariantList = forwardRef(function VariantList({
                       title="Uložit typ varianty"
                       onClick={() => {
                         const val = document.getElementById(`typVarianty-input-${group}`)?.value ?? "";
-                        saveDefectEdit(mainDef._id || mainDef.idVady, { ...mainDef, typVarianty: val });
+                        saveDefectEdit(mainDef._id || mainDef.idVady, { ...mainDef, ...defectEdits[getDefectKey(mainDef)], typVarianty: val });
                       }}
                     >✓</button>
                   </>
@@ -716,6 +766,7 @@ const VariantList = forwardRef(function VariantList({
                   </span>
                 </div>
               )}
+              {renderGroupDescription(mainDef, isNumericGroup ? numericRangeLabel : group)}
             </div>
             <div className="variants">
               {defs.slice().sort(compareVariantsWithBracket).map((def, i) => renderVariantBox(def, i, `var-${group}`))}
@@ -733,6 +784,7 @@ const VariantList = forwardRef(function VariantList({
             const mainPlusDef = plusVariantsOrdered.find(def => def?.variantaVady) || plusVariantsOrdered[0];
             const plusTypVarianty = mainPlusDef?.typVarianty || "";
             return (
+              <div className="variant-group-header">
               <h3 id={`${variantsHeadingBaseId}-plus`} className="variant-subtitle">
                 <span className="variant-subtitle-prefix">{isPlural ? "Varianty" : "Varianta"}</span>
                 <span className="variant-subtitle-name">{plusVariantLabel}</span>
@@ -745,7 +797,7 @@ const VariantList = forwardRef(function VariantList({
                       title="Uložit typ varianty"
                       onClick={() => {
                         const val = document.getElementById("typVarianty-input-plus")?.value ?? "";
-                        saveDefectEdit(mainPlusDef._id || mainPlusDef.idVady, { ...mainPlusDef, typVarianty: val });
+                        saveDefectEdit(mainPlusDef._id || mainPlusDef.idVady, { ...mainPlusDef, ...defectEdits[getDefectKey(mainPlusDef)], typVarianty: val });
                       }}
                     >✓</button>
                   </>
@@ -753,6 +805,8 @@ const VariantList = forwardRef(function VariantList({
                   plusTypVarianty && <><span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span><span className="variant-type">{plusTypVarianty}</span></>
                 )}
               </h3>
+              {renderGroupDescription(mainPlusDef, plusVariantLabel)}
+              </div>
             );
           })()}
           <div className="variants">

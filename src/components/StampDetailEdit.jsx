@@ -643,6 +643,8 @@ export function StampStudyTopSection({
           <label htmlFor="edit-popis-studie">Popis studie</label>
           <StudyBlockTextarea
             id="edit-popis-studie"
+            stampYear={editStampData.rok ?? item?.rok}
+            catalogNumber={editStampData.katalogCislo ?? item?.katalogCislo}
             value={popisStudieValue}
             onChange={(nextValue) => setEditStampData({ ...editStampData, popisStudie: nextValue })}
             onSave={(nextValue) => saveTechnicalField('popisStudie', nextValue)}
@@ -655,14 +657,6 @@ export function StampStudyTopSection({
             selectPlaceholder="Vložit dříve použitý blok popisu…"
             richText
           />
-          <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
-            <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
-            <div className="ktf-tip-box ktf-tip-box-bulleted">
-              <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Podporované formátování: <code>&apos;text&apos;</code> → šedé zvýraznění ✧ <code>*</code> → zneviditelnění tooltipu</span>
-              <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Redakční blok: <code>[pozn]Tvůj doplněný text[/pozn]</code></span>
-              <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">HTML: <code>&lt;b&gt;&lt;/b&gt;</code> → tučně ✧ <code>&lt;em&gt;&lt;/em&gt;</code> → kurzíva ✧ <code>&lt;u&gt;&lt;/u&gt;</code> → podtržení ✧ <code>&lt;br /&gt;</code> → nový řádek ✧ <code>&lt;sup&gt;&lt;/sup&gt;</code> → horní index ✧ <code>&lt;sub&gt;&lt;/sub&gt;</code> → dolní index</span>
-            </div>
-          </div>
         </div>
       </div>
     </>
@@ -728,6 +722,8 @@ export function StampStudyFooterSection({
           <label htmlFor="edit-popis-studie-2">Popis studie – část za variantami</label>
           <StudyBlockTextarea
             id="edit-popis-studie-2"
+            stampYear={editStampData.rok ?? item?.rok}
+            catalogNumber={editStampData.katalogCislo ?? item?.katalogCislo}
             value={popisStudie2Value}
             onChange={(nextValue) => setEditStampData({ ...editStampData, popisStudie2: nextValue })}
             onSave={(nextValue) => saveTechnicalField('popisStudie2', nextValue)}

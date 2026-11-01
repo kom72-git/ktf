@@ -59,7 +59,7 @@ export function formatRozmerDisplay(value) {
 }
 
 // Mapa textových zlomků na Unicode znaky
-const FRACTION_MAP = {
+export const FRACTION_MAP = {
   '1/4': '¼',
   '1/2': '½',
   '3/4': '¾',

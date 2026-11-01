@@ -27,6 +27,7 @@ const ZKRATKY_TOOLTIPY = {
   "TA": "tiskový arch",
   "TF": "tisková forma",
   "TL": "tiskový list",
+  "TÚS": "Technická ústředna spojů",
   "ZP": "známkové pole",
 };
 

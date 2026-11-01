@@ -4,6 +4,13 @@
 const EXTENSION_RE = /\.(?:jpe?g|png|webp|gif|avif|svg)$/i;
 const UNAVAILABLE_IMAGE_SUFFIX_RE = /\(n\/a\)\s*$/i;
 
+export function getStudyImagePathPrefix(yearValue, catalogValue) {
+  const year = String(yearValue ?? "").trim();
+  const catalog = String(catalogValue ?? "").replace(/\s+/g, "").replace(/\//g, "-");
+  if (!/^\d{4}$/.test(year) || !/\d{3,}/.test(catalog)) return "";
+  return `/img/${year}/${catalog}`;
+}
+
 function hasExplicitExtension(value) {
   return EXTENSION_RE.test(value);
 }

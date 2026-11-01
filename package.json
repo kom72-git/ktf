@@ -13,6 +13,7 @@
     "@fancyapps/ui": "^6.0.34",
     "@tailwindcss/postcss": "^4.1.13",
     "@tiptap/core": "^3.32.2",
+    "@tiptap/extension-image": "^3.32.2",
     "@tiptap/extension-subscript": "^3.32.2",
     "@tiptap/extension-superscript": "^3.32.2",
     "@tiptap/extension-underline": "^3.32.2",
