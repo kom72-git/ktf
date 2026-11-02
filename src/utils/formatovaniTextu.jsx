@@ -2,7 +2,7 @@ import React from "react";
 import AbbrWithTooltip from "../components/AbbrWithTooltip.jsx";
 import ZKRATKY_TOOLTIPY from "../zkratky-tooltips";
 
-const STUDY_NOTE_APPEARANCE = "editorial";
+export const STUDY_NOTE_APPEARANCE = "editorial";
 
 function normalizeStudyIndent(html) {
   return html.replace(/<p\b[^>]*>/gi, (tag) => {
@@ -49,8 +49,7 @@ export function formatPopisWithAll(text) {
     const body = String(content ?? "").trim();
     const editorial = STUDY_NOTE_APPEARANCE === "editorial";
     const className = editorial ? "study-editor-note study-editor-note--editorial" : "study-editor-note";
-    const label = editorial ? "Redakční poznámka" : "Poznámka ke studii";
-    return `<div class="${className}"><div class="study-editor-note-label">${label}</div><div class="study-editor-note-body">${body}</div></div>`;
+    return `<div class="${className}"><div class="study-editor-note-label">Redakční poznámka</div><div class="study-editor-note-body">${body}</div></div>`;
   });
   // Support both [B1a] and [B1]a (suffix inside or immediately after brackets)
   // capture optional single-letter suffix immediately after the closing bracket

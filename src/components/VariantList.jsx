@@ -4,8 +4,9 @@
 
 import React, { useState, useEffect, useLayoutEffect, useImperativeHandle, forwardRef, useRef } from "react";
 import { Fancybox } from "@fancyapps/ui";
+import { CornerDownRight } from "lucide-react";
 import VariantTooltip from "./VariantTooltip.jsx";
-import { formatDefectDescription } from "../utils/formatovaniTextu.jsx";
+import { formatDefectDescription, formatPopisWithAll } from "../utils/formatovaniTextu.jsx";
 import { naturalVariantSort, compareVariantsWithBracket } from "../utils/katalog.js";
 import { formatVariantLocationDisplay } from "../utils/formatovaniUdaju.js";
 
@@ -493,7 +494,7 @@ const VariantList = forwardRef(function VariantList({
       );
     }
     return def.obecnyPopisVarianty?.trim()
-      ? <div className="variant-group-description">{def.obecnyPopisVarianty}</div>
+      ? <div className="variant-group-description" dangerouslySetInnerHTML={{ __html: formatPopisWithAll(def.obecnyPopisVarianty) }} />
       : null;
   };
 
@@ -756,9 +757,7 @@ const VariantList = forwardRef(function VariantList({
               </h3>
               {subvariantLabels.length > 0 && (
                 <div className="variant-group-info">
-                  <span className="variant-group-info-icon" title={subvariantTitle}>
-                    <img src="/img/ico_podvarianty.png" alt="info" className="variant-group-info-icon" />
-                  </span>
+                  <CornerDownRight className="variant-group-info-icon" size={18} strokeWidth={1.8} aria-label="Podvarianty" role="img" />
                   <span className="variant-group-info-text">
                     {subvariantTitle}: {subvariantLabels.map((s, i) => (
                       <span key={s.label + i}>{i > 0 && ", "}{s.bold ? <strong>{s.label}</strong> : s.label}</span>

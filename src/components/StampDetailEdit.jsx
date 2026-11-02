@@ -551,7 +551,9 @@ export function StampTechnicalSpecSection({
         </span>
       </div>
       <div className="spec-tf-block">
-        <div className="spec-tf-title">Schéma tiskové formy</div>
+        <div className="spec-tf-title">
+          Schéma tiskové formy{schemaTFImages.length > 1 ? ` (${schemaTFImages.length})` : ""}
+        </div>
         <div className="spec-tf-media-wrap">
           <SchemaTFGallery images={schemaTFImages} normalizeImageSrc={normalizeImageSrc} />
           {isEditingAll && (

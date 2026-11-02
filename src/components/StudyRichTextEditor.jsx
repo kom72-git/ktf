@@ -12,6 +12,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ZKRATKY_TOOLTIPY from "../zkratky-tooltips";
 import { FRACTION_MAP } from "../utils/formatovaniUdaju.js";
+import { STUDY_NOTE_APPEARANCE } from "../utils/formatovaniTextu.jsx";
 
 const FRACTION_TEXT_MAP = Object.fromEntries(
   Object.entries(FRACTION_MAP).map(([text, fraction]) => [fraction, text]),
@@ -94,7 +95,9 @@ const StudyNote = Node.create({
       "div",
       mergeAttributes(HTMLAttributes, {
         "data-study-note": "true",
-        class: "study-editor-note",
+        class: STUDY_NOTE_APPEARANCE === "editorial"
+          ? "study-editor-note study-editor-note--editorial"
+          : "study-editor-note",
       }),
       0,
     ];

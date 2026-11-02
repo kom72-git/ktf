@@ -42,8 +42,7 @@ export function SchemaTFEditor({ value, onChange, suggestionListId, onSave }) {
 }
 
 export function SchemaTFGallery({ images, normalizeImageSrc }) {
-  const [selectedImage, setSelectedImage] = useState("");
-  const activeIndex = Math.max(0, images.indexOf(selectedImage));
+  const [activeIndex, setActiveIndex] = useState(0);
   if (!images.length) return null;
 
   const handleImageError = event => {
@@ -84,7 +83,7 @@ export function SchemaTFGallery({ images, normalizeImageSrc }) {
         />
       </button>
       {images.length > 1 && (
-        <div className="schema-tf-thumbnails" role="group" aria-label="Obrázky schématu TF">
+        <div className="schema-tf-thumbnails" role="group" aria-label={`Obrázky schématu TF, ${images.length} celkem`}>
           {images.map((src, index) => (
             <button
               type="button"
@@ -92,8 +91,9 @@ export function SchemaTFGallery({ images, normalizeImageSrc }) {
               className="schema-tf-thumbnail"
               aria-label={`Zobrazit schéma TF ${index + 1}`}
               aria-pressed={index === activeIndex}
-              onClick={() => setSelectedImage(src)}
+              onClick={() => setActiveIndex(index)}
             >
+              <span className="schema-tf-thumbnail-number" aria-hidden="true">{index + 1}</span>
               <img src={normalizeImageSrc(src)} alt="" onError={handleImageError} />
             </button>
           ))}

@@ -1,23 +1,11 @@
 # Katalog TF
 
-## Vzhled poznámky ke studii
+## Vzhled redakční poznámky
 
-Vizuální srovnání původního a nového vzhledu je v
-[docs/poznamka-ke-studii.html](docs/poznamka-ke-studii.html).
-Při spuštěném Vite je dostupné na `/docs/poznamka-ke-studii.html`.
-Původní varianta je v ukázce zachycena samostatně, aby zůstala dohledatelná
-i bez historie chatu.
-
-- Původní veřejný vzhled: "Poznámka ke studii", pozadí `#fafbfc`, červené
-  okraje vlevo i vpravo (`3px solid #d46a5c`), zaoblení `6px`, kurzíva.
-- Aktuální vzhled na stránce i v editoru: "Redakční poznámka", pozadí
-  `#f7f1df`, stejné červené okraje, bez kurzívy, text `16px / 1.5`.
-- Návrat veřejné stránky: v `src/utils/formatovaniTextu.jsx` změnit
-  `STUDY_NOTE_APPEARANCE` z `"editorial"` na `"original"`.
-  Původní základní pravidla `.study-editor-note`, `.study-editor-note-label`
-  a `.study-editor-note-body` zůstala v `src/App.css` zachována.
-- Uložená data `[pozn]...[/pozn]` ani aliasy `[poznamka]` a `[redakce]`
-  se nemění. Přepínač veřejného vzhledu nemění vzhled editačního editoru.
+Styl se řídí konstantou `STUDY_NOTE_APPEARANCE` v
+`src/utils/formatovaniTextu.jsx`. Změnou z `"editorial"` na `"original"`
+lze přepnout veřejný vzhled i editor na původní CSS variantu.
+Název zůstává vždy „Redakční poznámka“ a uložený text se nemění.
 
 ## Obrázky schématu tiskové formy
 
