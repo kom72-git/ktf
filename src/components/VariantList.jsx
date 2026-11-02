@@ -133,6 +133,7 @@ function hasDefectChanges(def, edits) {
     || (edits.umisteniVady ?? "") !== (def.umisteniVady || "")
     || (edits.popisVady ?? "") !== (def.popisVady || "")
     || (edits.obecnyPopisVarianty ?? "") !== (def.obecnyPopisVarianty || "")
+    || (edits.typVarianty ?? "") !== (def.typVarianty || "")
     || (edits.obrazekVady ?? "") !== (def.obrazekVady || "")
     || nextOrder !== currentOrder
     || !!edits.tucneVSeznamu !== !!def.tucneVSeznamu
@@ -155,7 +156,7 @@ const NO_IMAGE = "/img/no-image.png";
 // Podoba popisku pod obrázkem varianty: "hidden" (A 1), "plain" (A obr. 1), "brackets" (A (obr.) 1).
 const IMAGE_LABEL_MODE = "hidden";
 
-function renderDefectDescription(descriptionText, tucneVSeznamu) {
+function renderDefectDescription(descriptionText) {
   if (!descriptionText) return null;
   let parts = typeof descriptionText === "string" ? descriptionText.split(SPLIT_REGEX) : [descriptionText];
   if (parts.length === 1 && typeof descriptionText === "string") {
@@ -169,14 +170,14 @@ function renderDefectDescription(descriptionText, tucneVSeznamu) {
     const after = parts.slice(1).join("").replace(SPLIT_REGEX, "");
     return (
       <div className="variant-popis-detail">
-        <span className="variant-popis-short">{formatDefectDescription(before, { boldBracket: !!tucneVSeznamu })}</span>
-        <VariantTooltip tooltip={<span className="variant-tooltip-content">{formatDefectDescription(after, { boldBracket: !!tucneVSeznamu })}</span>}>
+        <span className="variant-popis-short">{formatDefectDescription(before)}</span>
+        <VariantTooltip tooltip={<span className="variant-tooltip-content">{formatDefectDescription(after)}</span>}>
           …
         </VariantTooltip>
       </div>
     );
   }
-  const rendered = formatDefectDescription(descriptionText, { boldBracket: !!tucneVSeznamu });
+  const rendered = formatDefectDescription(descriptionText);
   if (typeof descriptionText === "string" && descriptionText.length > 500) {
     return (
       <div className="variant-popis-detail">
@@ -211,6 +212,7 @@ const VariantList = forwardRef(function VariantList({
       getDefectKey(def),
       {
         variantaVady: def.variantaVady || "",
+        typVarianty: def.typVarianty || "",
         umisteniVady: def.umisteniVady || "",
         popisVady: def.popisVady || "",
         obecnyPopisVarianty: def.obecnyPopisVarianty || "",
@@ -233,6 +235,7 @@ const VariantList = forwardRef(function VariantList({
         if (!next[key]) {
           next[key] = {
             variantaVady: def.variantaVady || "",
+            typVarianty: def.typVarianty || "",
             umisteniVady: def.umisteniVady || "",
             popisVady: def.popisVady || "",
             obecnyPopisVarianty: def.obecnyPopisVarianty || "",
@@ -265,6 +268,17 @@ const VariantList = forwardRef(function VariantList({
     });
   };
 
+  const saveVariantType = async (def) => {
+    const key = getDefectKey(def);
+    const edits = defectEdits[key] || {};
+    const saved = await saveDefectEdit(def._id || def.idVady, {
+      ...def,
+      ...edits,
+      typVarianty: edits.typVarianty ?? def.typVarianty ?? "",
+    });
+    if (saved) clearDirtyKey(key);
+  };
+
   const saveCheckboxChangeImmediately = async (def, key, edits, field, value) => {
     const nextEdits = { ...edits, [field]: value };
 
@@ -284,6 +298,7 @@ const VariantList = forwardRef(function VariantList({
       umisteniVady: nextEdits.umisteniVady,
       popisVady: nextEdits.popisVady,
       obecnyPopisVarianty: nextEdits.obecnyPopisVarianty,
+      typVarianty: nextEdits.typVarianty,
       obrazekVady: nextEdits.obrazekVady,
       poradiVady: normalizeDefectOrderForSave(nextEdits.poradiVady),
       tucneVSeznamu: nextEdits.tucneVSeznamu,
@@ -346,6 +361,29 @@ const VariantList = forwardRef(function VariantList({
           const maxHeight = Math.max(...headers.map(header => header.getBoundingClientRect().height));
           headers.forEach(header => {
             header.style.minHeight = `${maxHeight}px`;
+          });
+        });
+
+        const captions = Array.from(container.querySelectorAll(".variants > .variant .variant-popis"));
+        captions.forEach(caption => {
+          caption.style.minHeight = "";
+        });
+
+        const captionRows = new Map();
+        captions.forEach(caption => {
+          const card = caption.closest(".variant");
+          if (!card) return;
+          const rowTop = Math.round(card.getBoundingClientRect().top);
+          const row = captionRows.get(rowTop) || [];
+          row.push(caption);
+          captionRows.set(rowTop, row);
+        });
+
+        captionRows.forEach(rowCaptions => {
+          if (rowCaptions.length < 2) return;
+          const maxHeight = Math.max(...rowCaptions.map(caption => caption.getBoundingClientRect().height));
+          rowCaptions.forEach(caption => {
+            caption.style.minHeight = `${maxHeight}px`;
           });
         });
       });
@@ -422,6 +460,7 @@ const VariantList = forwardRef(function VariantList({
           umisteniVady: edits.umisteniVady,
           popisVady: edits.popisVady,
           obecnyPopisVarianty: edits.obecnyPopisVarianty,
+          typVarianty: edits.typVarianty,
           obrazekVady: edits.obrazekVady,
           poradiVady: normalizeDefectOrderForSave(edits.poradiVady),
           tucneVSeznamu: edits.tucneVSeznamu,
@@ -509,6 +548,15 @@ const VariantList = forwardRef(function VariantList({
     const hasMamBottomBorder = isAdmin && showMamControl;
     const displayDescription = buildDefectDescriptionWithVariant(def);
     const { variantToken, descriptionText } = splitLeadingVariantToken(displayDescription);
+    const rawVariantLabel = String(def?.variantaVady || "").trim();
+    const isSubvariantLabel = rawVariantLabel.length > 1 && !/^\d+$/.test(rawVariantLabel) && !rawVariantLabel.includes(",");
+    const isNestedSubvariantLabel = isSubvariantLabel && rawVariantLabel.includes(".");
+    const variantLevelClass = !isSubvariantLabel
+      ? "variant-label-token-root"
+      : isNestedSubvariantLabel
+        ? "variant-label-token-nested"
+        : "variant-label-token-sub";
+    const imageNumber = getImageNumber(def);
 
     return (
       <div
@@ -561,15 +609,15 @@ const VariantList = forwardRef(function VariantList({
         )}
         <div className="variant-label">
           {variantToken && (
-            <span className={`variant-label-token${def.tucneVSeznamu ? " variant-label-token-emph" : ""}`}>
-              {renderVariantToken(variantToken, !!def.tucneVSeznamu)}
+            <span className={`variant-label-token ${variantLevelClass}`}>
+              {renderVariantToken(variantToken, false)}
             </span>
           )}
           {IMAGE_LABEL_MODE === "brackets" ? (
-            <>(<span className="variant-label-prefix">obr.</span>){" "}{getImageNumber(def)}</>
+            <>(<span className="variant-label-prefix">obr.</span>){" "}{imageNumber}</>
           ) : IMAGE_LABEL_MODE === "plain" ? (
-            <><span className="variant-label-prefix">obr.</span>{" "}{getImageNumber(def)}</>
-          ) : getImageNumber(def)}
+            <><span className="variant-label-prefix">obr.</span>{" "}{imageNumber}</>
+          ) : imageNumber}
         </div>
         {isEditingAll ? (
           <div>
@@ -642,7 +690,7 @@ const VariantList = forwardRef(function VariantList({
             </div>
           </div>
         ) : (
-          renderDefectDescription(descriptionText, def.tucneVSeznamu)
+          renderDefectDescription(descriptionText)
         )}
       </div>
     );
@@ -741,14 +789,18 @@ const VariantList = forwardRef(function VariantList({
                 {isEditingAll && isAdmin ? (
                   <>
                     <span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span>
-                    <input type="text" className="variant-typ-edit-input" defaultValue={typVarianty} placeholder="typ varianty…" id={`typVarianty-input-${group}`} />
+                    <input
+                      type="text"
+                      className="variant-typ-edit-input"
+                      value={defectEdits[getDefectKey(mainDef)]?.typVarianty ?? typVarianty}
+                      onChange={(event) => updateEdit(getDefectKey(mainDef), "typVarianty", event.target.value)}
+                      placeholder="typ varianty…"
+                      id={`typVarianty-input-${group}`}
+                    />
                     <button
                       className="ktf-btn-check variant-type-save-button"
                       title="Uložit typ varianty"
-                      onClick={() => {
-                        const val = document.getElementById(`typVarianty-input-${group}`)?.value ?? "";
-                        saveDefectEdit(mainDef._id || mainDef.idVady, { ...mainDef, ...defectEdits[getDefectKey(mainDef)], typVarianty: val });
-                      }}
+                      onClick={() => saveVariantType(mainDef)}
                     >✓</button>
                   </>
                 ) : (
@@ -790,14 +842,18 @@ const VariantList = forwardRef(function VariantList({
                 {isEditingAll && isAdmin && mainPlusDef ? (
                   <>
                     <span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span>
-                    <input type="text" className="variant-typ-edit-input" defaultValue={plusTypVarianty} placeholder="typ varianty…" id="typVarianty-input-plus" />
+                    <input
+                      type="text"
+                      className="variant-typ-edit-input"
+                      value={defectEdits[getDefectKey(mainPlusDef)]?.typVarianty ?? plusTypVarianty}
+                      onChange={(event) => updateEdit(getDefectKey(mainPlusDef), "typVarianty", event.target.value)}
+                      placeholder="typ varianty…"
+                      id="typVarianty-input-plus"
+                    />
                     <button
                       className="ktf-btn-check variant-type-save-button"
                       title="Uložit typ varianty"
-                      onClick={() => {
-                        const val = document.getElementById("typVarianty-input-plus")?.value ?? "";
-                        saveDefectEdit(mainPlusDef._id || mainPlusDef.idVady, { ...mainPlusDef, ...defectEdits[getDefectKey(mainPlusDef)], typVarianty: val });
-                      }}
+                      onClick={() => saveVariantType(mainPlusDef)}
                     >✓</button>
                   </>
                 ) : (

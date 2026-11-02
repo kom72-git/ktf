@@ -1844,12 +1844,16 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
 .variant-subtitle-name {
   display: inline-block;
   font-weight: 600;
-  color: #1e3a5f;
   padding: 0 8px;
   border-radius: 6px;
-  background: #eef3fb;
-  border: 1px solid #dbe4f3;
+  border: 1px solid;
   line-height: 1.35;
+}
+.variant-subtitle-name,
+.variant-label-token-root {
+  color: #17365f;
+  border-color: #7997bb;
+  background: #c8d8ec;
 }
 .variant-dash {
   font-weight: normal;
@@ -1982,8 +1986,10 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   font-weight: 400;
 }
 .variant-popis {
+  min-height: 1.5em;
   font-size: 1rem;
   font-weight: 600;
+  line-height: 1.5;
   margin-bottom: 14px;
 }
 .variant-popis-hlavni {
@@ -2014,21 +2020,26 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   display: inline-flex;
   align-items: center;
   margin-right: 10px;
-  color: #1e3a5f;
   font-weight: 500;
   padding: 1px 8px;
   border-radius: 6px;
-  border: 1px solid #dbe4f3;
-  background: #eef3fb;
+  border: 1px solid;
 }
-
-.variant-label-token-emph {
-  color: #0f2f57;
-  border-color: #bfd2eb;
-  background: #dfebfb;
-  box-shadow: inset 0 -1px 0 rgba(15, 47, 87, 0.18);
+.variant-label-token-root {
+  color: #17365f;
+  border-color: #7997bb;
+  background: #c8d8ec;
 }
-
+.variant-label-token-sub {
+  color: #23466f;
+  border-color: #c5d5e8;
+  background: #e8f0fa;
+}
+.variant-label-token-nested {
+  color: #36536f;
+  border-color: #dbe4f3;
+  background: #f3f6fb;
+}
 .variant-label-token strong,
 .variant-label-token .variant-suffix {
   color: inherit;
