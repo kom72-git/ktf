@@ -2100,7 +2100,7 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   flex: 0 0 18px;
   width: 18px;
   height: 18px;
-  top: -3px;
+  top: -2px;
   color: #64707b;
 }
 .variant-group-info-text strong {

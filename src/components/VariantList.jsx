@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useLayoutEffect, useImperativeHandle, forwardRef, useRef } from "react";
 import { Fancybox } from "@fancyapps/ui";
+import { CornerDownRight } from "lucide-react";
 import VariantTooltip from "./VariantTooltip.jsx";
 import { formatDefectDescription, formatPopisWithAll } from "../utils/formatovaniTextu.jsx";
 import { naturalVariantSort, compareVariantsWithBracket } from "../utils/katalog.js";
@@ -777,9 +778,7 @@ const VariantList = forwardRef(function VariantList({
               </h3>
               {subvariantLabels.length > 0 && (
                 <div className="variant-group-info">
-                  <span className="variant-group-info-icon" title={subvariantTitle}>
-                    <img src="/img/ico_podvarianty.png" alt="info" className="variant-group-info-icon" />
-                  </span>
+                  <CornerDownRight className="variant-group-info-icon" size={18} strokeWidth={1.8} aria-label="Podvarianty" role="img" title={subvariantTitle} />
                   <span className="variant-group-info-text">
                     {subvariantTitle}: {subvariantLabels.map((s, i) => (
                       <span key={s.label + i}>{i > 0 && ", "}{s.bold ? <strong>{s.label}</strong> : s.label}</span>
