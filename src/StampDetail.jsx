@@ -1382,6 +1382,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 caption: ''
               }
             ], {
+              mainClass: 'study-main-image-gutter',
               Toolbar: [ 'zoom', 'close' ],
               dragToClose: true,
               animated: true,

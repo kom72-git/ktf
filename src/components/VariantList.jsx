@@ -4,7 +4,6 @@
 
 import React, { useState, useEffect, useLayoutEffect, useImperativeHandle, forwardRef, useRef } from "react";
 import { Fancybox } from "@fancyapps/ui";
-import { CornerDownRight } from "lucide-react";
 import VariantTooltip from "./VariantTooltip.jsx";
 import { formatDefectDescription, formatPopisWithAll } from "../utils/formatovaniTextu.jsx";
 import { naturalVariantSort, compareVariantsWithBracket } from "../utils/katalog.js";
@@ -130,10 +129,10 @@ function hasDefectChanges(def, edits) {
   const nextOrder = normalizeDefectOrderForSave(edits.poradiVady);
   return (
     (edits.variantaVady ?? "") !== (def.variantaVady || "")
+    || (edits.typVarianty ?? "") !== (def.typVarianty || "")
     || (edits.umisteniVady ?? "") !== (def.umisteniVady || "")
     || (edits.popisVady ?? "") !== (def.popisVady || "")
     || (edits.obecnyPopisVarianty ?? "") !== (def.obecnyPopisVarianty || "")
-    || (edits.typVarianty ?? "") !== (def.typVarianty || "")
     || (edits.obrazekVady ?? "") !== (def.obrazekVady || "")
     || nextOrder !== currentOrder
     || !!edits.tucneVSeznamu !== !!def.tucneVSeznamu
@@ -156,7 +155,7 @@ const NO_IMAGE = "/img/no-image.png";
 // Podoba popisku pod obrázkem varianty: "hidden" (A 1), "plain" (A obr. 1), "brackets" (A (obr.) 1).
 const IMAGE_LABEL_MODE = "hidden";
 
-function renderDefectDescription(descriptionText) {
+function renderDefectDescription(descriptionText, tucneVSeznamu) {
   if (!descriptionText) return null;
   let parts = typeof descriptionText === "string" ? descriptionText.split(SPLIT_REGEX) : [descriptionText];
   if (parts.length === 1 && typeof descriptionText === "string") {
@@ -170,14 +169,14 @@ function renderDefectDescription(descriptionText) {
     const after = parts.slice(1).join("").replace(SPLIT_REGEX, "");
     return (
       <div className="variant-popis-detail">
-        <span className="variant-popis-short">{formatDefectDescription(before)}</span>
-        <VariantTooltip tooltip={<span className="variant-tooltip-content">{formatDefectDescription(after)}</span>}>
+        <span className="variant-popis-short">{formatDefectDescription(before, { boldBracket: !!tucneVSeznamu })}</span>
+        <VariantTooltip tooltip={<span className="variant-tooltip-content">{formatDefectDescription(after, { boldBracket: !!tucneVSeznamu })}</span>}>
           …
         </VariantTooltip>
       </div>
     );
   }
-  const rendered = formatDefectDescription(descriptionText);
+  const rendered = formatDefectDescription(descriptionText, { boldBracket: !!tucneVSeznamu });
   if (typeof descriptionText === "string" && descriptionText.length > 500) {
     return (
       <div className="variant-popis-detail">
@@ -295,10 +294,10 @@ const VariantList = forwardRef(function VariantList({
     const saved = await saveDefectEdit(defectId, {
       ...def,
       variantaVady: nextEdits.variantaVady,
+      typVarianty: nextEdits.typVarianty,
       umisteniVady: nextEdits.umisteniVady,
       popisVady: nextEdits.popisVady,
       obecnyPopisVarianty: nextEdits.obecnyPopisVarianty,
-      typVarianty: nextEdits.typVarianty,
       obrazekVady: nextEdits.obrazekVady,
       poradiVady: normalizeDefectOrderForSave(nextEdits.poradiVady),
       tucneVSeznamu: nextEdits.tucneVSeznamu,
@@ -361,29 +360,6 @@ const VariantList = forwardRef(function VariantList({
           const maxHeight = Math.max(...headers.map(header => header.getBoundingClientRect().height));
           headers.forEach(header => {
             header.style.minHeight = `${maxHeight}px`;
-          });
-        });
-
-        const captions = Array.from(container.querySelectorAll(".variants > .variant .variant-popis"));
-        captions.forEach(caption => {
-          caption.style.minHeight = "";
-        });
-
-        const captionRows = new Map();
-        captions.forEach(caption => {
-          const card = caption.closest(".variant");
-          if (!card) return;
-          const rowTop = Math.round(card.getBoundingClientRect().top);
-          const row = captionRows.get(rowTop) || [];
-          row.push(caption);
-          captionRows.set(rowTop, row);
-        });
-
-        captionRows.forEach(rowCaptions => {
-          if (rowCaptions.length < 2) return;
-          const maxHeight = Math.max(...rowCaptions.map(caption => caption.getBoundingClientRect().height));
-          rowCaptions.forEach(caption => {
-            caption.style.minHeight = `${maxHeight}px`;
           });
         });
       });
@@ -457,10 +433,10 @@ const VariantList = forwardRef(function VariantList({
         const saved = await saveDefectEdit(defectId, {
           ...def,
           variantaVady: edits.variantaVady,
+          typVarianty: edits.typVarianty,
           umisteniVady: edits.umisteniVady,
           popisVady: edits.popisVady,
           obecnyPopisVarianty: edits.obecnyPopisVarianty,
-          typVarianty: edits.typVarianty,
           obrazekVady: edits.obrazekVady,
           poradiVady: normalizeDefectOrderForSave(edits.poradiVady),
           tucneVSeznamu: edits.tucneVSeznamu,
@@ -548,15 +524,6 @@ const VariantList = forwardRef(function VariantList({
     const hasMamBottomBorder = isAdmin && showMamControl;
     const displayDescription = buildDefectDescriptionWithVariant(def);
     const { variantToken, descriptionText } = splitLeadingVariantToken(displayDescription);
-    const rawVariantLabel = String(def?.variantaVady || "").trim();
-    const isSubvariantLabel = rawVariantLabel.length > 1 && !/^\d+$/.test(rawVariantLabel) && !rawVariantLabel.includes(",");
-    const isNestedSubvariantLabel = isSubvariantLabel && rawVariantLabel.includes(".");
-    const variantLevelClass = !isSubvariantLabel
-      ? "variant-label-token-root"
-      : isNestedSubvariantLabel
-        ? "variant-label-token-nested"
-        : "variant-label-token-sub";
-    const imageNumber = getImageNumber(def);
 
     return (
       <div
@@ -609,15 +576,15 @@ const VariantList = forwardRef(function VariantList({
         )}
         <div className="variant-label">
           {variantToken && (
-            <span className={`variant-label-token ${variantLevelClass}`}>
-              {renderVariantToken(variantToken, false)}
+            <span className={`variant-label-token${def.tucneVSeznamu ? " variant-label-token-emph" : ""}`}>
+              {renderVariantToken(variantToken, !!def.tucneVSeznamu)}
             </span>
           )}
           {IMAGE_LABEL_MODE === "brackets" ? (
-            <>(<span className="variant-label-prefix">obr.</span>){" "}{imageNumber}</>
+            <>(<span className="variant-label-prefix">obr.</span>){" "}{getImageNumber(def)}</>
           ) : IMAGE_LABEL_MODE === "plain" ? (
-            <><span className="variant-label-prefix">obr.</span>{" "}{imageNumber}</>
-          ) : imageNumber}
+            <><span className="variant-label-prefix">obr.</span>{" "}{getImageNumber(def)}</>
+          ) : getImageNumber(def)}
         </div>
         {isEditingAll ? (
           <div>
@@ -674,6 +641,7 @@ const VariantList = forwardRef(function VariantList({
                   saveDefectEdit(def._id || def.idVady, {
                     ...def,
                     variantaVady: edits.variantaVady,
+                    typVarianty: edits.typVarianty,
                     umisteniVady: edits.umisteniVady,
                     popisVady: edits.popisVady,
                     obecnyPopisVarianty: edits.obecnyPopisVarianty,
@@ -690,7 +658,7 @@ const VariantList = forwardRef(function VariantList({
             </div>
           </div>
         ) : (
-          renderDefectDescription(descriptionText)
+          renderDefectDescription(descriptionText, def.tucneVSeznamu)
         )}
       </div>
     );
@@ -809,7 +777,9 @@ const VariantList = forwardRef(function VariantList({
               </h3>
               {subvariantLabels.length > 0 && (
                 <div className="variant-group-info">
-                  <CornerDownRight className="variant-group-info-icon" size={18} strokeWidth={1.8} aria-label="Podvarianty" role="img" />
+                  <span className="variant-group-info-icon" title={subvariantTitle}>
+                    <img src="/img/ico_podvarianty.png" alt="info" className="variant-group-info-icon" />
+                  </span>
                   <span className="variant-group-info-text">
                     {subvariantTitle}: {subvariantLabels.map((s, i) => (
                       <span key={s.label + i}>{i > 0 && ", "}{s.bold ? <strong>{s.label}</strong> : s.label}</span>
