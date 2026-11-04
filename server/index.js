@@ -183,11 +183,10 @@ app.put("/api/stamps/:id", async (req, res) => {
     
     const updateData = { ...req.body };
     delete updateData._id;
-    const nowIso = new Date().toISOString();
-    const updatePayload = {
-      ...updateData,
-      updatedAt: new Date().toISOString(),
-    };
+    const verificationOnlyUpdate = Object.prototype.hasOwnProperty.call(updateData, "overeno")
+      && Object.keys(updateData).every((field) => field === "overeno" || field === "overenoAt");
+    const updatePayload = { ...updateData };
+    if (!verificationOnlyUpdate) updatePayload.updatedAt = new Date().toISOString();
     
     const result = await mongoose.connection.db.collection("stamps").updateOne(
       { idZnamky: id },

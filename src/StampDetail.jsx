@@ -31,6 +31,7 @@ import {
   formatTiskovaFormaDisplay,
   formatZoubkovaniDisplay,
   formatDatumVydaniDisplay,
+  formatStampApprovalDate,
 } from "./utils/formatovaniUdaju.js";
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import "./fancybox-responsive.css";
@@ -42,6 +43,7 @@ import { getStavFromStamp, stavToIsHidden } from "./utils/stavUtils.js";
 
 const LITERATURE_PREFIX_REGEX = /^\s*(?:\[(\d+)\]|(\d+)([.)]))\s*(.*)$/;
 const LITERATURE_URL_REGEX = /(https?:\/\/[^\s]+)/i;
+
 function parseLiteratureEntries(rawValue) {
   if (typeof rawValue !== "string" || rawValue.trim() === "") {
     return [];
@@ -295,6 +297,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           isHidden: Boolean(data.isHidden),
           stav: getStavFromStamp(data),
           overeno: Boolean(data.overeno),
+          overenoAt: data.overenoAt || null,
           variantyVylouceneZA: data.variantyVylouceneZA || [],
           variantyMamZA: data.variantyMamZA || {}
         });
@@ -662,6 +665,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   // Funkce pro uložení hlavních informací
   const saveMainField = async (fieldOrObj, value) => {
     const fields = typeof fieldOrObj === 'object' ? fieldOrObj : { [fieldOrObj]: value };
+    const verificationOnlyUpdate = Object.prototype.hasOwnProperty.call(fields, 'overeno')
+      && Object.keys(fields).every((field) => field === 'overeno' || field === 'overenoAt');
     try {
       const API_BASE = getApiBase();
 
@@ -676,7 +681,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
       if (response.ok) {
         const updatedStamp = await response.json();
-        applyUpdatedStamp(updatedStamp, { touchNow: true });
+        applyUpdatedStamp(updatedStamp, { touchNow: !verificationOnlyUpdate });
         console.log(`Hlavní údaj uložen:`, fields);
         return true;
       } else {
@@ -833,12 +838,14 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
   const handleVerifiedToggle = async (isVerified) => {
     const previous = Boolean(editStampData.overeno);
-    setEditStampData((prev) => ({ ...prev, overeno: isVerified }));
+    const previousDate = editStampData.overenoAt || item?.overenoAt || null;
+    const overenoAt = isVerified ? new Date().toISOString() : null;
+    setEditStampData((prev) => ({ ...prev, overeno: isVerified, overenoAt }));
     setIsSavingVerified(true);
-    const saved = await saveMainField('overeno', isVerified);
+    const saved = await saveMainField({ overeno: isVerified, overenoAt });
     setIsSavingVerified(false);
     if (!saved) {
-      setEditStampData((prev) => ({ ...prev, overeno: previous }));
+      setEditStampData((prev) => ({ ...prev, overeno: previous, overenoAt: previousDate }));
       return;
     }
     const notification = document.createElement('div');
@@ -1138,7 +1145,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   })();
 
   const secondStudyBlockClass = isEditingAll ? 'study-note-block editing' : 'study-note-block';
-  const isVerifiedStamp = Boolean(item?.overeno);
+  const verifiedStampDate = formatStampApprovalDate(item?.overenoAt);
+  const isVerifiedStamp = Boolean(item?.overeno && verifiedStampDate);
   const detailHeadingId = `stamp-detail-${item.idZnamky || id}-title`;
   const specHeadingId = `${detailHeadingId}-spec`;
   const studyHeadingId = `${detailHeadingId}-study`;
@@ -1312,14 +1320,19 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         )}
       </div>
       {isVerifiedStamp && (
-        <span className="verified-stamp-wrap" role="status" aria-label="Známka je ověřená">
+        <span
+          className="verified-stamp-wrap"
+          role="status"
+          aria-label={`Známka je ověřená dne ${verifiedStampDate}`}
+        >
           <img
-            src="/img/verified.svg"
+            src="/img/overeno.svg"
             alt="Ověřeno"
             className="verified-stamp-mark"
             loading="lazy"
             decoding="async"
           />
+          <span className="verified-stamp-date" aria-hidden="true">{verifiedStampDate}</span>
         </span>
       )}
       <StampTitleSection

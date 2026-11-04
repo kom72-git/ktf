@@ -363,6 +363,29 @@ const VariantList = forwardRef(function VariantList({
             header.style.minHeight = `${maxHeight}px`;
           });
         });
+
+        const captions = Array.from(container.querySelectorAll(".variants > .variant .variant-popis"));
+        captions.forEach(caption => {
+          caption.style.minHeight = "";
+        });
+
+        const captionRows = new Map();
+        captions.forEach(caption => {
+          const card = caption.closest(".variant");
+          if (!card) return;
+          const rowTop = Math.round(card.getBoundingClientRect().top);
+          const row = captionRows.get(rowTop) || [];
+          row.push(caption);
+          captionRows.set(rowTop, row);
+        });
+
+        captionRows.forEach(rowCaptions => {
+          if (rowCaptions.length < 2) return;
+          const maxHeight = Math.max(...rowCaptions.map(caption => caption.getBoundingClientRect().height));
+          rowCaptions.forEach(caption => {
+            caption.style.minHeight = `${maxHeight}px`;
+          });
+        });
       });
     };
 
@@ -587,8 +610,8 @@ const VariantList = forwardRef(function VariantList({
         )}
         <div className="variant-label">
           {variantToken && (
-            <span className={`variant-label-token ${variantLevelClass}${def.tucneVSeznamu ? " variant-label-token-emph" : ""}`}>
-              {renderVariantToken(variantToken, !!def.tucneVSeznamu)}
+            <span className={`variant-label-token ${variantLevelClass}`}>
+              {renderVariantToken(variantToken, false)}
             </span>
           )}
           {IMAGE_LABEL_MODE === "brackets" ? (

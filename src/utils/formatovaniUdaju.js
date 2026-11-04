@@ -215,3 +215,23 @@ export function formatDateTimeDisplay(value) {
     minute: "2-digit",
   }).format(date);
 }
+
+const ROMAN_MONTHS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+
+export function formatStampApprovalDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Prague",
+    day: "2-digit",
+    month: "numeric",
+    year: "numeric",
+  }).formatToParts(date);
+  const day = parts.find((part) => part.type === "day")?.value;
+  const month = Number(parts.find((part) => part.type === "month")?.value);
+  const year = parts.find((part) => part.type === "year")?.value;
+  if (!day || !month || !year) return "";
+  return `${day}.${ROMAN_MONTHS[month - 1]}.${year}`;
+}

@@ -52,10 +52,10 @@ export default async function handler(req, res) {
     if (req.method === 'PUT') {
       const updateData = { ...(req.body || {}) };
       delete updateData._id;
-      const updatePayload = {
-        ...updateData,
-        updatedAt: new Date().toISOString(),
-      };
+      const verificationOnlyUpdate = Object.prototype.hasOwnProperty.call(updateData, "overeno")
+        && Object.keys(updateData).every((field) => field === "overeno" || field === "overenoAt");
+      const updatePayload = { ...updateData };
+      if (!verificationOnlyUpdate) updatePayload.updatedAt = new Date().toISOString();
 
       const result = await mongoose.connection.db.collection("stamps").updateOne(
         { idZnamky: id },
