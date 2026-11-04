@@ -1430,10 +1430,12 @@ input.admin-checkbox { width: 18px; height: 18px; cursor: pointer; }
 .variant-type-sep {
   margin: 0 0.5em;
   font-weight: normal;
+  color: #526173;
 }
 .variant-type {
   font-weight: normal;
-  font-size: 0.85em;
+  font-size: 16px;
+  color: #526173;
 }
 .variant-typ-edit-input {
   padding: 2px 6px;
@@ -2008,6 +2010,9 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   padding: 0 2px;
   border-radius: 2px;
   font-weight: 500;
+}
+.variant-cast-nakladu {
+  color: #64707b;
 }
 .variant-label {
   color: #888;

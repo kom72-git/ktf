@@ -525,6 +525,16 @@ const VariantList = forwardRef(function VariantList({
     const hasMamBottomBorder = isAdmin && showMamControl;
     const displayDescription = buildDefectDescriptionWithVariant(def);
     const { variantToken, descriptionText } = splitLeadingVariantToken(displayDescription);
+    const rawVariantLabel = String(def?.variantaVady || "").trim();
+    const isSubvariantLabel = rawVariantLabel.length > 1
+      && !/^\d+$/.test(rawVariantLabel)
+      && !rawVariantLabel.includes(",");
+    const isNestedSubvariantLabel = isSubvariantLabel && rawVariantLabel.includes(".");
+    const variantLevelClass = !isSubvariantLabel
+      ? "variant-label-token-root"
+      : isNestedSubvariantLabel
+        ? "variant-label-token-nested"
+        : "variant-label-token-sub";
 
     return (
       <div
@@ -577,7 +587,7 @@ const VariantList = forwardRef(function VariantList({
         )}
         <div className="variant-label">
           {variantToken && (
-            <span className={`variant-label-token${def.tucneVSeznamu ? " variant-label-token-emph" : ""}`}>
+            <span className={`variant-label-token ${variantLevelClass}${def.tucneVSeznamu ? " variant-label-token-emph" : ""}`}>
               {renderVariantToken(variantToken, !!def.tucneVSeznamu)}
             </span>
           )}

@@ -324,9 +324,9 @@ const italicizeCastNakladu = (value = "") =>
     const needsLineBreak = !/(<br\s*\/?>(\s|&nbsp;)*|\n)\s*$/i.test(before) && before.trim() !== "";
     const prefix = needsLineBreak ? "<br />" : "";
     if (before.endsWith("<em>") && after.startsWith("</em>")) {
-      return `${prefix}${match}`;
+      return `${prefix}<span class="variant-cast-nakladu">${match}</span>`;
     }
-    return `${prefix}<em>${match}</em>`;
+    return `${prefix}<span class="variant-cast-nakladu"><em>${match}</em></span>`;
   });
 
 export function sklonujZobrazeno(count, jednotka) {
