@@ -7,7 +7,7 @@ function normalizeCatalogPrefix(value) {
 
 function parseCatalogNumber(katalogCislo) {
   const fromString = String(katalogCislo || "").trim();
-  const match = fromString.match(/^([\s\S]*?)(\d+(?:\/\d+)?)([A-Za-z]*)$/);
+  const match = fromString.match(/^([\s\S]*?)(\d+(?:\/\d+)?)(\s*[A-Za-z]*)$/);
   if (!match) {
     return {
       prefix: normalizeCatalogPrefix(fromString),
@@ -19,7 +19,7 @@ function parseCatalogNumber(katalogCislo) {
   }
   const rawPrefix = match[1] || "";
   const rawNumber = match[2] || "0";
-  const rawSuffix = match[3] || "";
+  const rawSuffix = (match[3] || "").trim();
   const [basePart, tailPart] = rawNumber.split("/");
   return {
     prefix: normalizeCatalogPrefix(rawPrefix),
@@ -183,7 +183,7 @@ export function splitCatalogDisplaySuffix(text) {
 export function getCatalogDisplayParts(stamp) {
   const katalogCislo = String(stamp?.katalogCislo || "").trim();
   const idZnamky = String(stamp?.idZnamky || "").trim();
-  const catalogMatch = katalogCislo.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*([\d/]+)([A-ZČŘŽŠĚÚŮ]*)$/i);
+  const catalogMatch = katalogCislo.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*([\d/]+)\s*([A-ZČŘŽŠĚÚŮ]*)$/i);
   if (!catalogMatch) {
     return { prefix: "", number: katalogCislo, suffix: "", value: katalogCislo };
   }
@@ -200,13 +200,24 @@ export function getCatalogDisplayParts(stamp) {
 export function getCatalogBaseKey(stamp) {
   const katalogCislo = String(stamp?.katalogCislo || "").trim();
   const idZnamky = String(stamp?.idZnamky || "").trim();
-  const match = katalogCislo.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*([\d/]+)([A-ZČŘŽŠĚÚŮ]*)$/i);
+  const match = katalogCislo.match(/^([A-ZČŘŽŠĚÚŮ]+)?\s*([\d/]+)\s*([A-ZČŘŽŠĚÚŮ]*)$/i);
   if (match) {
     const prefix = (match[1] || "").trim().toUpperCase();
     const number = match[2];
     return `${prefix}|${number}`;
   }
   return `__single__|${idZnamky || katalogCislo}`;
+}
+
+export function isCatalogABPair(groupItems) {
+  if (!Array.isArray(groupItems) || groupItems.length !== 2) return false;
+  const [first, second] = groupItems.map(getCatalogDisplayParts);
+  if (
+    first.prefix.toUpperCase() !== second.prefix.toUpperCase()
+    || first.number !== second.number
+  ) return false;
+  const suffixes = [first.suffix, second.suffix].map((suffix) => suffix.toUpperCase()).sort();
+  return suffixes[0] === "A" && suffixes[1] === "B";
 }
 
 export function formatGroupedCatalogText(groupItems) {

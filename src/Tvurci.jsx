@@ -33,6 +33,27 @@ function AuthorPhoto({ src }) {
   );
 }
 
+function AuthorGroup({ group, className = "" }) {
+  return (
+    <div className={`authors-group${className ? ` ${className}` : ""}`}>
+      <h2 id={`pismeno-${group.letter}`} className="authors-group-letter">{group.letter}</h2>
+      <ul className="authors-list">
+        {group.items.map((author) => (
+          <li key={author.slug}>
+            <Link to={`/tvurce/${author.slug}`}>
+              <AuthorPhoto src={author.card?.foto ? fotoSrc(author.card.foto) : autoFoto(author.name)} />
+              <span className="authors-list-name">{author.card?.jmeno || author.name}</span>
+              <span className="authors-list-meta">
+                {sortedRoles(author.roles).map((role) => `${role === "navrhar" ? "návrh" : roleLabel(role, author.card?.jmeno || author.name)} (${author.roles.get(role)})`).join(", ")}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function Tvurci() {
   const navigate = useNavigate();
   const [stamps, setStamps] = useState(null);
@@ -78,44 +99,42 @@ export default function Tvurci() {
     return result;
   }, [authors]);
 
+  const renderAuthorGroup = (group, className) => (
+    <AuthorGroup key={group.letter} group={group} className={className} />
+  );
+
   return (
     <div className="page-bg">
       <Header navigate={navigate} />
       <main className="main">
         <section className="stamp-detail-block author-page" aria-labelledby="authors-title">
-          <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Zpět</button>
-          <div className="detail-title">
-            <h1 id="authors-title" className="detail-title-text">Tvůrci známek</h1>
-          </div>
-          {!authors ? (
-            <p>Načítám…</p>
-          ) : (
-            <>
-              <nav className="authors-letters" aria-label="Rejstřík podle písmen">
+          <div className="help-page-intro authors-page-intro">
+            <img className="help-page-art" src="/img/tvurci.svg" alt="" aria-hidden="true" />
+            <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Zpět</button>
+            <div className="authors-index-heading">
+              <div className="detail-title">
+                <h1 id="authors-title" className="detail-title-text">Tvůrci známek</h1>
+              </div>
+              <p className="authors-intro-text">
+                Přehled návrhářů a rytců československých poštovních známek evidovaných na tomto webu.
+              </p>
+              {!authors ? (
+                <p>Načítám…</p>
+              ) : null}
+            </div>
+            {authors ? (
+              <nav className="authors-letters authors-letters-centered" aria-label="Rejstřík podle písmen">
                 {groups.map((g) => (
                   <a key={g.letter} href={`#pismeno-${g.letter}`}>{g.letter}</a>
                 ))}
               </nav>
-              {groups.map((g) => (
-                <div key={g.letter} className="authors-group">
-                  <h2 id={`pismeno-${g.letter}`} className="authors-group-letter">{g.letter}</h2>
-                  <ul className="authors-list">
-                    {g.items.map((a) => (
-                      <li key={a.slug}>
-                        <Link to={`/tvurce/${a.slug}`}>
-                          <AuthorPhoto src={a.card?.foto ? fotoSrc(a.card.foto) : autoFoto(a.name)} />
-                          <span className="authors-list-name">{a.card?.jmeno || a.name}</span>
-                          <span className="authors-list-meta">
-                            {sortedRoles(a.roles).map((r) => `${r === "navrhar" ? "návrh" : roleLabel(r, a.card?.jmeno || a.name)} (${a.roles.get(r)})`).join(", ")}
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+            ) : null}
+          </div>
+          {authors ? (
+            <>
+              {groups.map((group) => renderAuthorGroup(group))}
             </>
-          )}
+          ) : null}
         </section>
       </main>
       <ScrollTopButton />

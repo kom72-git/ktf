@@ -230,7 +230,7 @@ export function StampCatalogNumberSection({
           {hasABPair && aStamp && bStamp ? (
             <>
               {currentIsA ? (
-                <strong>{renderCatalogDisplay(aStamp.katalogCislo, aStamp.idZnamky || "a-stamp")}</strong>
+                renderCatalogDisplay(aStamp.katalogCislo, aStamp.idZnamky || "a-stamp")
               ) : (
                 renderCatalogLinkWithPreview(aStamp, aStamp.katalogCislo)
               )}
@@ -238,12 +238,12 @@ export function StampCatalogNumberSection({
               {currentIsA ? (
                 renderCatalogLinkWithPreview(bStamp, bStamp.katalogCislo)
               ) : (
-                <strong>{renderCatalogDisplay(bStamp.katalogCislo, bStamp.idZnamky || "b-stamp")}</strong>
+                renderCatalogDisplay(bStamp.katalogCislo, bStamp.idZnamky || "b-stamp")
               )}
             </>
           ) : (
             <>
-              <strong>{renderCatalogDisplay(item.katalogCislo, item.idZnamky || "item-stamp")}</strong>
+              {renderCatalogDisplay(item.katalogCislo, item.idZnamky || "item-stamp")}
               {companionStamp && companionStamp.katalogCislo && (
                 <>
                   <span className="detail-catalog-separator">|</span>

@@ -3,10 +3,11 @@
 // Boxy mohou být sbalené (sloučené) nebo rozbalené (jednotlivé varianty).
 // Používá se v hlavní komponentě StampCatalog.
 
-import React from "react";
+import React, { useLayoutEffect, useRef } from "react";
 import EmissionTitleAbbr from "./EmissionTitleAbbr.jsx";
+import CatalogNumberDisplay from "./CatalogNumberDisplay.jsx";
 import { normalizeStampImagePath } from "../utils/obrazekCesta.js";
-import { katalogSort, emissionToSlug, getCatalogBaseKey, formatGroupedCatalogText, renderCatalogDisplay } from "../utils/katalog.js";
+import { katalogSort, emissionToSlug, getCatalogBaseKey, isCatalogABPair, formatGroupedCatalogText } from "../utils/katalog.js";
 import { renderEmissionTitleWithPragaSuffix } from "../utils/formatovaniTextu.jsx";
 import { getStavFromStamp } from "../utils/stavUtils.js";
 
@@ -17,6 +18,75 @@ export default function StampBoxList({
   onNavigateToDetail,
   onNavigateToEmission,
 }) {
+  const catalogListRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const container = catalogListRef.current;
+    if (!container) return undefined;
+
+    let frame = 0;
+    const equalizeCatalogRows = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const catalogBlocks = Array.from(container.querySelectorAll(".stamp-bottom > div"));
+        catalogBlocks.forEach(block => {
+          block.style.minHeight = "";
+          const label = block.querySelector(".stamp-catalog-label");
+          const catalog = block.querySelector(".catalog");
+          if (!label || !catalog) return;
+
+          block.classList.remove("stamp-catalog-label-above");
+          catalog.classList.remove("stamp-catalog-single-line");
+          const lineTops = new Set(Array.from(catalog.getClientRects(), rect => Math.round(rect.top)));
+          if (lineTops.size < 2) return;
+
+          block.classList.add("stamp-catalog-label-above");
+          catalog.style.whiteSpace = "nowrap";
+          const fitsWithoutLabel = catalog.scrollWidth <= catalog.clientWidth;
+          catalog.style.whiteSpace = "";
+          if (!fitsWithoutLabel) {
+            block.classList.remove("stamp-catalog-label-above");
+          } else {
+            catalog.classList.add("stamp-catalog-single-line");
+          }
+        });
+
+        const rows = new Map();
+        catalogBlocks.forEach(block => {
+          const card = block.closest(".stamp-card");
+          if (!card) return;
+          const rowTop = Math.round(card.getBoundingClientRect().top);
+          const row = rows.get(rowTop) || [];
+          row.push(block);
+          rows.set(rowTop, row);
+        });
+
+        rows.forEach(rowBlocks => {
+          if (rowBlocks.some(block => block.classList.contains("stamp-catalog-label-above"))) {
+            rowBlocks.forEach(block => block.classList.add("stamp-catalog-label-above"));
+          }
+          if (rowBlocks.length < 2) return;
+          const maxHeight = Math.max(...rowBlocks.map(block => block.getBoundingClientRect().height));
+          rowBlocks.forEach(block => {
+            block.style.minHeight = `${maxHeight}px`;
+          });
+        });
+      });
+    };
+
+    equalizeCatalogRows();
+    const observer = typeof ResizeObserver === "undefined"
+      ? null
+      : new ResizeObserver(equalizeCatalogRows);
+    observer?.observe(container);
+    window.addEventListener("resize", equalizeCatalogRows);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener("resize", equalizeCatalogRows);
+    };
+  }, [boxesToRender, expandedBoxes]);
 
   // Předpočítat střídající se pruhy pro sousedící rozbalené boxy
   const stripeMap = new Map();
@@ -32,7 +102,7 @@ export default function StampBoxList({
   });
 
   return (
-    <div className="stamp-list-layout">
+    <div className="stamp-list-layout" ref={catalogListRef}>
       {boxesToRender.flatMap(([key, items]) => {
         const sortedItems = [...items].sort(katalogSort);
         const item = sortedItems[0];
@@ -50,7 +120,8 @@ export default function StampBoxList({
           : "Nepublikované známky v této emisi";
         const allSameBaseKey = sortedItems.length > 1 &&
           sortedItems.every(s => getCatalogBaseKey(s) === getCatalogBaseKey(sortedItems[0]));
-        const isSingle = sortedItems.length === 1 || allSameBaseKey;
+        const hasCatalogABPair = isCatalogABPair(sortedItems);
+        const isSingle = sortedItems.length === 1 || (allSameBaseKey && !hasCatalogABPair);
         const ribbonClassWithGeometry = `${ribbonClass}${isSingle ? " stamp-unpublished-ribbon-fixed" : ""}`;
         const ribbonText = useInterniRibbon
           ? (isSingle ? "INTERNÍ" : `INTERNÍ ${interniCount}/${sortedItems.length}`)
@@ -62,7 +133,7 @@ export default function StampBoxList({
         const slug = emissionToSlug(emissionName);
         const expanded = expandedBoxes.includes(key);
 
-        if (!expanded || allSameBaseKey) {
+        if (!expanded || (allSameBaseKey && !hasCatalogABPair)) {
           // SLOUČENÝ BOX
           const groupedForCollapsed = new Map();
           sortedItems.forEach((entry) => {
@@ -91,7 +162,6 @@ export default function StampBoxList({
               }
             }
           }
-
           return (
             <div key={key} className={`stamp-card stamp-card-pointer${showUnpublishedHint ? " stamp-card-unpublished" : ""}${useInterniRibbon ? " stamp-card-internal" : ""}`}
               onClick={() => {
@@ -126,9 +196,11 @@ export default function StampBoxList({
                 <EmissionTitleAbbr>{renderEmissionTitleWithPragaSuffix(emise, rok)}</EmissionTitleAbbr>
               </div>
               <div className="stamp-bottom">
-                <div>Katalog: <span className="catalog">{renderCatalogDisplay(katalogText)}</span></div>
+                <div className="stamp-catalog-row"><span className="stamp-catalog-label">{sortedItems.length > 1 ? `Katalogová čísla (${sortedItems.length}):` : "Katalogové číslo:"}</span> <span className="catalog"><CatalogNumberDisplay text={katalogText} /></span></div>
                 {isSingle && (
-                  <span className="details-link details-link-offset">detaily</span>
+                  <span className="stamp-detail-tab-mask">
+                    <button type="button" className="stamp-detail-tab" onClick={e => { e.stopPropagation(); onNavigateToDetail(item.idZnamky); }}>Otevřít detail</button>
+                  </span>
                 )}
               </div>
             </div>
@@ -144,8 +216,14 @@ export default function StampBoxList({
               groupedForExpanded.get(groupKey).push(entry);
             }
           });
-          const expandedCards = Array.from(groupedForExpanded.values()).map((group) => {
+          const expandedCards = Array.from(groupedForExpanded.values()).flatMap((group) => {
             const groupSorted = [...group].sort(katalogSort);
+            if (isCatalogABPair(groupSorted)) {
+              return groupSorted.map((entry) => ({
+                item: entry,
+                katalogText: formatGroupedCatalogText([entry]),
+              }));
+            }
             return {
               item: groupSorted[0],
               katalogText: formatGroupedCatalogText(groupSorted),
@@ -186,8 +264,10 @@ export default function StampBoxList({
                   <EmissionTitleAbbr>{renderEmissionTitleWithPragaSuffix(item.emise, item.rok)}</EmissionTitleAbbr>
                 </div>
                 <div className="stamp-bottom">
-                  <div>Katalog: <span className="catalog">{renderCatalogDisplay(katalogText || item.katalogCislo)}</span></div>
-                  <span className="details-link details-link-offset">detaily</span>
+                  <div className="stamp-catalog-row"><span className="stamp-catalog-label">Katalogové číslo:</span> <span className="catalog"><CatalogNumberDisplay text={katalogText || item.katalogCislo} /></span></div>
+                  <span className="stamp-detail-tab-mask">
+                    <button type="button" className="stamp-detail-tab" onClick={e => { e.stopPropagation(); onNavigateToDetail(item.idZnamky); }}>Otevřít detail</button>
+                  </span>
                 </div>
               </div>
             );

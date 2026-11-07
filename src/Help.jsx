@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
 import VariantTooltip from "./components/VariantTooltip.jsx";
+import CatalogNumberDisplay from "./components/CatalogNumberDisplay.jsx";
 
 export default function Help() {
   const navigate = useNavigate();
@@ -12,31 +13,21 @@ export default function Help() {
       <Header navigate={navigate} />
       <main className="main">
         <section className="stamp-detail-block help-page" aria-labelledby="help-page-title">
-          <div className="help-top">
-            <div className="help-top-copy">
-              <div className="detail-title help-main-title-wrap">
-                <h1 id="help-page-title" className="detail-title-text">Nápověda</h1>
-              </div>
-
-              <p className="help-lead">
-                Tyto stránky poskytují široké filatelistické veřejnosti seznam o všech studiích, které rozlišují tiskové formy, desky a pole při tisku československých známek v letech 1945–1992.
-              </p>
-              <p className="help-lead help-lead-secondary">
-                Web má usnadnit orientaci v materiálech, které by jinak bylo potřeba dohledávat jednotlivě na různých místech internetu,
-                ve zpravodajích nebo ve starších časopisech. Místo roztříštěného hledání nabízí ucelený přehled, který je možný
-                využít zejména při podrobnějším studiu a kompletaci vaší specializované sbírky československých známek.
-              </p>
+          <div className="help-page-intro">
+            <img className="help-page-art" src="/img/napoveda.svg" alt="" aria-hidden="true" />
+            <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Zpět</button>
+            <div className="detail-title help-main-title-wrap">
+              <h1 id="help-page-title" className="detail-title-text">Nápověda</h1>
             </div>
 
-            <aside className="help-top-art" aria-hidden="true">
-              <div className="help-banner-frame">
-                <img
-                  src="/img/banner1.png"
-                  alt=""
-                  className="help-banner"
-                />
-              </div>
-            </aside>
+            <p className="help-lead">
+              Tyto stránky poskytují široké filatelistické veřejnosti seznam o všech studiích, které rozlišují tiskové formy, desky a pole při tisku československých známek v letech 1945–1992.
+            </p>
+            <p className="help-lead help-lead-secondary">
+              Web má usnadnit orientaci v materiálech, které by jinak bylo potřeba dohledávat jednotlivě na různých místech internetu,
+              ve zpravodajích nebo ve starších časopisech. Místo roztříštěného hledání nabízí ucelený přehled, který je možný
+              využít zejména při podrobnějším studiu a kompletaci vaší specializované sbírky československých známek.
+            </p>
           </div>
 
           <div className="help-section-intro">
@@ -99,18 +90,21 @@ export default function Help() {
               <ul className="help-list">
                 <li>V detailu najdeš hlavní obrázek studie a základní přehled informací ke konkrétní známce.</li>
                 <li>
-                  U aršíků se často objevují dvě možné varianty katalogového čísla (zoubkovaný a nezoubkovaný), například: <strong>A 2852A</strong> | <a
+                  U aršíků se často objevují dvě možné varianty katalogového čísla (zoubkovaný a nezoubkovaný), například: <CatalogNumberDisplay text="A 2852A" /> | <a
                     href="#"
                     className="details-link"
                     onClick={event => event.preventDefault()}
-                  >A 2852B</a>
+                  ><CatalogNumberDisplay text="A 2852B" /></a>
                 </li>
                 <li>V hlavním obrázku studie jsou grafické odkazy na pozici výskytu jednotlivých variant.</li>
                 <li>Ty jsou později na stránce jednotlivě vypsané.</li>
                 <li>
                   <span className="help-verified-item">
-                    <span>Razítko Ověřeno v pravém horním rohu detailu známky znamená, že obsah je odsouhlasený samotným autorem studie.</span>
-                    <img src="/img/verified.svg" alt="Ověřeno" className="help-verified-sample" />
+                    <span className="help-verified-sample" role="img" aria-label="Schváleno dne 01.VI.2026">
+                      <img src="/img/overeno.svg" alt="" aria-hidden="true" />
+                      <span aria-hidden="true">01.VI.2026</span>
+                    </span>
+                    <span>Razítko „Schváleno“ v pravém horním rohu detailu známky znamená, že obsah odsouhlasil sám autor studie.</span>
                   </span>
                 </li>
               </ul>

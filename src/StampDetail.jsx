@@ -4,6 +4,7 @@ import ScrollTopButton from "./components/ScrollTopButton.jsx";
 import { apiFetch, getApiBase } from "./apiBase.js";
 import { Fancybox } from "@fancyapps/ui";
 import VariantTooltip from "./components/VariantTooltip.jsx";
+import CatalogNumberDisplay from "./components/CatalogNumberDisplay.jsx";
 import AuthorNames from "./components/TvurceJmena.jsx";
 import {
   replaceAbbreviations,
@@ -14,11 +15,9 @@ import {
 import {
   naturalVariantSort,
   compareVariantsWithBracket,
-  splitCatalogDisplaySuffix,
-  renderCatalogDisplay,
-  CATALOG_SUFFIX_SPACING
 } from "./utils/katalog.js";
 import {
+  getStudyImagePathPrefix,
   normalizeStampImagePath,
   normalizeStampImagePathForStorage,
   normalizeSchemaTFForStorage,
@@ -90,7 +89,7 @@ function parseLiteratureEntries(rawValue) {
     .filter(Boolean);
 }
 
-export default function DetailPage({ id, onBack, defects, isAdmin = false, fieldSuggestions = {}, allStamps = [], onStampUpdated }) {
+export default function DetailPage({ id, onBack, defects, isAdmin = false, fieldSuggestions = {}, allStamps = [], onStampUpdated, onStampCreated }) {
   const [item, setItem] = useState(null);
   const [localDefects, setLocalDefects] = useState(defects || []);
   const [isEditingAll, setIsEditingAll] = useState(false);
@@ -99,6 +98,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const [savedCaption, setSavedCaption] = useState(false);
   const [isSavingHidden, setIsSavingHidden] = useState(false);
   const [isSavingVerified, setIsSavingVerified] = useState(false);
+  const [isCreatingRelatedStamp, setIsCreatingRelatedStamp] = useState(false);
   const [isRepublishing, setIsRepublishing] = useState(false);
   const [isSavingAllChanges, setIsSavingAllChanges] = useState(false);
   const [isDeletingStamp, setIsDeletingStamp] = useState(false);
@@ -194,7 +194,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
 
   const parseCatalogAB = (catalogValue) => {
     const text = String(catalogValue || "").trim();
-    const match = text.match(/^([A-ZČŘŽŠĚÚŮ]+)\s*([\d/]+)([A-Z])$/i);
+    const match = text.match(/^([A-ZČŘŽŠĚÚŮ]+)\s*([\d/]+)\s*([A-Z])$/i);
     if (!match) return null;
     return {
       prefix: (match[1] || "").trim().toUpperCase(),
@@ -887,6 +887,51 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const aStamp = hasABPair ? (currentIsA ? item : companionStamp) : null;
   const bStamp = hasABPair ? (currentIsA ? companionStamp : item) : null;
   const isViewingBVariant = Boolean(hasABPair && !currentIsA && aStamp);
+
+  const createRelatedStamp = async () => {
+    if (!isAdmin || !currentIsA || companionStamp || isCreatingRelatedStamp) return;
+    const catalogCislo = `${thisCatalogAB.prefix} ${thisCatalogAB.number}B`;
+    const imageBase = getStudyImagePathPrefix(item.rok, catalogCislo);
+    if (!imageBase) {
+      alert("Z katalogového čísla nelze automaticky sestavit adresy obrázků.");
+      return;
+    }
+    if (!window.confirm(`Založit novou B známku k ${item.katalogCislo}? Společné údaje a varianty se převezmou.`)) return;
+
+    setIsCreatingRelatedStamp(true);
+    try {
+      const response = await apiFetch(`${getApiBase()}/api/stamps`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...getAdminAuthHeaders() },
+        body: JSON.stringify({
+          rok: item.rok,
+          emise: item.emise || "",
+          emiseSkupina: item.emiseSkupina || "",
+          katalogCislo: catalogCislo,
+          obrazek: imageBase,
+          obrazekStudie: `${imageBase}s`,
+          schemaTF: `${imageBase}-TF`,
+          popisObrazkuStudie: item.popisObrazkuStudie || "",
+          stav: "interni",
+          isHidden: true,
+          overeno: false,
+          overenoAt: null,
+          variantyVylouceneZA: [],
+          variantyMamZA: {},
+        }),
+      });
+      const createdStamp = await response.json().catch(() => null);
+      if (!response.ok || !createdStamp?.idZnamky) {
+        throw new Error(createdStamp?.error || `HTTP ${response.status}`);
+      }
+      onStampCreated?.(createdStamp);
+    } catch (error) {
+      alert(`Související známku se nepodařilo vytvořit: ${error.message}`);
+    } finally {
+      setIsCreatingRelatedStamp(false);
+    }
+  };
+
   const getInheritedDefectKey = (defect) => (
     defect?._id?.toString()
     || defect?.idVady
@@ -1192,11 +1237,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     );
   };
 
-  const renderCatalogDisplay = (text, keyPrefix = "catalog") => {
-    const { base, suffix } = splitCatalogDisplaySuffix(text);
-    if (!suffix) return text;
-    return `${base}${CATALOG_SUFFIX_SPACING}${suffix}`;
-  };
+  const renderCatalogDisplay = text => <CatalogNumberDisplay text={text} />;
 
   const additionalStudyHeadingId = `${detailHeadingId}-study-after`;
   const currentStav = editStampData.stav || getStavFromStamp(item);
@@ -1267,19 +1308,32 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 {isSavingAllChanges ? 'Ukládám vše…' : '✔ Ulož vše'}
               </button>
             )}
-            {/* Tlačítko pro otevření modalu v admin panelu */}
-            <button
-              className="ktf-btn-confirm detail-inline-offset"
-              onClick={() => {
-                if (window.setShowAddVariantModal) {
-                  window.setShowAddVariantModal(id);
-                } else {
-                  window.dispatchEvent(new CustomEvent('openAddVariantModal', { detail: { idZnamky: id } }));
-                }
-              }}
-            >
-              + Přidat variantu
-            </button>
+            {!isEditingAll && (
+              <button
+                className="ktf-btn-confirm detail-inline-offset"
+                onClick={() => {
+                  if (window.setShowAddVariantModal) {
+                    window.setShowAddVariantModal(id);
+                  } else {
+                    window.dispatchEvent(new CustomEvent('openAddVariantModal', { detail: { idZnamky: id } }));
+                  }
+                }}
+              >
+                + Přidat variantu
+              </button>
+            )}
+            {!isEditingAll && currentIsA && !companionStamp && (
+              <button
+                type="button"
+                className="admin-edit-btn detail-inline-offset"
+                onClick={createRelatedStamp}
+                disabled={isCreatingRelatedStamp}
+                aria-label="Kopírovat známku"
+                title="Vytvoří související záznam s další katalogovou příponou; společné údaje a varianty se zdědí"
+              >
+                {isCreatingRelatedStamp ? 'Vytvářím…' : '＋ Kopírovat známku'}
+              </button>
+            )}
             {isEditingAll && (
               <button
                 className="admin-edit-btn danger detail-inline-offset"
@@ -1290,32 +1344,34 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                 {isDeletingStamp ? 'Mažu…' : '🗑 Smazat známku'}
               </button>
             )}
-            <StampStavControl
-              stav={editStampData.stav || getStavFromStamp(editStampData)}
-              onChange={handleStavChange}
-              disabled={isSavingHidden}
-            />
-            {editStampData.stav !== 'interni' && (
-              <button
-                className="admin-edit-btn detail-inline-offset"
-                onClick={handleRepublish}
-                disabled={isRepublishing}
-                title="Přepsat datum publikování na teď — posune emisi na vrchol katalogu"
-              >
-                {isRepublishing ? 'ukládám…' : '↑ Přepublikovat'}
-              </button>
+            {!isEditingAll && (
+              <>
+                <StampStavControl
+                  stav={editStampData.stav || getStavFromStamp(editStampData)}
+                  onChange={handleStavChange}
+                  disabled={isSavingHidden}
+                />
+                {editStampData.stav !== 'interni' && (
+                  <button
+                    className="admin-edit-btn detail-inline-offset"
+                    onClick={handleRepublish}
+                    disabled={isRepublishing}
+                    title="Přepsat datum publikování na teď — posune emisi na vrchol katalogu"
+                  >
+                    {isRepublishing ? 'ukládám…' : '↑ Přepublikovat'}
+                  </button>
+                )}
+                <label className="hide-stamp-toggle verified-toggle">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(editStampData.overeno)}
+                    onChange={(e) => handleVerifiedToggle(e.target.checked)}
+                    disabled={isSavingVerified}
+                  />
+                  {isSavingVerified ? 'ukládám…' : 'ověřeno'}
+                </label>
+              </>
             )}
-            <label
-              className="hide-stamp-toggle verified-toggle"
-            >
-              <input
-                type="checkbox"
-                checked={Boolean(editStampData.overeno)}
-                onChange={(e) => handleVerifiedToggle(e.target.checked)}
-                disabled={isSavingVerified}
-              />
-              {isSavingVerified ? 'ukládám…' : 'ověřeno'}
-            </label>
           </>
         )}
       </div>

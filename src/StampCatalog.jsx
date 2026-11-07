@@ -706,6 +706,11 @@ export default function StampCatalog(props) {
                 return found ? next : prev;
               });
             }}
+            onStampCreated={(createdStamp) => {
+              if (!createdStamp || !createdStamp.idZnamky) return;
+              setStamps((prev) => [createdStamp, ...prev.filter((stamp) => stamp.idZnamky !== createdStamp.idZnamky)]);
+              setDetailId(createdStamp.idZnamky);
+            }}
           />
         ) : (
           <>

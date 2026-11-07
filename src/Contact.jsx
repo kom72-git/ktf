@@ -11,11 +11,15 @@ export default function Contact() {
       <Header navigate={navigate} />
       <main className="main">
         <section className="stamp-detail-block help-page" aria-labelledby="contact-page-title">
-          <div className="detail-title help-main-title-wrap">
-            <h1 id="contact-page-title" className="detail-title-text">Kontakt</h1>
+          <div className="help-page-intro">
+            <img className="help-page-art" src="/img/kontakt.svg" alt="" aria-hidden="true" />
+            <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Zpět</button>
+            <div className="detail-title help-main-title-wrap">
+              <h1 id="contact-page-title" className="detail-title-text">Kontakt</h1>
+            </div>
+            <p className="help-lead">Kontaktovat nás můžete na e-mailové adrese:</p>
+            <p className="help-lead"><strong>info@filatelium.cz</strong></p>
           </div>
-          <p className="help-lead">Kontaktovat nás můžete na e-mailové adrese:</p>
-          <p className="help-lead"><strong>info@filatelium.cz</strong></p>
         </section>
       </main>
       <Footer />

@@ -27,6 +27,15 @@ schéma i dědění skryje.
 
 ## Úkoly na později
 
+### Obrázky ve sloučených boxech na hlavní stránce
+
+Zvážit zobrazení více známek v jednom sloučeném boxu bez zvětšení obrázkové plochy.
+Vyzkoušený vějíř z nejvýše tří obrázků (hlavní obrázek vpředu, další překryté za ním,
+boční rozložení pro úzké a svislé pro široké známky) nebyl na některých známkách
+dostatečně viditelný a u širokých obrázků se vrstvy překrývaly. Pokus byl z hlavní
+stránky odstraněn. Před případným návratem nejdřív ověřit, že skupina skutečně obsahuje
+různé dostupné obrázky, a navrhnout kompozici, která bude čitelná u obou orientací.
+
 ### Filtry Rok / Emise / Katalogové číslo
 
 Dnes jsou to nativní `<select>` seznamy, které se navzájem zužují. Až katalog naroste
