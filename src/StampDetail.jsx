@@ -299,7 +299,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           overeno: Boolean(data.overeno),
           overenoAt: data.overenoAt || null,
           variantyVylouceneZA: data.variantyVylouceneZA || [],
-          variantyMamZA: data.variantyMamZA || {}
+          variantyMamZA: data.variantyMamZA || {},
+          sharedVariantPositions: data.sharedVariantPositions || {}
         });
       })
       .catch(err => {
@@ -1290,7 +1291,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                     literatura: item.literatura || '',
                     isHidden: Boolean(item.isHidden),
                     stav: getStavFromStamp(item),
-                    overeno: Boolean(item.overeno)
+                    overeno: Boolean(item.overeno),
+                    sharedVariantPositions: item.sharedVariantPositions || {}
                   });
                   setIsEditingAll(false);
                 }
@@ -1561,6 +1563,16 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             item={item}
             aStampDefects={isViewingBVariant && aStamp ? localDefects.filter(d => d.idZnamky === aStamp.idZnamky) : []}
             variantsHeadingBaseId={variantsHeadingBaseId}
+            sharedVariantPositions={editStampData.sharedVariantPositions || item.sharedVariantPositions || {}}
+            onSharedVariantPositionChange={(label, position) => {
+              setEditStampData((prev) => ({
+                ...prev,
+                sharedVariantPositions: {
+                  ...(prev.sharedVariantPositions || item.sharedVariantPositions || {}),
+                  [label]: position,
+                },
+              }));
+            }}
             saveDefectEdit={saveDefectEdit}
             deleteDefect={deleteDefect}
             onSaveInheritedMam={saveInheritedMamForB}

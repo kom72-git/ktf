@@ -2391,6 +2391,32 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   align-items: stretch;
   column-gap: 80px;
 }
+.variant-groups > .variant-group-shared {
+  flex: 0 0 100%;
+}
+.variant-shared-position-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.variant-shared-position-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+  font-size: 0.82rem;
+}
+.variant-shared-position-control select {
+  min-height: 30px;
+  padding: 3px 7px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+}
 /* Skupina je tak široká jako její obsah: malé skupiny se řadí vedle sebe, velká zabere celý řádek. */
 .variant-groups > section {
   flex: 0 1 auto;

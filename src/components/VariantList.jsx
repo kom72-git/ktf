@@ -145,6 +145,12 @@ function getDefectKey(def) {
   return def._id?.toString() || def.idVady || `${def.variantaVady || ""}||${def.umisteniVady || ""}`;
 }
 
+function compareVariantGroupKeys(a, b) {
+  if (a === "__numeric__") return b === "__numeric__" ? 0 : 1;
+  if (b === "__numeric__") return -1;
+  return String(a).toUpperCase().localeCompare(String(b).toUpperCase());
+}
+
 function isExcludedFromA(def, excludedList) {
   const key = getDefectKey(def);
   const legacyKey = def?.variantaVady || "";
@@ -199,6 +205,8 @@ const VariantList = forwardRef(function VariantList({
   item,
   aStampDefects,
   variantsHeadingBaseId,
+  sharedVariantPositions = {},
+  onSharedVariantPositionChange,
   saveDefectEdit,
   deleteDefect,
   onSaveInheritedMam,
@@ -311,23 +319,47 @@ const VariantList = forwardRef(function VariantList({
   // Seskupení variant
   const grouped = {};
   const plusVariants = [];
+  const sharedVariantsByLabel = new Map();
   (effectiveDefects || []).forEach(def => {
     if (!def.variantaVady) return;
-    if (def.variantaVady.includes(",")) { plusVariants.push(def); return; }
+    if (def.variantaVady.includes(",")) {
+      plusVariants.push(def);
+      const label = String(def.variantaVady).split(",").map(part => part.trim()).filter(Boolean).join(", ");
+      if (!sharedVariantsByLabel.has(label)) sharedVariantsByLabel.set(label, []);
+      sharedVariantsByLabel.get(label).push(def);
+      return;
+    }
     const isNum = /^\d+$/.test(def.variantaVady);
     const lk = !isNum && def.variantaVady.match(/^([A-Z])/i);
     const groupKey = isNum ? "__numeric__" : (lk ? lk[0] : "?");
     if (!grouped[groupKey]) grouped[groupKey] = [];
     grouped[groupKey].push(def);
   });
-  const groupedKeysSorted = Object.keys(grouped).sort((ka, kb) => {
-    if (ka === "__numeric__") return 1;
-    if (kb === "__numeric__") return -1;
-    return ka.localeCompare(kb);
+  const groupedKeysSorted = Object.keys(grouped).sort(compareVariantGroupKeys);
+  const sharedVariantGroupsOrdered = Array.from(sharedVariantsByLabel, ([label, defs]) => ({ label, defs }));
+  const sharedVariantSlots = new Map();
+  sharedVariantGroupsOrdered.forEach(group => {
+    const position = sharedVariantPositions[group.label] || "after";
+    const match = position.match(/^(before|after):(.+)$/);
+    const targetIndex = match
+      ? groupedKeysSorted.findIndex(groupKey => compareVariantGroupKeys(groupKey, match[2]) === 0)
+      : -1;
+    const slot = position === "before"
+      ? 0
+      : match && targetIndex >= 0
+        ? targetIndex + (match[1] === "after" ? 1 : 0)
+        : groupedKeysSorted.length;
+    const groupsAtSlot = sharedVariantSlots.get(slot) || [];
+    groupsAtSlot.push(group);
+    sharedVariantSlots.set(slot, groupsAtSlot);
   });
-  const groupedVariantsOrdered = groupedKeysSorted.flatMap(gk => grouped[gk].slice().sort(compareVariantsWithBracket));
-  const plusVariantsOrdered = plusVariants.slice();
-  const allVariantsOrdered = [...groupedVariantsOrdered, ...plusVariantsOrdered];
+  const allVariantsOrdered = [];
+  for (let slot = 0; slot <= groupedKeysSorted.length; slot += 1) {
+    (sharedVariantSlots.get(slot) || []).forEach(group => allVariantsOrdered.push(...group.defs));
+    if (slot < groupedKeysSorted.length) {
+      allVariantsOrdered.push(...grouped[groupedKeysSorted[slot]].slice().sort(compareVariantsWithBracket));
+    }
+  }
   const getImageNumber = (def) => { const idx = allVariantsOrdered.indexOf(def); return idx === -1 ? "?" : idx + 1; };
 
   useLayoutEffect(() => {
@@ -698,6 +730,70 @@ const VariantList = forwardRef(function VariantList({
     );
   };
 
+  const renderSharedVariantGroup = (group, index) => {
+    const mainDef = group.defs[0];
+    const typeLabel = mainDef?.typVarianty || "";
+    const headingId = `${variantsHeadingBaseId}-shared-${index}`;
+    const position = sharedVariantPositions[group.label] || "after";
+    return (
+      <section key={group.label} className="variant-group-shared" aria-labelledby={headingId}>
+        <div className="variant-group-header">
+          <div className="variant-shared-position-row">
+            <h3 id={headingId} className="variant-subtitle">
+              <span className="variant-subtitle-prefix">Varianty</span>
+              <span className="variant-subtitle-name">{group.label}</span>
+              {isEditingAll && isAdmin ? (
+                <>
+                  <span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span>
+                  <input
+                    type="text"
+                    className="variant-typ-edit-input"
+                    value={defectEdits[getDefectKey(mainDef)]?.typVarianty ?? typeLabel}
+                    onChange={event => updateEdit(getDefectKey(mainDef), "typVarianty", event.target.value)}
+                    placeholder="typ varianty…"
+                    id={`typVarianty-input-shared-${index}`}
+                  />
+                  <button
+                    className="ktf-btn-check variant-type-save-button"
+                    title="Uložit typ varianty"
+                    onClick={() => saveVariantType(mainDef)}
+                  >✓</button>
+                </>
+              ) : (
+                typeLabel && <><span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span><span className="variant-type">{typeLabel}</span></>
+              )}
+            </h3>
+            {isEditingAll && isAdmin && (
+              <label className="variant-shared-position-control">
+                <span>Umístění</span>
+                <select
+                  className="variant-shared-position-select"
+                  value={position}
+                  aria-label={`Umístění společné skupiny ${group.label}`}
+                  onChange={event => onSharedVariantPositionChange?.(group.label, event.target.value)}
+                >
+                  {groupedKeysSorted.map(groupKey => (
+                    <option key={groupKey} value={`before:${groupKey}`}>
+                      Před {groupKey === "__numeric__" ? "číselnými variantami" : groupKey === "?" ? "ostatními variantami" : groupKey}
+                    </option>
+                  ))}
+                  <option value="after">Na konec</option>
+                </select>
+              </label>
+            )}
+          </div>
+          {renderGroupDescription(mainDef, group.label)}
+        </div>
+        <div className="variants">
+          {group.defs.map((def, defectIndex) => renderVariantBox(def, defectIndex, `shared-${index}`))}
+        </div>
+      </section>
+    );
+  };
+  const sharedVariantSectionByLabel = new Map(
+    sharedVariantGroupsOrdered.map((group, index) => [group.label, renderSharedVariantGroup(group, index)])
+  );
+
   return (
     <>
       {/* Vyloučení zděděných variant z A (jen admin edit, jen pro B) */}
@@ -748,8 +844,9 @@ const VariantList = forwardRef(function VariantList({
       )}
 
       <div className="variant-groups" ref={variantGroupsRef}>
+      {(sharedVariantSlots.get(0) || []).map(group => sharedVariantSectionByLabel.get(group.label))}
       {/* Seskupené varianty (A, B, ... nebo číselné) */}
-      {groupedKeysSorted.map(group => {
+      {groupedKeysSorted.map((group, groupIndex) => {
         const defs = grouped[group];
         const uniqueDefsMap = new Map();
         defs.forEach(def => { if (def.variantaVady && !uniqueDefsMap.has(def.variantaVady)) uniqueDefsMap.set(def.variantaVady, def); });
@@ -784,7 +881,8 @@ const VariantList = forwardRef(function VariantList({
           </>
         );
         return (
-          <section key={group} aria-labelledby={`${variantsHeadingBaseId}-${group}`}>
+          <React.Fragment key={group}>
+          <section aria-labelledby={`${variantsHeadingBaseId}-${group}`}>
             <div className="variant-group-header">
               <h3 id={`${variantsHeadingBaseId}-${group}`} className="variant-subtitle">
                 {heading}
@@ -825,52 +923,10 @@ const VariantList = forwardRef(function VariantList({
               {defs.slice().sort(compareVariantsWithBracket).map((def, i) => renderVariantBox(def, i, `var-${group}`))}
             </div>
           </section>
+            {(sharedVariantSlots.get(groupIndex + 1) || []).map(sharedGroup => sharedVariantSectionByLabel.get(sharedGroup.label))}
+            </React.Fragment>
         );
       })}
-
-      {/* Plus varianty (s čárkou v názvu) */}
-      {plusVariantsOrdered.length > 0 && (
-        <section aria-labelledby={`${variantsHeadingBaseId}-plus`}>
-          {(() => {
-            const plusVariantLabel = plusVariantsOrdered[0]?.variantaVady || "";
-            const isPlural = plusVariantLabel.includes(",");
-            const mainPlusDef = plusVariantsOrdered.find(def => def?.variantaVady) || plusVariantsOrdered[0];
-            const plusTypVarianty = mainPlusDef?.typVarianty || "";
-            return (
-              <div className="variant-group-header">
-              <h3 id={`${variantsHeadingBaseId}-plus`} className="variant-subtitle">
-                <span className="variant-subtitle-prefix">{isPlural ? "Varianty" : "Varianta"}</span>
-                <span className="variant-subtitle-name">{plusVariantLabel}</span>
-                {isEditingAll && isAdmin && mainPlusDef ? (
-                  <>
-                    <span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span>
-                    <input
-                      type="text"
-                      className="variant-typ-edit-input"
-                      value={defectEdits[getDefectKey(mainPlusDef)]?.typVarianty ?? plusTypVarianty}
-                      onChange={(event) => updateEdit(getDefectKey(mainPlusDef), "typVarianty", event.target.value)}
-                      placeholder="typ varianty…"
-                      id="typVarianty-input-plus"
-                    />
-                    <button
-                      className="ktf-btn-check variant-type-save-button"
-                      title="Uložit typ varianty"
-                      onClick={() => saveVariantType(mainPlusDef)}
-                    >✓</button>
-                  </>
-                ) : (
-                  plusTypVarianty && <><span className="variant-type-sep">&nbsp;&ndash;&nbsp;</span><span className="variant-type">{plusTypVarianty}</span></>
-                )}
-              </h3>
-              {renderGroupDescription(mainPlusDef, plusVariantLabel)}
-              </div>
-            );
-          })()}
-          <div className="variants">
-            {plusVariantsOrdered.map((def, idx) => renderVariantBox(def, idx, "plusvar"))}
-          </div>
-        </section>
-      )}
       </div>
     </>
   );
