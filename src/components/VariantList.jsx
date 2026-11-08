@@ -130,6 +130,7 @@ function hasDefectChanges(def, edits) {
   const nextOrder = normalizeDefectOrderForSave(edits.poradiVady);
   return (
     (edits.variantaVady ?? "") !== (def.variantaVady || "")
+    || (edits.skupinaVarianty ?? "") !== (def.skupinaVarianty || "")
     || (edits.typVarianty ?? "") !== (def.typVarianty || "")
     || (edits.umisteniVady ?? "") !== (def.umisteniVady || "")
     || (edits.popisVady ?? "") !== (def.popisVady || "")
@@ -145,10 +146,31 @@ function getDefectKey(def) {
   return def._id?.toString() || def.idVady || `${def.variantaVady || ""}||${def.umisteniVady || ""}`;
 }
 
+function makeVariantGroupKey(variant, context) {
+  const normalizedContext = String(context || "").trim();
+  return normalizedContext ? `${variant}|${encodeURIComponent(normalizedContext)}` : variant;
+}
+
+function splitVariantGroupKey(groupKey) {
+  const separator = String(groupKey).indexOf("|");
+  if (separator < 0) return { variant: String(groupKey), context: "" };
+  return {
+    variant: String(groupKey).slice(0, separator),
+    context: decodeURIComponent(String(groupKey).slice(separator + 1)),
+  };
+}
+
 function compareVariantGroupKeys(a, b) {
-  if (a === "__numeric__") return b === "__numeric__" ? 0 : 1;
-  if (b === "__numeric__") return -1;
-  return String(a).toUpperCase().localeCompare(String(b).toUpperCase());
+  const left = splitVariantGroupKey(a);
+  const right = splitVariantGroupKey(b);
+  if (Boolean(left.context) !== Boolean(right.context)) return left.context ? 1 : -1;
+  if (left.context && right.context) {
+    const contextOrder = left.context.localeCompare(right.context, undefined, { numeric: true, sensitivity: "base" });
+    if (contextOrder !== 0) return contextOrder;
+  }
+  if (left.variant === "__numeric__") return right.variant === "__numeric__" ? left.context.localeCompare(right.context) : 1;
+  if (right.variant === "__numeric__") return -1;
+  return left.variant.toUpperCase().localeCompare(right.variant.toUpperCase());
 }
 
 function isExcludedFromA(def, excludedList) {
@@ -207,12 +229,19 @@ const VariantList = forwardRef(function VariantList({
   variantsHeadingBaseId,
   sharedVariantPositions = {},
   onSharedVariantPositionChange,
+  onSharedVariantPositionSave,
+  variantGroupHeadings = {},
+  onVariantGroupHeadingChange,
+  onVariantGroupHeadingSave,
+  variantGroupAccentColors = {},
+  onVariantGroupAccentColorChange,
   saveDefectEdit,
   deleteDefect,
   onSaveInheritedMam,
   onExcludeChange,
 }, ref) {
   const variantGroupsRef = useRef(null);
+  const [previewGroupAccentColors, setPreviewGroupAccentColors] = useState({});
 
   // Kontrolovaný stav pro editaci polí každé varianty
   const buildInitialEdits = (defects) =>
@@ -220,6 +249,7 @@ const VariantList = forwardRef(function VariantList({
       getDefectKey(def),
       {
         variantaVady: def.variantaVady || "",
+        skupinaVarianty: def.skupinaVarianty || "",
         typVarianty: def.typVarianty || "",
         umisteniVady: def.umisteniVady || "",
         popisVady: def.popisVady || "",
@@ -243,6 +273,7 @@ const VariantList = forwardRef(function VariantList({
         if (!next[key]) {
           next[key] = {
             variantaVady: def.variantaVady || "",
+            skupinaVarianty: def.skupinaVarianty || "",
             typVarianty: def.typVarianty || "",
             umisteniVady: def.umisteniVady || "",
             popisVady: def.popisVady || "",
@@ -303,6 +334,7 @@ const VariantList = forwardRef(function VariantList({
     const saved = await saveDefectEdit(defectId, {
       ...def,
       variantaVady: nextEdits.variantaVady,
+      skupinaVarianty: nextEdits.skupinaVarianty,
       typVarianty: nextEdits.typVarianty,
       umisteniVady: nextEdits.umisteniVady,
       popisVady: nextEdits.popisVady,
@@ -325,21 +357,23 @@ const VariantList = forwardRef(function VariantList({
     if (def.variantaVady.includes(",")) {
       plusVariants.push(def);
       const label = String(def.variantaVady).split(",").map(part => part.trim()).filter(Boolean).join(", ");
-      if (!sharedVariantsByLabel.has(label)) sharedVariantsByLabel.set(label, []);
-      sharedVariantsByLabel.get(label).push(def);
+      const key = makeVariantGroupKey(label, def.skupinaVarianty);
+      if (!sharedVariantsByLabel.has(key)) sharedVariantsByLabel.set(key, { key, label, defs: [] });
+      sharedVariantsByLabel.get(key).defs.push(def);
       return;
     }
     const isNum = /^\d+$/.test(def.variantaVady);
     const lk = !isNum && def.variantaVady.match(/^([A-Z])/i);
-    const groupKey = isNum ? "__numeric__" : (lk ? lk[0] : "?");
+    const baseGroupKey = isNum ? "__numeric__" : (lk ? lk[0] : "?");
+    const groupKey = makeVariantGroupKey(baseGroupKey, def.skupinaVarianty);
     if (!grouped[groupKey]) grouped[groupKey] = [];
     grouped[groupKey].push(def);
   });
   const groupedKeysSorted = Object.keys(grouped).sort(compareVariantGroupKeys);
-  const sharedVariantGroupsOrdered = Array.from(sharedVariantsByLabel, ([label, defs]) => ({ label, defs }));
+  const sharedVariantGroupsOrdered = Array.from(sharedVariantsByLabel.values());
   const sharedVariantSlots = new Map();
   sharedVariantGroupsOrdered.forEach(group => {
-    const position = sharedVariantPositions[group.label] || "after";
+    const position = sharedVariantPositions[group.key] || sharedVariantPositions[group.label] || "after";
     const match = position.match(/^(before|after):(.+)$/);
     const targetIndex = match
       ? groupedKeysSorted.findIndex(groupKey => compareVariantGroupKeys(groupKey, match[2]) === 0)
@@ -489,6 +523,7 @@ const VariantList = forwardRef(function VariantList({
         const saved = await saveDefectEdit(defectId, {
           ...def,
           variantaVady: edits.variantaVady,
+          skupinaVarianty: edits.skupinaVarianty,
           typVarianty: edits.typVarianty,
           umisteniVady: edits.umisteniVady,
           popisVady: edits.popisVady,
@@ -693,6 +728,18 @@ const VariantList = forwardRef(function VariantList({
                 </label>
               ) : null}
             </div>
+            <label className="variant-context-id-row">
+              <span>Skupina:</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                aria-label="Číslo skupiny varianty"
+                value={edits.skupinaVarianty ?? ""}
+                onChange={e => updateEdit(key, "skupinaVarianty", e.target.value.replace(/\D+/g, ""))}
+                className="variant-context-id-input"
+              />
+            </label>
             <textarea
               value={edits.popisVady ?? ""}
               onChange={e => updateEdit(key, "popisVady", e.target.value)}
@@ -707,6 +754,7 @@ const VariantList = forwardRef(function VariantList({
                   saveDefectEdit(def._id || def.idVady, {
                     ...def,
                     variantaVady: edits.variantaVady,
+                    skupinaVarianty: edits.skupinaVarianty,
                     typVarianty: edits.typVarianty,
                     umisteniVady: edits.umisteniVady,
                     popisVady: edits.popisVady,
@@ -734,9 +782,9 @@ const VariantList = forwardRef(function VariantList({
     const mainDef = group.defs[0];
     const typeLabel = mainDef?.typVarianty || "";
     const headingId = `${variantsHeadingBaseId}-shared-${index}`;
-    const position = sharedVariantPositions[group.label] || "after";
+    const position = sharedVariantPositions[group.key] || sharedVariantPositions[group.label] || "after";
     return (
-      <section key={group.label} className="variant-group-shared" aria-labelledby={headingId}>
+      <section key={group.key} className="variant-group-shared" aria-labelledby={headingId}>
         <div className="variant-group-header">
           <div className="variant-shared-position-row">
             <h3 id={headingId} className="variant-subtitle">
@@ -764,13 +812,13 @@ const VariantList = forwardRef(function VariantList({
               )}
             </h3>
             {isEditingAll && isAdmin && (
-              <label className="variant-shared-position-control">
+              <div className="variant-shared-position-control">
                 <span>Umístění</span>
                 <select
                   className="variant-shared-position-select"
                   value={position}
                   aria-label={`Umístění společné skupiny ${group.label}`}
-                  onChange={event => onSharedVariantPositionChange?.(group.label, event.target.value)}
+                  onChange={event => onSharedVariantPositionChange?.(group.key, event.target.value)}
                 >
                   {groupedKeysSorted.map(groupKey => (
                     <option key={groupKey} value={`before:${groupKey}`}>
@@ -779,7 +827,14 @@ const VariantList = forwardRef(function VariantList({
                   ))}
                   <option value="after">Na konec</option>
                 </select>
-              </label>
+                <button
+                  type="button"
+                  className="ktf-btn-check variant-shared-position-save"
+                  title={`Uložit umístění společné varianty ${group.label}`}
+                  aria-label={`Uložit umístění společné varianty ${group.label}`}
+                  onClick={() => onSharedVariantPositionSave?.(group.key, position)}
+                >✓</button>
+              </div>
             )}
           </div>
           {renderGroupDescription(mainDef, group.label)}
@@ -791,8 +846,69 @@ const VariantList = forwardRef(function VariantList({
     );
   };
   const sharedVariantSectionByLabel = new Map(
-    sharedVariantGroupsOrdered.map((group, index) => [group.label, renderSharedVariantGroup(group, index)])
+    sharedVariantGroupsOrdered.map((group, index) => [group.key, renderSharedVariantGroup(group, index)])
   );
+  const orderedGroupContexts = Array.from(new Set([
+    ...groupedKeysSorted.map(groupKey => splitVariantGroupKey(groupKey).context),
+    ...sharedVariantGroupsOrdered.map(group => splitVariantGroupKey(group.key).context),
+  ].filter(Boolean))).sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+  const firstGroupContext = orderedGroupContexts[0] || "";
+  const renderedGroupHeadingContexts = new Set();
+  const renderGroupContextHeading = (context) => {
+    const groupContext = String(context || "").trim();
+    if (!groupContext || renderedGroupHeadingContexts.has(groupContext)) return null;
+    renderedGroupHeadingContexts.add(groupContext);
+    const groupHeading = String(variantGroupHeadings[groupContext] || "").trim();
+    const accentColor = previewGroupAccentColors[groupContext] || variantGroupAccentColors[groupContext] || "#7997bb";
+    if (!(isEditingAll && isAdmin) && !groupHeading) return null;
+
+    return (
+      <div
+        className={`variant-group-context-heading${groupContext !== firstGroupContext ? " variant-group-context-heading-later" : ""}`}
+        style={{ borderLeftColor: accentColor }}
+      >
+        {isEditingAll && isAdmin ? (
+          <div className="variant-group-context-heading-edit">
+            <input
+              type="text"
+              className="variant-group-context-heading-input"
+              aria-label={`Název skupiny ${groupContext}`}
+              value={variantGroupHeadings[groupContext] || ""}
+              onChange={event => onVariantGroupHeadingChange?.(groupContext, event.target.value)}
+              placeholder="Název skupiny"
+            />
+            <input
+              type="color"
+              className="variant-group-accent-preview"
+              aria-label={`Náhledová barva akcentu skupiny ${groupContext}, neukládá se`}
+              title="Náhled barvy akcentu"
+              value={accentColor}
+              onChange={event => {
+                const color = event.target.value;
+                setPreviewGroupAccentColors(prev => ({ ...prev, [groupContext]: color }));
+                onVariantGroupAccentColorChange?.(groupContext, color);
+              }}
+            />
+            <button
+              type="button"
+              className="ktf-btn-check"
+              title={`Uložit název skupiny ${groupContext}`}
+              aria-label={`Uložit název skupiny ${groupContext}`}
+              onClick={() => onVariantGroupHeadingSave?.(groupContext, variantGroupHeadings[groupContext] || "", accentColor)}
+            >✓</button>
+          </div>
+        ) : (
+          <span className="variant-group-context-heading-title">{groupHeading}</span>
+        )}
+      </div>
+    );
+  };
+  const renderSharedVariantSlot = (slot) => (sharedVariantSlots.get(slot) || []).map(group => (
+    <React.Fragment key={group.key}>
+      {renderGroupContextHeading(splitVariantGroupKey(group.key).context)}
+      {sharedVariantSectionByLabel.get(group.key)}
+    </React.Fragment>
+  ));
 
   return (
     <>
@@ -844,9 +960,12 @@ const VariantList = forwardRef(function VariantList({
       )}
 
       <div className="variant-groups" ref={variantGroupsRef}>
-      {(sharedVariantSlots.get(0) || []).map(group => sharedVariantSectionByLabel.get(group.label))}
+      {renderSharedVariantSlot(0)}
       {/* Seskupené varianty (A, B, ... nebo číselné) */}
       {groupedKeysSorted.map((group, groupIndex) => {
+        const groupContext = splitVariantGroupKey(group).context;
+        const previousContext = groupIndex > 0 ? splitVariantGroupKey(groupedKeysSorted[groupIndex - 1]).context : "";
+        const beginsContextRow = Boolean(groupContext) && groupContext !== previousContext;
         const defs = grouped[group];
         const uniqueDefsMap = new Map();
         defs.forEach(def => { if (def.variantaVady && !uniqueDefsMap.has(def.variantaVady)) uniqueDefsMap.set(def.variantaVady, def); });
@@ -860,7 +979,8 @@ const VariantList = forwardRef(function VariantList({
         }).map(d => ({ label: getSubvariantHeadingLabel(d.variantaVady), bold: !!d.tucneVSeznamu }));
         const hasSubvariants = subvariantLabels.some(s => s.label.includes("."));
         const subvariantTitle = hasSubvariants ? "Obsahuje podvarianty a subvarianty" : "Obsahuje podvarianty";
-        const isNumericGroup = group === "__numeric__";
+        const { variant: displayGroup } = splitVariantGroupKey(group);
+        const isNumericGroup = displayGroup === "__numeric__";
         const numericNums = isNumericGroup
           ? sortedDefs.map(d => parseInt(d.variantaVady, 10)).filter(n => !isNaN(n)).sort((a, b) => a - b)
           : [];
@@ -877,11 +997,13 @@ const VariantList = forwardRef(function VariantList({
         ) : (
           <>
             <span className="variant-subtitle-prefix">Varianta</span>
-            <span className="variant-subtitle-name">{group}</span>
+            <span className="variant-subtitle-name">{displayGroup}</span>
           </>
         );
         return (
           <React.Fragment key={group}>
+            {beginsContextRow && <span className="variant-group-context-break" aria-hidden="true" />}
+            {beginsContextRow && renderGroupContextHeading(groupContext)}
           <section aria-labelledby={`${variantsHeadingBaseId}-${group}`}>
             <div className="variant-group-header">
               <h3 id={`${variantsHeadingBaseId}-${group}`} className="variant-subtitle">
@@ -923,7 +1045,7 @@ const VariantList = forwardRef(function VariantList({
               {defs.slice().sort(compareVariantsWithBracket).map((def, i) => renderVariantBox(def, i, `var-${group}`))}
             </div>
           </section>
-            {(sharedVariantSlots.get(groupIndex + 1) || []).map(sharedGroup => sharedVariantSectionByLabel.get(sharedGroup.label))}
+            {renderSharedVariantSlot(groupIndex + 1)}
             </React.Fragment>
         );
       })}

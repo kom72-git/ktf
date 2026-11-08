@@ -300,7 +300,9 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           overenoAt: data.overenoAt || null,
           variantyVylouceneZA: data.variantyVylouceneZA || [],
           variantyMamZA: data.variantyMamZA || {},
-          sharedVariantPositions: data.sharedVariantPositions || {}
+          sharedVariantPositions: data.sharedVariantPositions || {},
+          variantGroupHeadings: data.variantGroupHeadings || {},
+          variantGroupAccentColors: data.variantGroupAccentColors || {}
         });
       })
       .catch(err => {
@@ -1564,6 +1566,17 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
             aStampDefects={isViewingBVariant && aStamp ? localDefects.filter(d => d.idZnamky === aStamp.idZnamky) : []}
             variantsHeadingBaseId={variantsHeadingBaseId}
             sharedVariantPositions={editStampData.sharedVariantPositions || item.sharedVariantPositions || {}}
+            variantGroupHeadings={editStampData.variantGroupHeadings || item.variantGroupHeadings || {}}
+            variantGroupAccentColors={editStampData.variantGroupAccentColors || item.variantGroupAccentColors || {}}
+            onVariantGroupAccentColorChange={(groupContext, color) => {
+              setEditStampData((prev) => ({
+                ...prev,
+                variantGroupAccentColors: {
+                  ...(prev.variantGroupAccentColors || item.variantGroupAccentColors || {}),
+                  [groupContext]: color,
+                },
+              }));
+            }}
             onSharedVariantPositionChange={(label, position) => {
               setEditStampData((prev) => ({
                 ...prev,
@@ -1572,6 +1585,59 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   [label]: position,
                 },
               }));
+            }}
+            onSharedVariantPositionSave={async (label, position) => {
+              const saved = await saveTechnicalField("sharedVariantPositions", {
+                ...(item.sharedVariantPositions || {}),
+                [label]: position,
+              });
+              if (saved) {
+                setEditStampData((prev) => ({
+                  ...prev,
+                  sharedVariantPositions: {
+                    ...(prev.sharedVariantPositions || item.sharedVariantPositions || {}),
+                    [label]: position,
+                  },
+                }));
+              }
+              return saved;
+            }}
+            onVariantGroupHeadingChange={(groupContext, heading) => {
+              setEditStampData((prev) => ({
+                ...prev,
+                variantGroupHeadings: {
+                  ...(prev.variantGroupHeadings || item.variantGroupHeadings || {}),
+                  [groupContext]: heading,
+                },
+              }));
+            }}
+            onVariantGroupHeadingSave={async (groupContext, heading, accentColor) => {
+              const nextHeadings = {
+                ...(item.variantGroupHeadings || {}),
+                [groupContext]: heading,
+              };
+              const nextAccentColors = {
+                ...(item.variantGroupAccentColors || {}),
+                [groupContext]: accentColor,
+              };
+              const saved = await saveMainField({
+                variantGroupHeadings: nextHeadings,
+                variantGroupAccentColors: nextAccentColors,
+              });
+              if (saved) {
+                setEditStampData((prev) => ({
+                  ...prev,
+                  variantGroupHeadings: {
+                    ...(prev.variantGroupHeadings || item.variantGroupHeadings || {}),
+                    [groupContext]: heading,
+                  },
+                  variantGroupAccentColors: {
+                    ...(prev.variantGroupAccentColors || item.variantGroupAccentColors || {}),
+                    [groupContext]: accentColor,
+                  },
+                }));
+              }
+              return saved;
             }}
             saveDefectEdit={saveDefectEdit}
             deleteDefect={deleteDefect}

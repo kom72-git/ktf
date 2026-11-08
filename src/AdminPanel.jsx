@@ -54,6 +54,7 @@ export default function AdminPanel({
   const [newVariantData, setNewVariantData] = useState({
     idZnamky: '',
     variantaVady: '',
+    skupinaVarianty: '',
     umisteniVady: '',
     poradiVady: '',
     obrazekVady: '',
@@ -177,6 +178,15 @@ export default function AdminPanel({
       nextOrder = String(base - 1);
     }
     updateVariantDataWithImageSync({ poradiVady: nextOrder }, { forceImageSync: true });
+  };
+  const stepVariantGroup = (direction) => {
+    const raw = String(newVariantData.skupinaVarianty ?? "").trim();
+    const parsed = Number.parseInt(raw, 10);
+    const base = Number.isFinite(parsed) ? parsed : 0;
+    const nextGroup = direction > 0
+      ? String(Math.min(99, base + 1))
+      : base > 1 ? String(base - 1) : "";
+    setNewVariantData(prev => ({ ...prev, skupinaVarianty: nextGroup }));
   };
   const getSuggestionValues = (field) => {
     const values = fieldSuggestions?.[field];
@@ -373,6 +383,7 @@ export default function AdminPanel({
       setNewVariantData({
         idZnamky,
         variantaVady: '',
+        skupinaVarianty: '',
         umisteniVady: '',
         poradiVady: '',
         obrazekVady,
@@ -401,6 +412,7 @@ export default function AdminPanel({
       setNewVariantData({
         idZnamky,
         variantaVady: '',
+        skupinaVarianty: '',
         umisteniVady: '',
         poradiVady: '',
         obrazekVady,
@@ -463,6 +475,7 @@ export default function AdminPanel({
         setNewVariantData({
           idZnamky: '',
           variantaVady: '',
+          skupinaVarianty: '',
           umisteniVady: '',
           poradiVady: '',
           obrazekVady: '',
@@ -932,6 +945,24 @@ export default function AdminPanel({
                       >
                         ▼
                       </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="label-top-input admin-variant-group-field">
+                  <label htmlFor="new-variant-group-key">Skupina</label>
+                  <div className="admin-input-with-stepper">
+                    <input
+                      id="new-variant-group-key"
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      value={newVariantData.skupinaVarianty}
+                      onChange={e => setNewVariantData(v => ({ ...v, skupinaVarianty: e.target.value.replace(/\D+/g, "").slice(0, 2) }))}
+                      className="ktf-edit-input-tech admin-variant-group-key-input"
+                    />
+                    <div className="admin-stepper-btns">
+                      <button type="button" onClick={() => stepVariantGroup(1)} aria-label="Zvýšit skupinu varianty" title="Zvýšit skupinu" className="admin-stepper-btn">▲</button>
+                      <button type="button" onClick={() => stepVariantGroup(-1)} aria-label="Snížit skupinu varianty" title="Snížit skupinu" className="admin-stepper-btn">▼</button>
                     </div>
                   </div>
                 </div>

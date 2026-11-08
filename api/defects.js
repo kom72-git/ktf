@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     }
     if (req.method === 'POST') {
       // Přidání nové vady
-      const { idZnamky, variantaVady, umisteniVady, poradiVady, obrazekVady, popisVady, mam } = req.body;
+      const { idZnamky, variantaVady, skupinaVarianty, umisteniVady, poradiVady, obrazekVady, popisVady, mam } = req.body;
       if (!idZnamky || !variantaVady) {
         return res.status(400).json({ error: "Chybí povinné pole idZnamky nebo variantaVady" });
       }
@@ -47,6 +47,7 @@ export default async function handler(req, res) {
       const defect = {
         idZnamky,
         variantaVady,
+        skupinaVarianty: String(skupinaVarianty || "").trim(),
         umisteniVady: umisteniVady || '',
         poradiVady: poradiVady ?? '',
         obrazekVady: obrazekVady || '',
