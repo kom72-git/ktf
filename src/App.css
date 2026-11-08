@@ -1044,6 +1044,25 @@ textarea.resize-corner {
   min-width: 0;
   font-size: 14px;
 }
+.study-image-dialog-dimensions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.study-image-dialog .study-image-dialog-ratio {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.study-image-dialog .study-image-dialog-ratio input {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  accent-color: #176b55;
+}
 .study-image-dialog input,
 .study-image-dialog select {
   width: 100%;

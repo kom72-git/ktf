@@ -781,8 +781,8 @@ export function StampStudyFooterSection({
               <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
               <div className="ktf-tip-box ktf-tip-box-bulleted">
                 <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Příklady:<br />
-                  <code>1) Pavel Hankovec: Dvě varianty aršíku INTERKOSMOS, Filatelie 1980/14 str. 440</code><br />
-                  <code>2) Stanislav Pilař: Ještě k aršíku INTERKOSMOS 80, <strong>%</strong>Filatelie 1984/12 str. 361<strong>%</strong> https://example.com</code>
+                  <code>1) Pavel Hankovec: Dvě varianty aršíku INTERKOSMOS – časopis Filatelie č. 14/1980 (str. 440)</code><br />
+                  <code>2) Stanislav Pilař: Ještě k aršíku INTERKOSMOS 80 – <strong>%</strong>časopis Filatelie č. 12/1984 (str. 361)<strong>%</strong> https://example.com</code>
                 </span>
                 <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Každou položku dej na nový řádek. Klikací část vymezuj mezi <code>%...%</code>.</span>
               </div>

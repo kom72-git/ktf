@@ -26,6 +26,38 @@ const StudyImage = Image.extend({
         default: null,
         parseHTML: (element) => element.getAttribute("class"),
       },
+      studyDimensions: {
+        default: null,
+        parseHTML: (element) => {
+          const width = parseStudyImageDimension(
+            element.getAttribute("data-study-width") || element.style.width || element.getAttribute("width"),
+          );
+          const height = parseStudyImageDimension(
+            element.getAttribute("data-study-height") || element.style.height || element.getAttribute("height"),
+          );
+          if (!width && !height) return null;
+          return {
+            width,
+            height,
+            keepAspectRatio: element.getAttribute("data-study-keep-aspect-ratio") !== "false",
+          };
+        },
+        renderHTML: ({ studyDimensions }) => {
+          if (!studyDimensions) return {};
+          const width = parseStudyImageDimension(studyDimensions.width);
+          const height = parseStudyImageDimension(studyDimensions.height);
+          const keepAspectRatio = studyDimensions.keepAspectRatio !== false;
+          const styles = [];
+          if (width) styles.push(`width: ${width}px`);
+          if (height && (!keepAspectRatio || !width)) styles.push(`height: ${height}px`);
+          return {
+            ...(width ? { "data-study-width": String(width) } : {}),
+            ...(height ? { "data-study-height": String(height) } : {}),
+            "data-study-keep-aspect-ratio": String(keepAspectRatio),
+            ...(styles.length ? { style: styles.join("; ") } : {}),
+          };
+        },
+      },
     };
   },
 }).configure({ inline: true });
@@ -58,6 +90,13 @@ const EditorSpellcheck = Extension.create({
 
 function validStudyImageSource(value) {
   return /^(?:\/(?!\/)|https?:\/\/)/i.test(value) && !/[\\\u0000-\u001f]/.test(value);
+}
+
+function parseStudyImageDimension(value) {
+  const raw = String(value ?? "").trim();
+  if (!/^\d+(?:\.\d+)?(?:px)?$/i.test(raw)) return null;
+  const dimension = Math.round(Number.parseFloat(raw));
+  return Number.isFinite(dimension) && dimension > 0 ? dimension : null;
 }
 
 const NoTooltip = Mark.create({
@@ -346,6 +385,7 @@ export default function StudyRichTextEditor({
   const imageDialogRef = useRef(null);
   const [imageDialog, setImageDialog] = useState(null);
   const [imagePreviewFailed, setImagePreviewFailed] = useState(false);
+  const [imageIntrinsicSize, setImageIntrinsicSize] = useState(null);
 
   useEffect(() => {
     const dialog = imageDialogRef.current;
@@ -428,9 +468,11 @@ export default function StudyRichTextEditor({
     const node = typeof position === "number" ? doc.nodeAt(position) : selection.node;
     const existing = node?.type.name === "image";
     const attrs = existing ? node.attrs : {};
+    const dimensions = attrs.studyDimensions || {};
     const classes = (attrs.class || "").split(/\s+/);
     const from = existing && typeof position === "number" ? position : selection.from;
     setImagePreviewFailed(false);
+    setImageIntrinsicSize(null);
     setImageDialog({
       from,
       to: existing ? from + node.nodeSize : selection.to,
@@ -440,9 +482,82 @@ export default function StudyRichTextEditor({
       suggestedSource: imagePathPrefix,
       alt: attrs.alt || "",
       layout: classes.includes("study-float-left") ? "left" : classes.includes("study-float-right") ? "right" : "none",
+      width: dimensions.width ? String(dimensions.width) : "",
+      height: dimensions.height ? String(dimensions.height) : "",
+      keepAspectRatio: dimensions.keepAspectRatio !== false,
+      dimensionsEdited: false,
       error: "",
     });
   };
+
+  const updateImageDimension = (dimension, value) => {
+    setImageDialog((current) => {
+      if (!current) return current;
+      const next = { ...current, [dimension]: value, dimensionsEdited: true };
+      const ratio = imageIntrinsicSize?.width && imageIntrinsicSize?.height
+        ? imageIntrinsicSize.width / imageIntrinsicSize.height
+        : 0;
+      const numericValue = Number(value);
+      if (current.keepAspectRatio && ratio > 0 && numericValue > 0) {
+        const pairedDimension = dimension === "width" ? "height" : "width";
+        const pairedValue = dimension === "width" ? numericValue / ratio : numericValue * ratio;
+        next[pairedDimension] = String(Math.max(1, Math.round(pairedValue)));
+      } else if (current.keepAspectRatio && value === "") {
+        next[dimension === "width" ? "height" : "width"] = "";
+      }
+      return next;
+    });
+  };
+
+  const toggleImageAspectRatio = (keepAspectRatio) => {
+    setImageDialog((current) => {
+      if (!current) return current;
+      const next = { ...current, keepAspectRatio, dimensionsEdited: true };
+      const ratio = imageIntrinsicSize?.width && imageIntrinsicSize?.height
+        ? imageIntrinsicSize.width / imageIntrinsicSize.height
+        : 0;
+      if (keepAspectRatio && ratio > 0) {
+        if (Number(current.width) > 0) {
+          next.height = String(Math.max(1, Math.round(Number(current.width) / ratio)));
+        } else if (Number(current.height) > 0) {
+          next.width = String(Math.max(1, Math.round(Number(current.height) * ratio)));
+        }
+      }
+      return next;
+    });
+  };
+
+  const handleImagePreviewLoad = (event) => {
+    const size = { width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight };
+    if (!size.width || !size.height) return;
+    setImageIntrinsicSize(size);
+    setImageDialog((current) => {
+      if (!current) return current;
+      const ratio = size.width / size.height;
+      if (!current.keepAspectRatio) {
+        return {
+          ...current,
+          width: current.width || String(size.width),
+          height: current.height || String(size.height),
+        };
+      }
+      if (Number(current.width) > 0) {
+        return { ...current, height: String(Math.max(1, Math.round(Number(current.width) / ratio))) };
+      }
+      if (Number(current.height) > 0) {
+        return { ...current, width: String(Math.max(1, Math.round(Number(current.height) * ratio))) };
+      }
+      return { ...current, width: String(size.width), height: String(size.height) };
+    });
+  };
+
+  useEffect(() => {
+    if (!imageDialog) return;
+    const preview = imageDialogRef.current?.querySelector(".study-image-dialog-preview img");
+    if (preview?.complete && preview.naturalWidth && preview.naturalHeight) {
+      handleImagePreviewLoad({ currentTarget: preview });
+    }
+  }, [imageDialog?.src, imageDialog?.from]);
 
   const closeImageDialog = () => {
     imageDialogRef.current?.close();
@@ -461,12 +576,25 @@ export default function StudyRichTextEditor({
       setImageDialog({ ...imageDialog, error: "Zadej cestu začínající / nebo adresu https:// či http://." });
       return;
     }
+    const hasWidth = String(imageDialog.width || "").trim() !== "";
+    const hasHeight = String(imageDialog.height || "").trim() !== "";
+    const width = parseStudyImageDimension(imageDialog.width);
+    const height = parseStudyImageDimension(imageDialog.height);
+    if ((hasWidth && !width) || (hasHeight && !height)) {
+      setImageDialog({ ...imageDialog, error: "Rozměry musí být kladná čísla v pixelech." });
+      return;
+    }
+    const studyDimensions = imageDialog.dimensionsEdited
+      ? width || height
+        ? { width, height, keepAspectRatio: imageDialog.keepAspectRatio !== false }
+        : null
+      : imageDialog.attrs.studyDimensions || null;
     const classes = (imageDialog.attrs.class || "").split(/\s+/)
       .filter((name) => name && !["study-float-left", "study-float-right", "study-image"].includes(name));
     classes.push(imageDialog.layout === "none" ? "study-image" : `study-float-${imageDialog.layout}`);
     editor.chain().focus().command(({ tr }) => { closeHistory(tr); return true; }).insertContentAt({ from: imageDialog.from, to: imageDialog.to }, {
       type: "image",
-      attrs: { ...imageDialog.attrs, src, alt: imageDialog.alt.trim(), class: classes.join(" ") },
+      attrs: { ...imageDialog.attrs, src, alt: imageDialog.alt.trim(), class: classes.join(" "), studyDimensions },
     }).run();
     closeImageDialog();
   };
@@ -631,11 +759,57 @@ export default function StudyRichTextEditor({
               <button type="button" className="study-image-icon-button" title="Zavřít" aria-label="Zavřít" onClick={closeImageDialog}><X size={18} aria-hidden="true" /></button>
             </div>
             <label>Cesta / URL
-              <input autoFocus required value={imageDialog.src} placeholder="/img/1989/PL2909-4bloky.jpg" onChange={(event) => { setImagePreviewFailed(false); setImageDialog({ ...imageDialog, src: event.target.value, error: "" }); }} />
+              <input
+                autoFocus
+                required
+                value={imageDialog.src}
+                placeholder="/img/1989/PL2909-4bloky.jpg"
+                onChange={(event) => {
+                  setImagePreviewFailed(false);
+                  setImageIntrinsicSize(null);
+                  setImageDialog({
+                    ...imageDialog,
+                    attrs: { ...imageDialog.attrs, studyDimensions: null },
+                    src: event.target.value,
+                    width: "",
+                    height: "",
+                    dimensionsEdited: false,
+                    error: "",
+                  });
+                }}
+              />
             </label>
             <label>Popis obrázku
               <input value={imageDialog.alt} onChange={(event) => setImageDialog({ ...imageDialog, alt: event.target.value })} />
             </label>
+            <div className="study-image-dialog-dimensions">
+              <label>Šířka (px)
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={imageDialog.width}
+                  onChange={(event) => updateImageDimension("width", event.target.value)}
+                />
+              </label>
+              <label>Výška (px)
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={imageDialog.height}
+                  onChange={(event) => updateImageDimension("height", event.target.value)}
+                />
+              </label>
+              <label className="study-image-dialog-ratio">
+                <input
+                  type="checkbox"
+                  checked={imageDialog.keepAspectRatio}
+                  onChange={(event) => toggleImageAspectRatio(event.target.checked)}
+                />
+                <span>Zachovat poměr stran</span>
+              </label>
+            </div>
             <label>Obtékání textem
               <select value={imageDialog.layout} onChange={(event) => setImageDialog({ ...imageDialog, layout: event.target.value })}>
                 <option value="none">Bez obtékání</option>
@@ -645,7 +819,20 @@ export default function StudyRichTextEditor({
             </label>
             {validStudyImageSource(imageDialog.src.trim()) && (imageDialog.existing || imageDialog.src.trim() !== imageDialog.suggestedSource) && (
               <div className="study-image-dialog-preview">
-                {imagePreviewFailed ? <span role="status">Obrázek se nepodařilo načíst.</span> : <img src={imageDialog.src.trim()} alt={imageDialog.alt || "Náhled obrázku"} onError={() => setImagePreviewFailed(true)} />}
+                {imagePreviewFailed ? <span role="status">Obrázek se nepodařilo načíst.</span> : (
+                  <img
+                    src={imageDialog.src.trim()}
+                    alt={imageDialog.alt || "Náhled obrázku"}
+                    style={{
+                      width: imageDialog.width ? `${imageDialog.width}px` : undefined,
+                      height: imageDialog.height && (!imageDialog.keepAspectRatio || !imageDialog.width)
+                        ? `${imageDialog.height}px`
+                        : undefined,
+                    }}
+                    onLoad={handleImagePreviewLoad}
+                    onError={() => { setImagePreviewFailed(true); setImageIntrinsicSize(null); }}
+                  />
+                )}
               </div>
             )}
             {imageDialog.error && <div className="study-image-dialog-error" role="alert">{imageDialog.error}</div>}
