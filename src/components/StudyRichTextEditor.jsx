@@ -7,7 +7,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Superscript from "@tiptap/extension-superscript";
 import Subscript from "@tiptap/extension-subscript";
 import Image from "@tiptap/extension-image";
-import { Bold, CaseSensitive, Check, Eye, EyeOff, ImagePlus, IndentDecrease, IndentIncrease, Italic, List, ListOrdered, MessageSquareText, Trash2, X } from "lucide-react";
+import { Bold, CaseSensitive, Check, Eye, EyeOff, ImagePlus, IndentDecrease, IndentIncrease, Italic, Link2, List, ListOrdered, MessageSquareText, Trash2, Unlink, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ZKRATKY_TOOLTIPY from "../zkratky-tooltips";
@@ -97,6 +97,15 @@ function parseStudyImageDimension(value) {
   if (!/^\d+(?:\.\d+)?(?:px)?$/i.test(raw)) return null;
   const dimension = Math.round(Number.parseFloat(raw));
   return Number.isFinite(dimension) && dimension > 0 ? dimension : null;
+}
+
+function normalizeStudyLink(value) {
+  const raw = String(value ?? "").trim();
+  if (!raw || /[\u0000-\u0020]/.test(raw)) return "";
+  if (/^(?:https?:\/\/|mailto:|tel:|\/(?!\/)|#|\.\.?\/)/i.test(raw)) return raw;
+  if (/^[a-z][a-z\d+.-]*:/i.test(raw) || raw.startsWith("//")) return "";
+  if (/^(?:www\.)?[a-z\d-]+(?:\.[a-z\d-]+)+(?:[/:?#].*)?$/i.test(raw)) return `https://${raw}`;
+  return "";
 }
 
 const NoTooltip = Mark.create({
@@ -383,7 +392,9 @@ export default function StudyRichTextEditor({
   const onChangeRef = useRef(onChange);
   const lastValueRef = useRef(String(value ?? ""));
   const imageDialogRef = useRef(null);
+  const linkDialogRef = useRef(null);
   const [imageDialog, setImageDialog] = useState(null);
+  const [linkDialog, setLinkDialog] = useState(null);
   const [imagePreviewFailed, setImagePreviewFailed] = useState(false);
   const [imageIntrinsicSize, setImageIntrinsicSize] = useState(null);
 
@@ -398,12 +409,20 @@ export default function StudyRichTextEditor({
   }, [imageDialog]);
 
   useEffect(() => {
+    const dialog = linkDialogRef.current;
+    if (linkDialog && !dialog?.open) {
+      dialog?.showModal();
+      dialog?.querySelector("input")?.focus();
+    }
+  }, [linkDialog]);
+
+  useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
 
   const editor = useEditor({
     immediatelyRender: false,
-    extensions: [StarterKit, Superscript, Subscript, NoTooltip, TooltipEnabled, StudyNote, ParagraphIndent,
+    extensions: [StarterKit.configure({ link: { openOnClick: false, HTMLAttributes: { rel: "noopener noreferrer" } } }), Superscript, Subscript, NoTooltip, TooltipEnabled, StudyNote, ParagraphIndent,
       EditorSpellcheck.configure({ language: lang }),
       ...(storageFormat !== "author" ? [StudyImage] : []),
       LiveAbbreviationTooltips.configure({ enabled: storageFormat !== "author" })],
@@ -437,6 +456,10 @@ export default function StudyRichTextEditor({
     editor,
     selector: ({ editor: currentEditor }) => currentEditor?.isActive("image") ?? false,
   });
+  const linkSelected = useEditorState({
+    editor,
+    selector: ({ editor: currentEditor }) => currentEditor?.isActive("link") ?? false,
+  });
   const fractionActionLabel = useEditorState({
     editor,
     selector: ({ editor: currentEditor }) => {
@@ -460,6 +483,69 @@ export default function StudyRichTextEditor({
 
   const run = (command) => {
     if (editor) command(editor.chain().focus()).run();
+  };
+
+  const openLinkDialog = () => {
+    if (!editor) return;
+    if (editor.state.selection.empty && editor.isActive("link")) {
+      editor.chain().extendMarkRange("link").run();
+    }
+    const { from, to } = editor.state.selection;
+    const attrs = editor.getAttributes("link");
+    const text = editor.state.doc.textBetween(from, to, "");
+    setLinkDialog({
+      from,
+      to,
+      text,
+      originalText: text,
+      href: attrs.href || "",
+      openInNewWindow: attrs.target === "_blank",
+      existing: editor.isActive("link"),
+      error: "",
+    });
+  };
+
+  const closeLinkDialog = () => {
+    linkDialogRef.current?.close();
+    setLinkDialog(null);
+    editor?.commands.focus();
+  };
+
+  const applyLink = (event) => {
+    event.preventDefault();
+    const href = normalizeStudyLink(linkDialog.href);
+    if (!href) {
+      setLinkDialog({ ...linkDialog, error: "Zadej platnou adresu odkazu (http(s), e-mail, telefon nebo místní cestu)." });
+      return;
+    }
+    const text = String(linkDialog.text ?? "");
+    if (!text.trim()) {
+      setLinkDialog({ ...linkDialog, error: "Doplň text, který se má zobrazit jako odkaz." });
+      return;
+    }
+    const target = linkDialog.openInNewWindow ? "_blank" : null;
+    const rel = linkDialog.openInNewWindow ? "noopener noreferrer" : null;
+    let chain = editor.chain().focus().command(({ tr }) => { closeHistory(tr); return true; });
+    if (linkDialog.existing && text === linkDialog.originalText) {
+      chain.setTextSelection({ from: linkDialog.from, to: linkDialog.to })
+        .setLink({ href, target, rel })
+        .run();
+    } else {
+      const marks = editor.state.doc.resolve(linkDialog.from).marks()
+        .filter(mark => mark.type.name !== "link")
+        .map(mark => ({ type: mark.type.name, attrs: mark.attrs }));
+      marks.push({ type: "link", attrs: { href, target, rel } });
+      chain.insertContentAt({ from: linkDialog.from, to: linkDialog.to }, { type: "text", text, marks }).run();
+    }
+    closeLinkDialog();
+  };
+
+  const removeLink = () => {
+    editor.chain().focus()
+      .setTextSelection({ from: linkDialog.from, to: linkDialog.to })
+      .unsetLink()
+      .run();
+    closeLinkDialog();
   };
 
   const openImageDialog = (position) => {
@@ -744,6 +830,9 @@ export default function StudyRichTextEditor({
         {storageFormat !== "author" && (
           <>
             <span className="study-rich-editor-divider" aria-hidden="true" />
+            <button type="button" title={linkSelected ? "Upravit odkaz" : "Vložit odkaz"} aria-label={linkSelected ? "Upravit odkaz" : "Vložit odkaz"} aria-pressed={linkSelected || false} onMouseDown={(event) => event.preventDefault()} onClick={openLinkDialog}>
+              <Link2 aria-hidden="true" size={16} />
+            </button>
             <button type="button" title={imageSelected ? "Upravit obrázek" : "Vložit obrázek"} aria-label={imageSelected ? "Upravit obrázek" : "Vložit obrázek"} onMouseDown={(event) => event.preventDefault()} onClick={() => openImageDialog()}>
               <ImagePlus aria-hidden="true" size={16} />
             </button>
@@ -839,6 +928,32 @@ export default function StudyRichTextEditor({
             <div className="study-image-dialog-actions">
               {imageDialog.existing && <button type="button" className="study-image-icon-button study-image-remove" title="Odebrat obrázek" aria-label="Odebrat obrázek" onClick={removeImage}><Trash2 size={18} aria-hidden="true" /></button>}
               <button type="button" onClick={closeImageDialog}>Zrušit</button>
+              <button type="submit" className="study-image-apply"><Check size={18} aria-hidden="true" />Použít</button>
+            </div>
+          </form>
+        </dialog>, document.body,
+      )}
+      {linkDialog && createPortal(
+        <dialog ref={linkDialogRef} className="study-image-dialog study-link-dialog" aria-labelledby={`${id}-link-dialog-title`} onCancel={(event) => { event.preventDefault(); closeLinkDialog(); }}>
+          <form onSubmit={applyLink}>
+            <div className="study-image-dialog-header">
+              <h3 id={`${id}-link-dialog-title`}>{linkDialog.existing ? "Upravit odkaz" : "Vložit odkaz"}</h3>
+              <button type="button" className="study-image-icon-button" title="Zavřít" aria-label="Zavřít" onClick={closeLinkDialog}><X size={18} aria-hidden="true" /></button>
+            </div>
+            <label>Text odkazu
+              <input autoFocus required value={linkDialog.text} onChange={(event) => setLinkDialog({ ...linkDialog, text: event.target.value, error: "" })} />
+            </label>
+            <label>Adresa odkazu
+              <input required value={linkDialog.href} placeholder="https://example.com" onChange={(event) => setLinkDialog({ ...linkDialog, href: event.target.value, error: "" })} />
+            </label>
+            <label className="study-link-dialog-new-window">
+              <input type="checkbox" checked={linkDialog.openInNewWindow} onChange={(event) => setLinkDialog({ ...linkDialog, openInNewWindow: event.target.checked })} />
+              <span>Otevřít odkaz v novém okně</span>
+            </label>
+            {linkDialog.error && <div className="study-image-dialog-error" role="alert">{linkDialog.error}</div>}
+            <div className="study-image-dialog-actions">
+              {linkDialog.existing && <button type="button" className="study-image-icon-button study-image-remove" title="Odebrat odkaz" aria-label="Odebrat odkaz" onClick={removeLink}><Unlink size={18} aria-hidden="true" /></button>}
+              <button type="button" onClick={closeLinkDialog}>Zrušit</button>
               <button type="submit" className="study-image-apply"><Check size={18} aria-hidden="true" />Použít</button>
             </div>
           </form>

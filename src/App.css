@@ -959,6 +959,14 @@ textarea.resize-corner {
 }
 .study-rich-editor-content p:last-child {
   margin-bottom: 0;
+.study-rich-editor-content a,
+.study-note a,
+.study-editor-note a {
+  color: #176b55;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.study-rich-editor-content a { cursor: pointer; }
 }
 .study-rich-editor-content p[data-indent]::before,
 .study-note p[data-indent]::before {
@@ -1056,6 +1064,19 @@ textarea.resize-corner {
   gap: 8px;
 }
 .study-image-dialog .study-image-dialog-ratio input {
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  accent-color: #176b55;
+}
+.study-link-dialog .study-link-dialog-new-window {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.study-link-dialog .study-link-dialog-new-window input {
   flex: 0 0 16px;
   width: 16px;
   height: 16px;
