@@ -847,6 +847,7 @@ export default function StampCatalog(props) {
               }}
               onNavigateToEmission={(slug, rok, key) => {
                 if (navigate) {
+                  window.sessionStorage.setItem(`ktf-scroll:${location.key}`, String(window.scrollY));
                   navigate(`/emise/${slug}-${rok}`, { state: { openBoxKey: key } });
                 } else {
                   window.location.href = `/emise/${slug}-${rok}`;

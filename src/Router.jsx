@@ -73,6 +73,7 @@ function StaticPageMetadata() {
 
 function CatalogWrapper() {
   const navigate = useNavigate();
+  const location = useLocation();
   const params = useParams();
   // Rozlišíme, zda je to /rok/:year nebo /emise/:slug(-:year)?
   const { slug, year } = params;
@@ -83,7 +84,11 @@ function CatalogWrapper() {
     <StampCatalog
       key={key}
       detailId={null}
-      setDetailId={id => navigate(id ? `/detail/${id}` : "/")}
+      setDetailId={id => {
+        if (!id) return navigate("/");
+        window.sessionStorage.setItem(`ktf-scroll:${location.key}`, String(window.scrollY));
+        navigate(`/detail/${id}`, { state: { returnToCatalog: true } });
+      }}
       initialEmissionSlug={isYearRoute ? null : slug}
       initialYear={year}
       onlyYear={isYearRoute}
@@ -94,15 +99,75 @@ function CatalogWrapper() {
 function DetailWrapper() {
   const { id } = useParams();
   const navigate = useNavigate();
-  return <StampCatalog detailId={id} setDetailId={id => navigate(id ? `/detail/${id}` : "/")} />;
+  const location = useLocation();
+  return (
+    <StampCatalog
+      detailId={id}
+      setDetailId={nextId => {
+        if (nextId) {
+          navigate(`/detail/${nextId}`, { state: location.state });
+        } else if (location.state?.returnToCatalog) {
+          navigate(-1);
+        } else {
+          navigate("/");
+        }
+      }}
+    />
+  );
 }
 
 // Nová navigace vždy začíná nahoře; při Zpět necháme obnovit pozici prohlížeči
 function ScrollToTop() {
-  const { pathname } = useLocation();
+  const location = useLocation();
   const type = useNavigationType();
   useEffect(() => {
-    if (type !== "POP") window.scrollTo({ top: 0, left: 0 });
-  }, [pathname, type]);
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+
+    const storageKey = `ktf-scroll:${location.key}`;
+    let restoreFrame = 0;
+    let isRestoring = false;
+    const firstEffectForDocument = !window.__ktfScrollRestorationInitialized;
+    window.__ktfScrollRestorationInitialized = true;
+    const navigationType = performance.getEntriesByType("navigation")[0]?.type;
+    const isReload = firstEffectForDocument && navigationType === "reload";
+    const savedValue = type === "POP" && !isReload ? window.sessionStorage.getItem(storageKey) : null;
+    const savedPosition = savedValue === null ? NaN : Number(savedValue);
+
+    const savePosition = () => {
+      if (!isRestoring && window.location.pathname === location.pathname) {
+        window.sessionStorage.setItem(storageKey, String(window.scrollY));
+      }
+    };
+
+    if (isReload) {
+      window.sessionStorage.setItem(storageKey, "0");
+      window.scrollTo({ top: 0, left: 0 });
+    } else if (type === "POP" && Number.isFinite(savedPosition)) {
+      isRestoring = true;
+      const startedAt = performance.now();
+      const restorePosition = () => {
+        const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+        if (maxScroll >= savedPosition || performance.now() - startedAt >= 10000) {
+          window.scrollTo({ top: Math.min(savedPosition, maxScroll), left: 0 });
+          isRestoring = false;
+          savePosition();
+          restoreFrame = 0;
+          return;
+        }
+        restoreFrame = requestAnimationFrame(restorePosition);
+      };
+      restoreFrame = requestAnimationFrame(restorePosition);
+    } else if (type !== "POP") {
+      window.scrollTo({ top: 0, left: 0 });
+    }
+
+    window.addEventListener("scroll", savePosition, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", savePosition);
+      if (restoreFrame) cancelAnimationFrame(restoreFrame);
+    };
+  }, [location.key, type]);
   return null;
 }

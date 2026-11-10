@@ -199,6 +199,9 @@
   font-style: normal;
   color: inherit;
 }
+.study-editor-note-body .ktf-abbr-tooltip-abbr {
+  font-style: inherit;
+}
 .ktf-abbr-tooltip-bubble {
   position: absolute;
   left: 0;

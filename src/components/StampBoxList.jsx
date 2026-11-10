@@ -3,7 +3,7 @@
 // Boxy mohou být sbalené (sloučené) nebo rozbalené (jednotlivé varianty).
 // Používá se v hlavní komponentě StampCatalog.
 
-import React, { useLayoutEffect, useRef } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import EmissionTitleAbbr from "./EmissionTitleAbbr.jsx";
 import CatalogNumberDisplay from "./CatalogNumberDisplay.jsx";
 import { normalizeStampImagePath } from "../utils/obrazekCesta.js";
@@ -19,6 +19,7 @@ export default function StampBoxList({
   onNavigateToEmission,
 }) {
   const catalogListRef = useRef(null);
+  const [expandHintKey, setExpandHintKey] = useState(null);
 
   useLayoutEffect(() => {
     const container = catalogListRef.current;
@@ -164,6 +165,10 @@ export default function StampBoxList({
           }
           return (
             <div key={key} className={`stamp-card stamp-card-pointer${showUnpublishedHint ? " stamp-card-unpublished" : ""}${useInterniRibbon ? " stamp-card-internal" : ""}`}
+              onPointerLeave={event => {
+                if (event.relatedTarget?.closest?.(".stamp-detail-tab-mask")) return;
+                setExpandHintKey(current => current === key ? null : current);
+              }}
               onClick={() => {
                 if (isSingle) {
                   onNavigateToDetail(item.idZnamky);
@@ -177,7 +182,19 @@ export default function StampBoxList({
                 </span>
               )}
               {!isSingle && (
-                <button className="stamp-box-toggle stamp-box-toggle-tight" title="Rozbalit box"
+                <button className="stamp-box-toggle stamp-box-toggle-tight" aria-label="Rozbalit box"
+                  onPointerEnter={event => {
+                    if (event.pointerType !== "touch") setExpandHintKey(key);
+                  }}
+                  onPointerLeave={event => {
+                    if (event.relatedTarget?.closest?.(".stamp-detail-tab-mask")) return;
+                    setExpandHintKey(current => current === key ? null : current);
+                  }}
+                  onFocus={() => setExpandHintKey(key)}
+                  onBlur={event => {
+                    if (event.relatedTarget?.closest?.(".stamp-detail-tab-mask")) return;
+                    setExpandHintKey(current => current === key ? null : current);
+                  }}
                   onClick={e => { e.stopPropagation(); handleToggleBox(key); }}
                 >+</button>
               )}
@@ -197,9 +214,21 @@ export default function StampBoxList({
               </div>
               <div className="stamp-bottom">
                 <div className="stamp-catalog-row"><span className="stamp-catalog-label">{sortedItems.length > 1 ? `Katalogová čísla (${sortedItems.length}):` : "Katalogové číslo:"}</span> <span className="catalog"><CatalogNumberDisplay text={katalogText} /></span></div>
-                {isSingle && (
+                {isSingle ? (
                   <span className="stamp-detail-tab-mask">
                     <button type="button" className="stamp-detail-tab" onClick={e => { e.stopPropagation(); onNavigateToDetail(item.idZnamky); }}>Otevřít detail</button>
+                  </span>
+                ) : (
+                  <span className="stamp-detail-tab-mask">
+                    <button type="button" className="stamp-detail-tab" onClick={e => {
+                      e.stopPropagation();
+                      if (expandHintKey === key) {
+                        handleToggleBox(key);
+                        setExpandHintKey(null);
+                      } else {
+                        onNavigateToEmission(slug, rok, key);
+                      }
+                    }}>{expandHintKey === key ? "Rozbalit box" : "Otevřít emisi"}</button>
                   </span>
                 )}
               </div>
@@ -237,6 +266,10 @@ export default function StampBoxList({
               <div
                 key={key + '-' + idx}
                 className={`stamp-card ${stripeClass} stamp-card-pointer${(itemStav === 'priprava' || itemStav === 'interni') ? " stamp-card-unpublished" : ""}${itemStav === 'interni' ? " stamp-card-internal" : ""}`}
+                onPointerLeave={event => {
+                  if (event.relatedTarget?.closest?.(".stamp-detail-tab-mask")) return;
+                  setExpandHintKey(current => current === key ? null : current);
+                }}
                 onClick={() => onNavigateToDetail(item.idZnamky)}>
                 {itemStav === 'priprava' && (
                   <span className="stamp-unpublished-ribbon stamp-unpublished-ribbon-fixed" title="Známka je nepublikovaná">V PŘÍPRAVĚ</span>
@@ -245,8 +278,22 @@ export default function StampBoxList({
                   <span className="stamp-unpublished-ribbon stamp-unpublished-ribbon-internal stamp-unpublished-ribbon-fixed" title="Známka je interní">INTERNÍ</span>
                 )}
                 {idx === 0 && (
-                  <button className="stamp-box-toggle stamp-box-toggle-tight" title="Sloučit boxy"
-                    onClick={e => { e.stopPropagation(); handleToggleBox(key); }}
+                  <button
+                    className="stamp-box-toggle stamp-box-toggle-tight"
+                    aria-label="Sloučit box"
+                    onPointerEnter={event => {
+                      if (event.pointerType !== "touch") setExpandHintKey(key);
+                    }}
+                    onPointerLeave={event => {
+                      if (event.relatedTarget?.closest?.(".stamp-detail-tab-mask")) return;
+                      setExpandHintKey(current => current === key ? null : current);
+                    }}
+                    onFocus={() => setExpandHintKey(key)}
+                    onBlur={event => {
+                      if (event.relatedTarget?.closest?.(".stamp-detail-tab-mask")) return;
+                      setExpandHintKey(current => current === key ? null : current);
+                    }}
+                    onClick={e => { e.stopPropagation(); handleToggleBox(key); setExpandHintKey(null); }}
                   >−</button>
                 )}
                 <div className="stamp-img-bg">
@@ -266,7 +313,15 @@ export default function StampBoxList({
                 <div className="stamp-bottom">
                   <div className="stamp-catalog-row"><span className="stamp-catalog-label">Katalogové číslo:</span> <span className="catalog"><CatalogNumberDisplay text={katalogText || item.katalogCislo} /></span></div>
                   <span className="stamp-detail-tab-mask">
-                    <button type="button" className="stamp-detail-tab" onClick={e => { e.stopPropagation(); onNavigateToDetail(item.idZnamky); }}>Otevřít detail</button>
+                    <button type="button" className="stamp-detail-tab" onClick={e => {
+                      e.stopPropagation();
+                      if (idx === 0 && expandHintKey === key) {
+                        handleToggleBox(key);
+                        setExpandHintKey(null);
+                      } else {
+                        onNavigateToDetail(item.idZnamky);
+                      }
+                    }}>{idx === 0 && expandHintKey === key ? "Sloučit box" : "Otevřít detail"}</button>
                   </span>
                 </div>
               </div>
