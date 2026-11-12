@@ -39,6 +39,7 @@ import VariantList from "./components/VariantList.jsx";
 import { StampImageEditRow, StampCatalogNumberSection, StampTitleSection, StampTechnicalSpecSection, StampStudyTopSection, StampStudyFooterSection } from "./components/StampDetailEdit.jsx";
 import StampStavControl from "./components/StampStavControl.jsx";
 import { getStavFromStamp, stavToIsHidden } from "./utils/stavUtils.js";
+import { getEmissionSiblings } from "./utils/emise.js";
 
 const LITERATURE_PREFIX_REGEX = /^\s*(?:\[(\d+)\]|(\d+)([.)]))\s*(.*)$/;
 const LITERATURE_URL_REGEX = /(https?:\/\/[^\s]+)/i;
@@ -98,6 +99,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   const [savedCaption, setSavedCaption] = useState(false);
   const [isSavingHidden, setIsSavingHidden] = useState(false);
   const [isSavingVerified, setIsSavingVerified] = useState(false);
+  const [isSavingStudyStatus, setIsSavingStudyStatus] = useState(false);
   const [isCreatingRelatedStamp, setIsCreatingRelatedStamp] = useState(false);
   const [isRepublishing, setIsRepublishing] = useState(false);
   const [isSavingAllChanges, setIsSavingAllChanges] = useState(false);
@@ -271,6 +273,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         // Inicializace editačních dat pro známku
         setEditStampData({
           emise: data.emise || '',
+          bezStudie: data.bezStudie === true,
+          bezRozliseni: data.bezRozliseni === true,
           emiseSkupina: data.emiseSkupina || '',
           rok: data.rok || '',
           katalogCislo: data.katalogCislo || '',
@@ -817,6 +821,25 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
     }, 1500);
   };
 
+  const handleStudyStatusChange = async (status) => {
+    const previousBezStudie = Boolean(item.bezStudie);
+    const previousBezRozliseni = Boolean(item.bezRozliseni);
+    const fields = {
+      bezStudie: status === "bezStudie",
+      bezRozliseni: status === "bezRozliseni",
+    };
+    if (fields.bezStudie === previousBezStudie && fields.bezRozliseni === previousBezRozliseni) return;
+    const nextBezStudie = fields.bezStudie;
+    if (previousBezStudie && !nextBezStudie) fields.publishedAt = new Date().toISOString();
+    setIsSavingStudyStatus(true);
+    setEditStampData(prev => ({ ...prev, ...fields }));
+    const saved = await saveMainField(fields);
+    setIsSavingStudyStatus(false);
+    setEditStampData(prev => saved
+      ? { ...prev, ...fields }
+      : { ...prev, bezStudie: previousBezStudie, bezRozliseni: previousBezRozliseni });
+  };
+
   const handleRepublish = async () => {
     const now = new Date().toISOString();
     const previous = editStampData.publishedAt || item.publishedAt;
@@ -1241,6 +1264,15 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
   };
 
   const renderCatalogDisplay = text => <CatalogNumberDisplay text={text} />;
+  const siblingStamps = getEmissionSiblings(item, allStamps, isAdmin);
+  const emissionSiblingPreview = siblingStamps.length ? {
+    items: siblingStamps.map(stamp => ({
+      catalogNumber: stamp.katalogCislo,
+      stamp: stamp.bezStudie ? null : stamp,
+      image: getPreviewImageSrc(stamp),
+      isPlaceholder: !stamp.obrazek,
+    })),
+  } : null;
 
   const additionalStudyHeadingId = `${detailHeadingId}-study-after`;
   const currentStav = editStampData.stav || getStavFromStamp(item);
@@ -1268,6 +1300,8 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   // Obnovit editStampData podle aktuálního item
                   setEditStampData({
                     emise: item.emise || '',
+                    bezStudie: item.bezStudie === true,
+                    bezRozliseni: item.bezRozliseni === true,
                     emiseSkupina: item.emiseSkupina || '',
                     rok: item.rok || '',
                     katalogCislo: item.katalogCislo || '',
@@ -1355,6 +1389,18 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
                   onChange={handleStavChange}
                   disabled={isSavingHidden}
                 />
+                <label className="hide-stamp-toggle verified-toggle study-classification-control">
+                  <select
+                    aria-label={isSavingStudyStatus ? "Ukládám stav studie" : "Stav studie"}
+                    value={editStampData.bezStudie ? "bezStudie" : editStampData.bezRozliseni ? "bezRozliseni" : "studie"}
+                    onChange={event => handleStudyStatusChange(event.target.value)}
+                    disabled={isSavingStudyStatus}
+                  >
+                    <option value="studie">Studie</option>
+                    <option value="bezRozliseni">Bez rozlišení</option>
+                    <option value="bezStudie">Bez studie</option>
+                  </select>
+                </label>
                 {editStampData.stav !== 'interni' && (
                   <button
                     className="admin-edit-btn detail-inline-offset"
@@ -1424,6 +1470,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
         renderCatalogLinkWithPreview={renderCatalogLinkWithPreview}
         item={item}
         companionStamp={companionStamp}
+        emissionSiblingPreview={emissionSiblingPreview}
       />
       
       {/* Editační formulář a vykreslení základních údajů známky */}

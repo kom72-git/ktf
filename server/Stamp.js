@@ -19,6 +19,8 @@ const StampSchema = new mongoose.Schema({
   katalogCislo: String,
   emise: String,
   emiseSkupina: String,
+  bezStudie: { type: Boolean, default: false },
+  bezRozliseni: { type: Boolean, default: false },
   obrazek: String,
   datumVydani: String,
   navrh: String,

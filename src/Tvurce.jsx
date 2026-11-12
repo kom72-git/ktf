@@ -8,6 +8,7 @@ import { emissionToSlug } from "./utils/katalog.js";
 import { normalizeStampImagePath } from "./utils/obrazekCesta.js";
 import { setPageMetadata } from "./utils/seo.js";
 import ScrollTopButton from "./components/ScrollTopButton.jsx";
+import CatalogNumberDisplay from "./components/CatalogNumberDisplay.jsx";
 import { renderPopis, parseZdroje, renderZdroje } from "./utils/popisTvurce.jsx";
 import AuthorForm from "./components/TvurceForm.jsx";
 import { useAdminSession } from "./utils/useAdminSession.js";
@@ -139,7 +140,7 @@ export default function Tvurce() {
                       </span>
                       <span className="author-stamps-title">{stamp.emise}</span>
                       <span className="author-stamps-meta">
-                        {stamp.rok} · {stamp.katalogCislo}
+                        {stamp.rok} · <CatalogNumberDisplay text={stamp.katalogCislo} />
                       </span>
                       <span className="author-stamps-meta author-stamps-role">
                         {[engraver && "rytina", designer && "návrh"].filter(Boolean).join(" + ")}

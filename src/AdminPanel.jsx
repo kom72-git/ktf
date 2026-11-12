@@ -25,6 +25,9 @@ export default function AdminPanel({
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [newStampData, setNewStampData] = useState({
     emise: '',
+    emiseSkupina: '',
+    bezStudie: false,
+    bezRozliseni: false,
     rok: '',
     katalogCislo: '',
     obrazek: '',
@@ -574,7 +577,17 @@ export default function AdminPanel({
               onSubmit={e => {
                 e.preventDefault();
                 if (onAddStamp) {
-                  onAddStamp(newStampData);
+                  onAddStamp(newStampData.bezStudie ? {
+                    emise: newStampData.emise,
+                    emiseSkupina: newStampData.emiseSkupina,
+                    rok: newStampData.rok,
+                    katalogCislo: newStampData.katalogCislo,
+                    obrazek: newStampData.obrazek,
+                    navrh: newStampData.navrh,
+                    rytec: newStampData.rytec,
+                    bezStudie: true,
+                    bezRozliseni: false,
+                  } : newStampData);
                 }
               }}
               onKeyDown={(e) => {
@@ -583,6 +596,21 @@ export default function AdminPanel({
                 }
               }}
             >
+              <label className="label-top-input admin-study-classification">
+                <span>Stav studie</span>
+                <select
+                  value={newStampData.bezStudie ? "bezStudie" : newStampData.bezRozliseni ? "bezRozliseni" : "studie"}
+                  onChange={event => setNewStampData(prev => ({
+                    ...prev,
+                    bezStudie: event.target.value === "bezStudie",
+                    bezRozliseni: event.target.value === "bezRozliseni",
+                  }))}
+                >
+                  <option value="studie">Studie</option>
+                  <option value="bezRozliseni">Bez rozlišení</option>
+                  <option value="bezStudie">Bez studie</option>
+                </select>
+              </label>
               <div className="label-top-input">
                 <label>Rok vydání</label>
                 <input
@@ -607,15 +635,21 @@ export default function AdminPanel({
                   type="text"
                   value={newStampData.emise}
                   onChange={e => setNewStampData({ ...newStampData, emise: e.target.value })}
+                  required
                   list={hasSuggestions('emise') ? getSuggestionListId('emise') : undefined}
                   autoComplete="off"
                 />
+              </div>
+              <div className="label-top-input">
+                <label>Skupina emise (jen pro filtr)</label>
+                <input type="text" value={newStampData.emiseSkupina} onChange={event => setNewStampData(prev => ({ ...prev, emiseSkupina: event.target.value }))} list={hasSuggestions('emiseSkupina') ? getSuggestionListId('emiseSkupina') : undefined} />
               </div>
               <div className="label-top-input">
                 <label>Katalogové číslo <span className="admin-label-hint">(pro přepočet adres použij Enter)</span></label>
                 <input
                   type="text"
                   value={newStampData.katalogCislo}
+                  required
                   onChange={e => setNewStampData({ ...newStampData, katalogCislo: e.target.value })}
                   onBlur={(e) => applyAutoImagePrefill(true, { katalogCislo: e.target.value })}
                   onKeyDown={(e) => {
@@ -641,6 +675,7 @@ export default function AdminPanel({
                   autoComplete="off"
                 />
               </div>
+              {!newStampData.bezStudie && <>
               <div className="label-top-input">
                 <label>Obrázek studie</label>
                 <input
@@ -675,6 +710,7 @@ export default function AdminPanel({
                   autoComplete="off"
                 />
               </div>
+              </>}
               <div className="label-top-input">
                 <label>Návrh</label>
                 <input
@@ -695,6 +731,7 @@ export default function AdminPanel({
                   autoComplete="off"
                 />
               </div>
+              {!newStampData.bezStudie && <>
               <div className="label-top-input">
                 <label>Druh tisku</label>
                 <input
@@ -776,6 +813,7 @@ export default function AdminPanel({
                   suggestionListId={hasSuggestions('schemaTF') ? getSuggestionListId('schemaTF') : undefined}
                 />
               </div>
+              </>}
               <div className="admin-modal-actions">
                 <button type="submit" className="ktf-btn-confirm">Přidat</button>
                 <button type="button" className="ktf-btn-cancel" onClick={() => setShowAddModal(false)}>Zrušit</button>

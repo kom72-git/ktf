@@ -26,6 +26,7 @@ import {
 import ScrollTopButton from "./components/ScrollTopButton.jsx";
 import "./App.css";
 import { setPageMetadata } from "./utils/seo.js";
+import { getEmissionStudyPublishTime } from "./utils/emise.js";
 
 // Pomocná fce: vrátí čas (ms) pro řazení podle data publikování.
 // Primárně používá publishedAt; pokud není, odvozen timestamp z MongoDB ObjectId.
@@ -289,6 +290,7 @@ export default function StampCatalog(props) {
   const fieldSuggestions = useMemo(() => {
     const fields = [
       "emise",
+      "emiseSkupina",
       "rok",
       "katalogCislo",
       "obrazek",
@@ -403,7 +405,7 @@ export default function StampCatalog(props) {
 
       if (isHomepageDefault) {
         if (homeSortMode === "db") {
-          return getPublishTime(itemB) - getPublishTime(itemA);
+          return getEmissionStudyPublishTime(b[1]) - getEmissionStudyPublishTime(a[1]);
         }
 
         if (homeSortMode === "alpha") {
@@ -564,7 +566,7 @@ export default function StampCatalog(props) {
     const startIndex = (homePage - 1) * homepagePageSize;
     const endIndex = startIndex + homepagePageSize;
     return groupedBoxes.slice(startIndex, endIndex);
-  }, [groupedBoxes, isHomepageDefault, isHomepagePaginationActive, homepagePageSize, homePage]);
+  }, [groupedBoxes, isHomepageDefault, isHomepagePaginationActive, homepagePageSize, homePage, emission, year, catalog, query]);
 
   const displayedBoxCount = boxesToRender.length;
 
@@ -773,7 +775,7 @@ export default function StampCatalog(props) {
                     }
                     return true;
                   });
-                  if (matches.length === 1) {
+                  if (matches.length === 1 && (!matches[0].bezStudie || isAdmin)) {
                     const targetId = matches[0].idZnamky;
                     if (props && props.setDetailId) {
                       props.setDetailId(targetId);
@@ -810,12 +812,17 @@ export default function StampCatalog(props) {
                     </>
                   ) : (
                     <>
-                      Zobrazeno: <strong>{displayedBoxCount}</strong> z <strong>{totalBoxCount}</strong> emisí do katalogu (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)}, <strong>{displayedVariantCount}</strong> {sklonujVariant(displayedVariantCount)})
+                      Zobrazeno: <strong>{displayedBoxCount}</strong> z <strong>{totalBoxCount}</strong> emisí v katalogu (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)}, <strong>{displayedVariantCount}</strong> {sklonujVariant(displayedVariantCount)})
                     </>
                   )
                 ) : (
                   <>
-                    Obsahuje: <strong>{totalBoxCount}</strong> {sklonujEmise(totalBoxCount)} (<strong>{filtered.length}</strong> {sklonujZnamek(filtered.length)}, <strong>{displayedVariantCount}</strong> {sklonujVariant(displayedVariantCount)})
+                    Obsahuje: <strong>{totalBoxCount}</strong> {sklonujEmise(totalBoxCount)} (<strong>{displayedStampCount}</strong> {sklonujZnamek(displayedStampCount)}
+                    {boxesToRender.some(([, items]) => items.some(stamp => stamp.bezStudie || stamp.bezRozliseni)) ? (
+                      <>) · Studie pro <strong>{displayedStampCount - boxesToRender.reduce((count, [, items]) => count + items.filter(stamp => stamp.bezStudie).length, 0)}</strong> {displayedStampCount - boxesToRender.reduce((count, [, items]) => count + items.filter(stamp => stamp.bezStudie).length, 0) === 1 ? "známku" : sklonujZnamek(displayedStampCount - boxesToRender.reduce((count, [, items]) => count + items.filter(stamp => stamp.bezStudie).length, 0))} (<strong>{displayedVariantCount}</strong> {sklonujVariant(displayedVariantCount)})</>
+                    ) : (
+                      <>, <strong>{displayedVariantCount}</strong> {sklonujVariant(displayedVariantCount)})</>
+                    )}
                   </>
                 )}
               </div>
@@ -833,6 +840,7 @@ export default function StampCatalog(props) {
               />
             </div>
             <StampBoxList
+              isAdmin={isAdmin}
               boxesToRender={boxesToRender}
               expandedBoxes={expandedBoxes}
               handleToggleBox={handleToggleBox}

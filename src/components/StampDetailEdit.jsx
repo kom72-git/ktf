@@ -193,6 +193,7 @@ export function StampCatalogNumberSection({
   renderCatalogLinkWithPreview,
   item,
   companionStamp,
+  emissionSiblingPreview,
 }) {
   return (
     <div className="detail-catalog">
@@ -252,6 +253,34 @@ export function StampCatalogNumberSection({
               )}
             </>
           )}
+          {emissionSiblingPreview && (
+            <span className="emission-sibling-preview">
+              <span className="emission-sibling-preview-label">Další známky emise:</span>
+              <span className="emission-sibling-preview-list">
+                {emissionSiblingPreview.items.map(({ catalogNumber, stamp, image, isPlaceholder }, index) => (
+                  <React.Fragment key={catalogNumber}>
+                    {index > 0 && <span aria-hidden="true">, </span>}
+                    {stamp ? renderCatalogLinkWithPreview(stamp, catalogNumber) : (
+                      <span
+                        className="emission-sibling-preview-trigger"
+                        tabIndex={0}
+                        aria-describedby={`emission-preview-${catalogNumber}`}
+                      >
+                        {catalogNumber}
+                        <span className="emission-sibling-preview-popover" id={`emission-preview-${catalogNumber}`} role="tooltip">
+                          <img
+                            src={image}
+                            alt={isPlaceholder ? `Obrázek pro ${catalogNumber} zatím není přiřazen` : `Náhled katalogového čísla ${catalogNumber}`}
+                          />
+                          {isPlaceholder && <span>Obrázek zatím není přiřazen</span>}
+                        </span>
+                      </span>
+                    )}
+                  </React.Fragment>
+                ))}
+              </span>
+            </span>
+          )}
         </>
       )}
     </div>
@@ -280,6 +309,8 @@ export function StampTechnicalSpecSection({
   normalizeImageSrc,
   schemaTFImages,
   specHeadingId,
+  emissionSiblingPreview,
+  renderCatalogLinkWithPreview,
 }) {
   return (
     <section className="stamp-spec stamp-detail-spec-col" aria-labelledby={specHeadingId}>
