@@ -18,6 +18,7 @@ import {
   sklonujPosledniVlozeneEmise
 } from './utils/formatovaniTextu.jsx';
 import { katalogSort, emissionToSlug, slugToEmission, getCatalogBaseKey } from './utils/katalog.js';
+import { normalizeDatumVydani } from "./utils/formatovaniUdaju.js";
 import {
   normalizeStampImagePath,
   normalizeStampImagePathForStorage,
@@ -79,6 +80,7 @@ export default function StampCatalog(props) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [stamps, setStamps] = useState([]);
   const [defects, setDefects] = useState([]);
+  const [schemaTFImagePaths, setSchemaTFImagePaths] = useState([]);
   const [query, setQuery] = useState("");
   // ...existing code...
   // Emise a rok vždy odvozujeme pouze z props (tedy z URL)
@@ -194,6 +196,10 @@ export default function StampCatalog(props) {
         setDefects(data);
       })
       .catch(err => console.error("Chyba při načítání vad:", err));
+    apiFetch(`${API_BASE}/api/schema-tf-images`)
+      .then(res => (res.ok ? res.json() : []))
+      .then(paths => setSchemaTFImagePaths(Array.isArray(paths) ? paths : []))
+      .catch(err => console.error("Chyba při načítání obrázků schémat TF:", err));
   }, [isAdmin]);
 
   useEffect(() => {
@@ -288,6 +294,17 @@ export default function StampCatalog(props) {
   }, [year, emission, stamps]);
 
   const fieldSuggestions = useMemo(() => {
+    const whitespaceInsensitiveFields = new Set([
+      "datumVydani",
+      "katalogCislo",
+      "druhTisku",
+      "tiskovaForma",
+      "nominal",
+      "zoubkovani",
+      "papir",
+      "rozmer",
+      "naklad",
+    ]);
     const fields = [
       "emise",
       "emiseSkupina",
@@ -315,23 +332,30 @@ export default function StampCatalog(props) {
     "obrazekAutor",
     ];
     const collect = (field) => {
-      const values = new Set();
+      const values = new Map();
       stamps.forEach((stamp) => {
         const raw = stamp[field];
         if (raw === null || raw === undefined) return;
         const entries = field === "schemaTF" && Array.isArray(raw) ? raw : [raw];
         entries.forEach(entry => {
-          const value = String(entry).trim();
-          if (value) values.add(value);
+          const rawValue = String(entry).trim();
+          if (!rawValue) return;
+          const value = field === "datumVydani" ? normalizeDatumVydani(rawValue) : rawValue;
+          const suggestionKey = whitespaceInsensitiveFields.has(field) ? value.replace(/\s+/g, "") : value;
+          if (!values.has(suggestionKey)) values.set(suggestionKey, value);
         });
       });
-      return Array.from(values).sort((a, b) => a.localeCompare(b, "cs"));
+      return Array.from(values.values()).sort((a, b) => a.localeCompare(b, "cs"));
     };
-    return fields.reduce((acc, field) => {
+    const suggestions = fields.reduce((acc, field) => {
       acc[field] = collect(field);
       return acc;
     }, {});
-  }, [stamps]);
+    const yearSample = "1988/PL2870-TF";
+    suggestions.schemaTF = Array.from(new Set([...schemaTFImagePaths, yearSample]))
+      .sort((a, b) => a.localeCompare(b, "cs", { numeric: true, sensitivity: "base" }));
+    return suggestions;
+  }, [stamps, schemaTFImagePaths]);
 
   // Výchozí náhled: všechny známky (nikde se neřeže na 20) a pro homepage se 4 boxy omezí až v rendereru.
   const filtered = useMemo(() => {

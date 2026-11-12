@@ -308,6 +308,7 @@ export function StampTechnicalSpecSection({
   resolvedNaklad,
   normalizeImageSrc,
   schemaTFImages,
+  schemaTFSuggestionValues = [],
   specHeadingId,
   emissionSiblingPreview,
   renderCatalogLinkWithPreview,
@@ -591,7 +592,7 @@ export function StampTechnicalSpecSection({
             <SchemaTFEditor
               value={editStampData.schemaTF}
               onChange={value => setEditStampData({ ...editStampData, schemaTF: value })}
-              suggestionListId={hasSuggestions('schemaTF') ? getSuggestionListId('schemaTF') : undefined}
+              suggestionValues={schemaTFSuggestionValues}
               onSave={() => saveTechnicalField('schemaTF', editStampData.schemaTF || '')}
             />
           )}

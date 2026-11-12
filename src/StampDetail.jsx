@@ -35,7 +35,7 @@ import {
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import "./fancybox-responsive.css";
 import ImageSources from "./components/ImageSources.jsx";
-import VariantList from "./components/VariantList.jsx";
+import VariantList, { VariantEditHelp } from "./components/VariantList.jsx";
 import { StampImageEditRow, StampCatalogNumberSection, StampTitleSection, StampTechnicalSpecSection, StampStudyTopSection, StampStudyFooterSection } from "./components/StampDetailEdit.jsx";
 import StampStavControl from "./components/StampStavControl.jsx";
 import { getStavFromStamp, stavToIsHidden } from "./utils/stavUtils.js";
@@ -366,7 +366,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
       const next = { ...prev };
       const canAutoUpdateMain = !currentMain || (previousAutoBase && currentMain === previousAutoBase);
       const canAutoUpdateStudy = !currentStudy || (previousAutoBase && currentStudy === `${previousAutoBase}s`);
-      const canAutoUpdateTf = !currentTf || (previousAutoBase && currentTf === `${previousAutoBase}-TF`);
+      const canAutoUpdateTf = previousAutoBase && currentTf === `${previousAutoBase}-TF`;
 
       if (canAutoUpdateMain && currentMain !== base) {
         next.obrazek = base;
@@ -1583,6 +1583,7 @@ export default function DetailPage({ id, onBack, defects, isAdmin = false, field
           resolvedNaklad={resolvedNaklad}
           normalizeImageSrc={normalizeImageSrc}
           schemaTFImages={schemaTFImages}
+          schemaTFSuggestionValues={getSuggestionValues("schemaTF")}
           specHeadingId={specHeadingId}
         />
       </div>

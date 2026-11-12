@@ -498,6 +498,15 @@
 .ktf-tip-box-bulleted .ktf-tip-line + .ktf-tip-line {
   margin-top: 4px;
 }
+.ktf-tip-box-bulleted .ktf-tip-line-plain {
+  padding-left: 0;
+}
+.ktf-tip-box-bulleted .ktf-tip-line-indent {
+  padding-left: 14px;
+}
+.ktf-tip-box-bulleted .ktf-tip-line-plain::before {
+  content: none;
+}
 
 .ktf-tip-wrap {
   display: flex;
@@ -1856,6 +1865,40 @@ input.admin-checkbox { width: 18px; height: 18px; cursor: pointer; }
   flex: 1;
   min-width: 0;
 }
+.schema-tf-editor .schema-tf-input-row {
+  align-items: center;
+}
+.schema-tf-input-wrap {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.schema-tf-editor .schema-tf-input-wrap input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 30px;
+}
+.schema-tf-suggestion-picker {
+  position: absolute;
+  top: 0;
+  right: 1px;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #111827;
+  font-size: 10px;
+  line-height: 1;
+  text-align: center;
+  appearance: none;
+  -webkit-appearance: none;
+  box-shadow: none;
+  cursor: pointer;
+}
 .schema-tf-editor-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2018,9 +2061,17 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   color: inherit;
   font: inherit;
 }
-@media (max-width: 600px) {
+@media (max-width: 900px) {
   .emission-sibling-preview {
-    margin-left: 36px;
+    display: block;
+    margin: 8px 0 0;
+  }
+  .emission-sibling-preview-label,
+  .emission-sibling-preview-list {
+    display: block;
+  }
+  .emission-sibling-preview-list {
+    margin-top: 3px;
   }
 }
 .emission-sibling-preview-trigger {
@@ -3026,7 +3077,10 @@ img[src*="img/no-image.png"]:not(.variant-img-no-image):not(.variant-img-special
   border-color: #9ca3af;
   box-shadow: 0 2px 8px rgba(107, 114, 128, 0.22);
 }
-
+.stamp-card.stamp-card-study-missing,
+.stamp-card.stamp-card-study-undifferentiated {
+  background: #f1f7fd !important;
+}
 .stamp-unpublished-ribbon {
   position: absolute;
   top: 30px;

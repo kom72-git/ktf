@@ -180,7 +180,8 @@ export function formatDefectDescription(text, options = {}) {
 
   const formatInnerHtml = (str) => {
     if (!str) return "";
-    const withApostrophes = str.replace(/'(.+?)'(?=$|[\s.,;:!?)\]}])/g, '<span class="variant-popis-apostrof">$1</span>');
+    const withPartOfRunShortcut = str.replace(/(^|[^\p{L}\p{N}])\*čn(?=$|[^\p{L}\p{N}])/giu, "$1(část nákladu)");
+    const withApostrophes = withPartOfRunShortcut.replace(/'(.+?)'(?=$|[\s.,;:!?)\]}])/g, '<span class="variant-popis-apostrof">$1</span>');
     const withItalics = italicizeCastNakladu(withApostrophes);
     return replaceAbbreviationsWithHtml(withItalics);
   };

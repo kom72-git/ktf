@@ -168,14 +168,14 @@ export default function StampBoxList({
             }
           }
           return (
-            <div key={key} className={`stamp-card${isSingle && item.bezStudie && !isAdmin ? "" : " stamp-card-pointer"}${showUnpublishedHint ? " stamp-card-unpublished" : ""}${useInterniRibbon ? " stamp-card-internal" : ""}`}
+            <div key={key} className={`stamp-card stamp-card-pointer${isSingle && item.bezStudie ? " stamp-card-study-missing" : ""}${isSingle && item.bezRozliseni ? " stamp-card-study-undifferentiated" : ""}${showUnpublishedHint ? " stamp-card-unpublished" : ""}${useInterniRibbon ? " stamp-card-internal" : ""}`}
               onPointerLeave={event => {
                 if (event.relatedTarget?.closest?.(".stamp-detail-tab-mask")) return;
                 setExpandHintKey(current => current === key ? null : current);
               }}
               onClick={() => {
                 if (isSingle) {
-                  if (!item.bezStudie || isAdmin) onNavigateToDetail(item.idZnamky);
+                  onNavigateToDetail(item.idZnamky);
                 } else {
                   onNavigateToEmission(slug, rok, key);
                 }
@@ -232,11 +232,10 @@ export default function StampBoxList({
                     )) : <CatalogNumberDisplay text={katalogText} />}
                   </span>
                 </div>
-                {isSingle && item.bezStudie ? (
-                  <span className="stamp-study-state-label">bez studie</span>
-                ) : isSingle ? (
+                {isSingle && item.bezStudie && <span className="stamp-study-state-label">bez studie</span>}
+                {isSingle && item.bezRozliseni && <span className="stamp-study-state-label">bez rozlišení</span>}
+                {isSingle ? (
                   <>
-                    {item.bezRozliseni && <span className="stamp-study-state-label">bez rozlišení</span>}
                   <span className="stamp-detail-tab-mask">
                     <button type="button" className="stamp-detail-tab" onClick={e => { e.stopPropagation(); onNavigateToDetail(item.idZnamky); }}>Otevřít detail</button>
                   </span>
@@ -288,12 +287,12 @@ export default function StampBoxList({
             return (
               <div
                 key={key + '-' + idx}
-                className={`stamp-card ${stripeClass}${item.bezStudie && !isAdmin ? "" : " stamp-card-pointer"}${(itemStav === 'priprava' || itemStav === 'interni') ? " stamp-card-unpublished" : ""}${itemStav === 'interni' ? " stamp-card-internal" : ""}`}
+                className={`stamp-card ${stripeClass} stamp-card-pointer${item.bezStudie ? " stamp-card-study-missing" : ""}${item.bezRozliseni ? " stamp-card-study-undifferentiated" : ""}${(itemStav === 'priprava' || itemStav === 'interni') ? " stamp-card-unpublished" : ""}${itemStav === 'interni' ? " stamp-card-internal" : ""}`}
                 onPointerLeave={event => {
                   if (event.relatedTarget?.closest?.(".stamp-detail-tab-mask")) return;
                   setExpandHintKey(current => current === key ? null : current);
                 }}
-                onClick={item.bezStudie && !isAdmin ? undefined : () => onNavigateToDetail(item.idZnamky)}>
+                onClick={() => onNavigateToDetail(item.idZnamky)}>
                 {itemStav === 'priprava' && (
                   <span className="stamp-unpublished-ribbon stamp-unpublished-ribbon-fixed" title="Známka je nepublikovaná">V PŘÍPRAVĚ</span>
                 )}
@@ -337,7 +336,7 @@ export default function StampBoxList({
                   <div className="stamp-catalog-row"><span className="stamp-catalog-label">Katalogové číslo:</span> <span className="catalog"><CatalogNumberDisplay text={katalogText || item.katalogCislo} /></span></div>
                   {item.bezStudie && <span className="stamp-study-state-label">bez studie</span>}
                   {item.bezRozliseni && <span className="stamp-study-state-label">bez rozlišení</span>}
-                  {!item.bezStudie && <span className="stamp-detail-tab-mask">
+                  <span className="stamp-detail-tab-mask">
                     <button type="button" className="stamp-detail-tab" onClick={e => {
                       e.stopPropagation();
                       if (idx === 0 && expandHintKey === key) {
@@ -347,7 +346,7 @@ export default function StampBoxList({
                         onNavigateToDetail(item.idZnamky);
                       }
                     }}>{idx === 0 && expandHintKey === key ? "Sloučit box" : "Otevřít detail"}</button>
-                  </span>}
+                  </span>
                 </div>
               </div>
             );

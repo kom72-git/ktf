@@ -136,9 +136,7 @@ export default function AdminPanel({
           next.variantaVady,
           next.poradiVady
         );
-        if (composedPath) {
-          next.obrazekVady = composedPath;
-        }
+        next.obrazekVady = composedPath;
       }
       return next;
     });
@@ -214,7 +212,7 @@ export default function AdminPanel({
     const order = String(orderValue ?? "").trim();
 
     if (!base) return "";
-    if (!variant) return base;
+    if (!variant) return order ? `${base}-${order}` : "";
     if (!order) return `${base}-${variant}`;
     return `${base}-${variant}-${order}`;
   };
@@ -810,7 +808,7 @@ export default function AdminPanel({
                     autoManagedImageFieldsRef.current.schemaTF = false;
                     setNewStampData({ ...newStampData, schemaTF: value });
                   }}
-                  suggestionListId={hasSuggestions('schemaTF') ? getSuggestionListId('schemaTF') : undefined}
+                  suggestionValues={fieldSuggestions.schemaTF || []}
                 />
               </div>
               </>}
@@ -905,7 +903,7 @@ export default function AdminPanel({
               </div>
               <div className="admin-variant-row">
                 <div className="label-top-input admin-varianta-field">
-                  <label>Varianta</label>
+                      <label>Varianta</label>
                   <div className="admin-input-with-stepper">
                     <input
                       type="text"
@@ -920,7 +918,6 @@ export default function AdminPanel({
                       className="ktf-edit-input-tech admin-input-flex"
                       list={variantSuggestions.variantaVady.length ? "variant-varianta-options" : undefined}
                       autoComplete="off"
-                      required
                     />
                     <div className="admin-stepper-btns">
                       <button
@@ -1020,13 +1017,6 @@ export default function AdminPanel({
               <div className="label-top-input">
                 <label>Popis vady</label>
                 <textarea value={newVariantData.popisVady} onChange={e => setNewVariantData(v => ({ ...v, popisVady: e.target.value }))} className="ktf-edit-input-tech" rows={3} />
-                <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
-                  <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
-                  <div className="ktf-tip-box ktf-tip-box-bulleted">
-                    <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Vlož <code>[[...]]</code> kde chceš schovat text, před ní bude text vidět hned a text za ní se zobrazí jen po přejetí myší (…)</span>
-                    <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">V adrese obrázku varianty: <code>_</code> na začátku názvu = čárkovaný obrázek ✧ <code>!</code> na začátku názvu = čárkovaný box varianty ✧ <code>!</code> je jen marker v adrese (soubor ukládej bez něj) ✧ <code>(n/a)</code> na konci adresy = trvale nedostupný obrázek</span>
-                  </div>
-                </div>
               </div>
               {variantSuggestions.variantaVady.length > 0 && (
                 <datalist id="variant-varianta-options">
@@ -1049,6 +1039,19 @@ export default function AdminPanel({
                 <button type="button" className="back-btn" onClick={() => setShowAddVariantModal(false)}>
                   Zrušit
                 </button>
+              </div>
+              <div className="ktf-tip-wrap" role="note" aria-label="Nápověda">
+                <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
+                <div className="ktf-tip-box ktf-tip-box-bulleted">
+                  <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Prázdná varianta = obecné znaky.</span>
+                  <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Skupina: stejné číslo spojí související vady do jednoho bloku; jiné číslo vytvoří oddělený blok. Prázdné = bez skupiny.</span>
+                    <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line"><code>*čn</code> = (část nákladu)</span>
+                  <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Vlož <code>[[...]]</code> kde chceš schovat text, před ní bude text vidět hned a text za ní se zobrazí jen po přejetí myší (…)</span>
+                  <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line ktf-tip-line-plain">V adrese obrázku varianty:</span>
+                  <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line ktf-tip-line-plain ktf-tip-line-indent"><strong><code>_</code></strong> na začátku názvu obrázku = čárkovaný obrázek.</span>
+                  <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line ktf-tip-line-plain ktf-tip-line-indent"><strong><code>!</code></strong> na začátku adresy = čárkovaný box (vykřičník je jen značka v adrese, název souboru ho neobsahuje).</span>
+                  <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line ktf-tip-line-plain ktf-tip-line-indent"><strong><code>(n/a)</code></strong> na konci adresy = trvale nedostupný obrázek.</span>
+                </div>
               </div>
             </form>
           </div>

@@ -168,6 +168,8 @@ function compareVariantGroupKeys(a, b) {
     const contextOrder = left.context.localeCompare(right.context, undefined, { numeric: true, sensitivity: "base" });
     if (contextOrder !== 0) return contextOrder;
   }
+  if (left.variant === "__general__" && right.variant !== "__general__") return -1;
+  if (right.variant === "__general__" && left.variant !== "__general__") return 1;
   if (left.variant === "__numeric__") return right.variant === "__numeric__" ? left.context.localeCompare(right.context) : 1;
   if (right.variant === "__numeric__") return -1;
   return left.variant.toUpperCase().localeCompare(right.variant.toUpperCase());
@@ -215,6 +217,25 @@ function renderDefectDescription(descriptionText, tucneVSeznamu) {
     );
   }
   return <div className="variant-popis-detail">{rendered}</div>;
+}
+
+export function VariantEditHelp() {
+  return (
+    <div className="ktf-tip-wrap" role="note" aria-label="Nápověda k editaci variant">
+      <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
+      <div className="ktf-tip-box ktf-tip-box-bulleted">
+        <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Prázdná varianta = obecné znaky.</span>
+        <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Skupina: stejné číslo spojí související vady do jednoho bloku; jiné číslo vytvoří oddělený blok. Prázdné = bez skupiny.</span>
+        <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line"><code>*čn</code> = (část nákladu)</span>
+        <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line"><code>&apos;text&apos;</code> → šedé zvýraznění</span>
+        <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Vlož <code>{"[[...]]"}</code> kde chceš schovat text, před ní bude text vidět hned a text za ní se zobrazí jen po přejetí myší (…)</span>
+        <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line ktf-tip-line-plain">V adrese obrázku varianty:</span>
+        <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line ktf-tip-line-plain ktf-tip-line-indent"><strong><code>_</code></strong> na začátku názvu obrázku = čárkovaný obrázek</span>
+        <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line ktf-tip-line-plain ktf-tip-line-indent"><strong><code>!</code></strong> na začátku adresy = čárkovaný box (vykřičník je jen značka v adrese, název souboru ho neobsahuje)</span>
+        <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line ktf-tip-line-plain ktf-tip-line-indent"><strong><code>(n/a)</code></strong> na konci adresy = trvale nedostupný obrázek</span>
+      </div>
+    </div>
+  );
 }
 
 // --- Komponenta ---
@@ -353,17 +374,23 @@ const VariantList = forwardRef(function VariantList({
   const plusVariants = [];
   const sharedVariantsByLabel = new Map();
   (effectiveDefects || []).forEach(def => {
-    if (!def.variantaVady) return;
-    if (def.variantaVady.includes(",")) {
+    const variantValue = String(def.variantaVady || "").trim();
+    if (!variantValue) {
+      const groupKey = makeVariantGroupKey("__general__", def.skupinaVarianty);
+      if (!grouped[groupKey]) grouped[groupKey] = [];
+      grouped[groupKey].push(def);
+      return;
+    }
+    if (variantValue.includes(",")) {
       plusVariants.push(def);
-      const label = String(def.variantaVady).split(",").map(part => part.trim()).filter(Boolean).join(", ");
+      const label = variantValue.split(",").map(part => part.trim()).filter(Boolean).join(", ");
       const key = makeVariantGroupKey(label, def.skupinaVarianty);
       if (!sharedVariantsByLabel.has(key)) sharedVariantsByLabel.set(key, { key, label, defs: [] });
       sharedVariantsByLabel.get(key).defs.push(def);
       return;
     }
-    const isNum = /^\d+$/.test(def.variantaVady);
-    const lk = !isNum && def.variantaVady.match(/^([A-Z])/i);
+    const isNum = /^\d+$/.test(variantValue);
+    const lk = !isNum && variantValue.match(/^([A-Z])/i);
     const baseGroupKey = isNum ? "__numeric__" : (lk ? lk[0] : "?");
     const groupKey = makeVariantGroupKey(baseGroupKey, def.skupinaVarianty);
     if (!grouped[groupKey]) grouped[groupKey] = [];
@@ -947,18 +974,6 @@ const VariantList = forwardRef(function VariantList({
         </div>
       )}
 
-      {/* Nápověda k editaci variant */}
-      {isEditingAll && (
-        <div className="ktf-tip-wrap" role="note" aria-label="Nápověda k editaci variant">
-          <span className="ktf-tip-title"><span className="ktf-tip-icon" aria-hidden="true">i</span>Tip</span>
-          <div className="ktf-tip-box ktf-tip-box-bulleted">
-            <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line"><code>&apos;text&apos;</code> → šedé zvýraznění</span>
-            <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">Vlož <code>{"[[...]]"}</code> kde chceš schovat text, před ní bude text vidět hned a text za ní se zobrazí jen po přejetí myší (…)</span>
-            <span className="ktf-edit-hint ktf-edit-tip ktf-tip-line">V adrese obrázku varianty: <code>_</code> na začátku názvu = čárkovaný obrázek ✧ <code>!</code> na začátku názvu = čárkovaný box varianty ✧ <code>!</code> je jen marker v adrese (soubor ukládej bez něj) ✧ <code>(n/a)</code> na konci adresy = trvale nedostupný obrázek</span>
-          </div>
-        </div>
-      )}
-
       <div className="variant-groups" ref={variantGroupsRef}>
       {renderSharedVariantSlot(0)}
       {/* Seskupené varianty (A, B, ... nebo číselné) */}
@@ -967,8 +982,14 @@ const VariantList = forwardRef(function VariantList({
         const previousContext = groupIndex > 0 ? splitVariantGroupKey(groupedKeysSorted[groupIndex - 1]).context : "";
         const beginsContextRow = Boolean(groupContext) && groupContext !== previousContext;
         const defs = grouped[group];
+        const { variant: displayGroup } = splitVariantGroupKey(group);
+        const isGeneralGroup = displayGroup === "__general__";
         const uniqueDefsMap = new Map();
-        defs.forEach(def => { if (def.variantaVady && !uniqueDefsMap.has(def.variantaVady)) uniqueDefsMap.set(def.variantaVady, def); });
+        defs.forEach(def => {
+          if (isGeneralGroup || (def.variantaVady && !uniqueDefsMap.has(def.variantaVady))) {
+            uniqueDefsMap.set(isGeneralGroup ? getDefectKey(def) : def.variantaVady, def);
+          }
+        });
         const uniqueDefs = Array.from(uniqueDefsMap.values());
         const sortedDefs = uniqueDefs.slice().sort(naturalVariantSort);
         const seen = new Set();
@@ -979,7 +1000,6 @@ const VariantList = forwardRef(function VariantList({
         }).map(d => ({ label: getSubvariantHeadingLabel(d.variantaVady), bold: !!d.tucneVSeznamu }));
         const hasSubvariants = subvariantLabels.some(s => s.label.includes("."));
         const subvariantTitle = hasSubvariants ? "Obsahuje podvarianty a subvarianty" : "Obsahuje podvarianty";
-        const { variant: displayGroup } = splitVariantGroupKey(group);
         const isNumericGroup = displayGroup === "__numeric__";
         const numericNums = isNumericGroup
           ? sortedDefs.map(d => parseInt(d.variantaVady, 10)).filter(n => !isNaN(n)).sort((a, b) => a - b)
@@ -989,7 +1009,9 @@ const VariantList = forwardRef(function VariantList({
           : "";
         const mainDef = sortedDefs.find(def => def.variantaVady && (def.variantaVady.length === 1 || /^\d+$/.test(def.variantaVady))) || sortedDefs[0];
         const typVarianty = mainDef?.typVarianty || "";
-        const heading = isNumericGroup ? (
+        const heading = isGeneralGroup ? (
+          <span className="variant-subtitle-prefix">Obecné znaky</span>
+        ) : isNumericGroup ? (
           <>
             <span className="variant-subtitle-prefix">{numericNums.length === 1 ? "Varianta" : "Varianty"}</span>
             <span className="variant-subtitle-name">{numericRangeLabel}</span>
@@ -1039,7 +1061,8 @@ const VariantList = forwardRef(function VariantList({
                   </span>
                 </div>
               )}
-              {renderGroupDescription(mainDef, isNumericGroup ? numericRangeLabel : group)}
+              {renderGroupDescription(mainDef, isGeneralGroup ? "Obecné znaky" : isNumericGroup ? numericRangeLabel : group)}
+              {isEditingAll && isAdmin && groupIndex === 0 && <VariantEditHelp />}
             </div>
             <div className="variants">
               {defs.slice().sort(compareVariantsWithBracket).map((def, i) => renderVariantBox(def, i, `var-${group}`))}

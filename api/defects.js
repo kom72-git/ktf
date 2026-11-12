@@ -40,13 +40,13 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       // Přidání nové vady
       const { idZnamky, variantaVady, skupinaVarianty, umisteniVady, poradiVady, obrazekVady, popisVady, mam } = req.body;
-      if (!idZnamky || !variantaVady) {
-        return res.status(400).json({ error: "Chybí povinné pole idZnamky nebo variantaVady" });
+      if (!idZnamky) {
+        return res.status(400).json({ error: "Chybí povinné pole idZnamky" });
       }
       // Vytvoření nového záznamu
       const defect = {
         idZnamky,
-        variantaVady,
+        variantaVady: String(variantaVady ?? "").trim(),
         skupinaVarianty: String(skupinaVarianty || "").trim(),
         umisteniVady: umisteniVady || '',
         poradiVady: poradiVady ?? '',

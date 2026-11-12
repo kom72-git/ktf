@@ -2,12 +2,13 @@ import React, { useState } from "react";
 import { Fancybox } from "@fancyapps/ui";
 import { getSchemaTFEntries } from "../utils/obrazekCesta.js";
 
-export function SchemaTFEditor({ value, onChange, suggestionListId, onSave }) {
+export function SchemaTFEditor({ value, onChange, suggestionValues = [], onSave }) {
   const entries = getSchemaTFEntries(value);
   return (
     <div className="schema-tf-editor">
       {entries.map((entry, index) => (
-        <div className="edit-field-row" key={index}>
+        <div className="edit-field-row schema-tf-input-row" key={index}>
+          <div className="schema-tf-input-wrap">
           <input
             type="text"
             aria-label={`Obrázek schématu TF ${index + 1}`}
@@ -16,9 +17,29 @@ export function SchemaTFEditor({ value, onChange, suggestionListId, onSave }) {
               position === index ? event.target.value : current
             )))}
             className="ktf-edit-input-tech"
-            list={suggestionListId}
             autoComplete="off"
           />
+          {suggestionValues.length > 0 && (
+            <select
+              className="schema-tf-suggestion-picker"
+              value=""
+              aria-label={`Vybrat návrh obrázku schématu TF ${index + 1}`}
+              title="Zobrazit všechny návrhy obrázků schématu TF"
+              onChange={event => {
+                const selectedValue = event.target.value;
+                if (!selectedValue) return;
+                onChange(entries.map((current, position) => (
+                  position === index ? selectedValue : current
+                )));
+              }}
+            >
+              <option value="" aria-label="Zobrazit návrhy">▼</option>
+              {suggestionValues.map(suggestion => (
+                <option key={suggestion} value={suggestion}>{suggestion}</option>
+              ))}
+            </select>
+          )}
+          </div>
           {entries.length > 1 && (
             <button
               type="button"

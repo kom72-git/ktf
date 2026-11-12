@@ -1,5 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -12,6 +14,7 @@ import {
   verifyAdminPassword,
 } from "../api/_lib/adminAuth.js";
 import { saveAuthor } from "../api/_lib/tvurci.js";
+import { listSchemaTfImagePaths } from "../api/_lib/schemaTfImages.js";
 
 
 const app = express();
@@ -85,6 +88,17 @@ mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true 
 
 app.get("/", (req, res) => {
   res.send("API běží");
+});
+
+app.get("/api/schema-tf-images", async (_req, res) => {
+  try {
+    const directory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public/img/TF");
+    res.setHeader("Cache-Control", "no-store");
+    return res.json(await listSchemaTfImagePaths(directory));
+  } catch (error) {
+    console.error("Načtení obrázků schémat TF selhalo:", error);
+    return res.status(500).json({ error: "Nepodařilo se načíst obrázky schémat TF" });
+  }
 });
 
 // Endpoint pro všechny známky
@@ -273,6 +287,7 @@ app.post("/api/defects", async (req, res) => {
   try {
     console.log('[API] Přijatý request body (defect):', req.body);
     const newDefect = { ...req.body };
+    newDefect.variantaVady = String(newDefect.variantaVady ?? '').trim();
     // Pokud je idZnamky, NEPŘEPISUJ obrazekVady! (původní logika zakomentována)
     // if (newDefect.idZnamky) {
     //   const stamp = await mongoose.connection.db.collection("stamps").findOne({ idZnamky: newDefect.idZnamky });
